@@ -834,6 +834,10 @@
 
 &i2c2 {
 	status = "okay";
+
+	i2c-scl-rising-time-ns = <150>;
+	i2c-scl-falling-time-ns = <30>;
+	clock-frequency = <200000>;
 };
 
 &i2c4 {
