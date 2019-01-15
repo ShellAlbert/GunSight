@@ -42,6 +42,9 @@
 #define I2C_REG_ADDR_POLL           0x3d
 #define I2C_REG_ADDR_PITCH          0x3e
 #define I2C_REG_ADDR_YAW            0x3f
+//pressure.
+#define I2C_REG_ADDR_PRESSURE_L     0x45
+#define I2C_REG_ADDR_PRESSURE_H     0x46
 
 #define I2C_REG_ADDR_IICADDR        0x1a
 
@@ -66,23 +69,23 @@ public:
     //get Ax,Ay,Az Offset.
     int getAxAyAzOffset(int *axOffset,int *ayOffset,int *azOffset);
     //get Ax,Ay,Az.
-    int getAxAyAz(int *ax,int *ay,int *az);
+    int getAxAyAz(float *ax,float *ay,float *az);
 
     //get Gx,Gy,Gz Offset.
     int getGxGyGzOffset(int *gxOffset,int *gyOffset,int *gzOffset);
     //get Gx,Gy,Gz.
-    int getGxGyGz(int *gx,int *gy,int *gz);
+    int getGxGyGz(float *gx,float *gy,float *gz);
 
     //get Hx,Hy,Hz Offset.
     int getHxHyHzOffset(int *hxOffset,int *hyOffset,int *hzOffset);
     //get Hx,Hy,Hz.
-    int getHxHyHz(int *hx,int *hy,int *hz);
+    int getHxHyHz(float *hx,float *hy,float *hz);
 
     //get Roll,Pitch,Yaw.
-    int getRollPitchYaw(int *roll,int *pitch,int *yaw);
+    int getRollPitchYaw(float *roll,float *pitch,float *yaw);
 
-    //get Pressure High and Low.
-    int getPressureHL(int *high,int *low);
+    //get Pressure.
+    int getPressure(int *pressure);
     //get Longtude  High and Low.
     int getLongitudeHL(int *high,int *low);
     //get Latitude High and Low.
@@ -250,9 +253,37 @@ int jy901b::getAxAyAzOffset(int *axOffset,int *ayOffset,int *azOffset)
 
 }
 //get Ax,Ay,Az.
-int jy901b::getAxAyAz(int *ax,int *ay,int *az)
+int jy901b::getAxAyAz(float *ax,float *ay,float *az)
 {
+    int nAx,nAy,nAz;
+    int nAxSwp=0,nAySwp=0,nAzSwp=0;
+    if(NULL==ax || NULL==ay || NULL==az)
+    {
+        printf("<jy901b>:null parameter.");
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_AX,&nAx)<0)
+    {
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_AY,&nAy)<0)
+    {
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_AZ,&nAz)<0)
+    {
+        return -1;
+    }
+    nAxSwp=((nAx&0xFF)<<8)|((nAx&0xFF00)>>8);
+    nAySwp=((nAy&0xFF)<<8)|((nAy&0xFF00)>>8);
+    nAzSwp=((nAz&0xFF)<<8)|((nAz&0xFF00)>>8);
+    printf("......Ax:%x(%x),Ay:%x(%x),Az:%x(%x)\n",nAx,nAxSwp,nAy,nAySwp,nAz,nAzSwp);
 
+    *ax=nAxSwp/32768.0*16.0*9.8;
+    *ay=nAySwp/32768.0*16.0*9.8;
+    *az=nAzSwp/32768.0*16.0*9.8;
+    //printf("AxAyAz:%.2f,%.2f,%.2f\n",*ax,*ay,*az);
+    return 0;
 }
 
 //get Gx,Gy,Gz Offset.
@@ -261,9 +292,37 @@ int jy901b::getGxGyGzOffset(int *gxOffset,int *gyOffset,int *gzOffset)
 
 }
 //get Gx,Gy,Gz.
-int jy901b::getGxGyGz(int *gx,int *gy,int *gz)
+int jy901b::getGxGyGz(float *gx,float *gy,float *gz)
 {
+    int nGx,nGy,nGz;
+    int nGxSwp=0,nGySwp=0,nGzSwp=0;
+    if(NULL==gx || NULL==gy || NULL==gz)
+    {
+        printf("<jy901b>:null parameter.");
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_GX,&nGx)<0)
+    {
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_GY,&nGy)<0)
+    {
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_GZ,&nGz)<0)
+    {
+        return -1;
+    }
+    nGxSwp=((nGx&0xFF)<<8)|((nGx&0xFF00)>>8);
+    nGySwp=((nGy&0xFF)<<8)|((nGy&0xFF00)>>8);
+    nGzSwp=((nGz&0xFF)<<8)|((nGz&0xFF00)>>8);
+    printf("......Gx:%x(%x),Gy:%x(%x),Gz:%x(%x)\n",nGx,nGxSwp,nGy,nGySwp,nGz,nGzSwp);
 
+    *gx=nGxSwp/32768.0*2000.0;
+    *gy=nGySwp/32768.0*2000.0;
+    *gz=nGzSwp/32768.0*2000.0;
+    //printf("GxGyGz:%.2f,%.2f,%.2f\n",*gx,*gy,*gz);
+    return 0;
 }
 
 //get Hx,Hy,Hz Offset.
@@ -272,21 +331,95 @@ int jy901b::getHxHyHzOffset(int *hxOffset,int *hyOffset,int *hzOffset)
 
 }
 //get Hx,Hy,Hz.
-int jy901b::getHxHyHz(int *hx,int *hy,int *hz)
+int jy901b::getHxHyHz(float *hx,float *hy,float *hz)
 {
+    int nHx,nHy,nHz;
+    int nHxSwp=0,nHySwp=0,nHzSwp=0;
+    if(NULL==hx || NULL==hy || NULL==hz)
+    {
+        printf("<jy901b>:null parameter.");
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_HX,&nHx)<0)
+    {
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_HY,&nHy)<0)
+    {
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_HZ,&nHz)<0)
+    {
+        return -1;
+    }
+    nHxSwp=((nHx&0xFF)<<8)|((nHx&0xFF00)>>8);
+    nHySwp=((nHy&0xFF)<<8)|((nHy&0xFF00)>>8);
+    nHzSwp=((nHz&0xFF)<<8)|((nHz&0xFF00)>>8);
+    printf("......Hx:%x(%x),Hy:%x(%x),Hz:%x(%x)\n",nHx,nHxSwp,nHy,nHySwp,nHz,nHzSwp);
 
+    *hx=nHxSwp/100.0;
+    *hy=nHySwp/100.0;
+    *hz=nHzSwp/100.0;
+    //printf("HxHyHz:%.2f,%.2f,%.2f\n",*hx,*hy,*hz);
+    return 0;
 }
 
 //get Roll,Pitch,Yaw.
-int jy901b::getRollPitchYaw(int *roll,int *pitch,int *yaw)
+int jy901b::getRollPitchYaw(float *roll,float *pitch,float *yaw)
 {
+    int nRoll,nPitch,nYaw;
+    int nRollSwp=0,nPitchSwp=0,nYawSwp=0;
+    if(NULL==roll || NULL==pitch || NULL==yaw)
+    {
+        printf("<jy901b>:null parameter.");
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_POLL,&nRoll)<0)
+    {
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_PITCH,&nPitch)<0)
+    {
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_YAW,&nYaw)<0)
+    {
+        return -1;
+    }
+    nRollSwp=((nRoll&0xFF)<<8)|((nRoll&0xFF00)>>8);
+    nPitchSwp=((nPitch&0xFF)<<8)|((nPitch&0xFF00)>>8);
+    nYawSwp=((nYaw&0xFF)<<8)|((nYaw&0xFF00)>>8);
+    printf("......roll:%x(%x),pitch:%x(%x),yaw:%x(%x)\n",nRoll,nRollSwp,nPitch,nPitchSwp,nYaw,nYawSwp);
 
+    *roll=nRollSwp/32768.0*180.0;
+    *pitch=nPitchSwp/32768.0*180.0;
+    *yaw=nYawSwp/32768.0*180.0;
+    //printf("roll:%.2f,%.2f,%.2f\n",*roll,*pitch,*yaw);
+    return 0;
 }
 
-//get Pressure High and Low.
-int jy901b::getPressureHL(int *high,int *low)
+//get Pressure.
+int jy901b::getPressure(int *pressure)
 {
-
+    int nPressureL,nPressureH;
+    int nPressureLSwp,nPressureHSwp;
+    if(NULL==pressure)
+    {
+        printf("<jy901b>:null parameter.");
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_PRESSURE_L,&nPressureL)<0)
+    {
+        return -1;
+    }
+    if(this->i2c_smbus_read_word_data(I2C_REG_ADDR_PRESSURE_H,&nPressureH)<0)
+    {
+        return -1;
+    }
+    nPressureLSwp=((nPressureL&0xFF)<<8)|((nPressureL&0xFF00)>>8);
+    nPressureHSwp=((nPressureH&0xFF)<<8)|((nPressureH&0xFF00)>>8);
+    *pressure=(nPressureHSwp<<16)|nPressureLSwp;
+    return 0;
 }
 //get Longtude  High and Low.
 int jy901b::getLongitudeHL(int *high,int *low)
@@ -366,10 +499,36 @@ int main(void)
     signal(SIGINT,g_SigIntHandler);
     while(!g_ExitFlag)
     {
+
         dev1.setD0123Mode(1,Digital_Out_High);
         sleep(1);
+        //加速度输出.
+        float ax,ay,az;
+        dev1.getAxAyAz(&ax,&ay,&az);
+        printf("Ax:%.2f,Ay:%.2f,Az:%.2f\n",ax,ay,az);
+
+        //角速度输出.
+        float gx,gy,gz;
+        dev1.getGxGyGz(&gx,&gy,&gz);
+        printf("Gx:%.2f,Gy:%.2f,Gz:%.2f\n",gx,gy,gz);
+
+        //角度输出.
+        float roll,pitch,yaw;
+        dev1.getRollPitchYaw(&roll,&pitch,&yaw);
+        printf("Roll:%.2f,Pitch:%.2f,Yaw:%.2f\n",roll,pitch,yaw);
+
+        //磁场输出.
+        float hx,hy,hz;
+        dev1.getHxHyHz(&hx,&hy,&hz);
+        printf("Hx:%.2f,Hy:%.2f,Hz:%.2f\n",hx,hy,hz);
+
+        //压力输出.
+        int pressure;
+        dev1.getPressure(&pressure);
+        printf("Pressure:%d (pa)\n",pressure);
+
         dev1.setD0123Mode(1,Digital_Out_Low);
-        sleep(1);
+        sleep(3);
     }
     dev1.doClean();
     return 0;
