@@ -10,8 +10,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgproc/types_c.h>
-#define CAP_IMG_SIZE_W  720
-#define CAP_IMG_SIZE_H  480
+#define CAP_IMG_SIZE_W  800
+#define CAP_IMG_SIZE_H  600
 
 #define TRACK_BOX_W 100
 #define TRACK_BOX_H 100
@@ -23,7 +23,6 @@
 enum
 {
     STATE_TRACKING_STOP=0,
-    STATE_TRACKING_DRAWOBJ,
     STATE_TRACKING_START,
     STATE_TRACKING_FAILED,
 };
@@ -65,6 +64,10 @@ public:
     qreal ZMapScreenY2ImgY(qreal y);
     qreal ZMapScreenWidth2ImgWidth(qreal width);
     qreal ZMapScreenHeight2ImgHeight(qreal height);
+
+public:
+    QVector<QPointF> m_vecActivePoints;
+    QLineF m_lines[4];
 };
 extern ZGblHelp g_GblHelp;
 

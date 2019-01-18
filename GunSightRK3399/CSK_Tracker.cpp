@@ -2,7 +2,7 @@
 
 using namespace std;
 
-const double CSK_Tracker::padding = 0.5;//1;
+const double CSK_Tracker::padding =0;//1;
 const double CSK_Tracker::output_sigma_factor = 1.0/16;
 const double CSK_Tracker::sigma = 0.2;
 const double CSK_Tracker::lambda = 0.01;

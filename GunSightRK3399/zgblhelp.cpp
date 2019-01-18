@@ -53,13 +53,10 @@ QString ZGblHelp::ZGetTipsByState(qint32 nState)
     switch(nState)
     {
     case STATE_TRACKING_STOP:
-        strTips=QObject::tr("按下鼠标左键框选目标物体\n松开后开始追踪");
-        break;
-    case STATE_TRACKING_DRAWOBJ:
-        strTips=QObject::tr("正在框选待追踪目标物...");
+        strTips=QObject::tr("移动镜头使物件进入矩形框区域内\n按键触发追踪");
         break;
     case STATE_TRACKING_START:
-        strTips=QObject::tr("正在追踪...\n鼠标右键取消");
+        strTips=QObject::tr("正在追踪...\n按键取消追踪");
         break;
     case STATE_TRACKING_FAILED:
         strTips=QObject::tr("追踪丢失");

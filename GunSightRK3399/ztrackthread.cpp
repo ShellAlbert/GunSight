@@ -8,6 +8,19 @@
 #include <QDebug>
 #include <QDateTime>
 #include <CSK_Tracker.h>
+
+#include "CppMT/CMT.h"
+#include "CppMT/gui.h"
+
+//#include <opencv2/highgui/highgui.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cstdio>
+
+
 using namespace std;
 // Convert to string
 #define SSTR( x ) static_cast< std::ostringstream & >( \
@@ -136,7 +149,7 @@ void ZTrackThread::run()
 
             if(this->m_bInitBox)
             {
-                qint64 tStart=QDateTime::currentDateTime().toMSecsSinceEpoch();
+                //qint64 tStart=QDateTime::currentDateTime().toMSecsSinceEpoch();
 
                 // Update the tracking result.
                 bool result = tracker.tracker_update(matFrm,ptCenter,target_size);
@@ -175,8 +188,8 @@ void ZTrackThread::run()
                     qDebug()<<"Tracking failure detected.";
 //                    g_GblHelp.m_nTrackingState=STATE_TRACKING_FAILED;
                 }
-                qint64 tEnd=QDateTime::currentDateTime().toMSecsSinceEpoch();
-                qDebug()<<"cost (ms):"<<(tEnd-tStart);
+                //qint64 tEnd=QDateTime::currentDateTime().toMSecsSinceEpoch();
+                //qDebug()<<"cost (ms):"<<(tEnd-tStart);
                 emit this->ZSigNewTracking();
             }else{
 
@@ -210,6 +223,118 @@ void ZTrackThread::run()
                 cv::Mat matBox=cv::Mat(matFrm,box);
                 QImage imgBox=cvMat2QImage(matBox);
                 emit this->ZSigNewInitBox(imgBox);
+            }
+            this->usleep(THREAD_SCHEDULE_MS);
+        }else{
+            if(this->m_bInitBox)
+            {
+                qDebug()<<"Tracking cancel.";
+                this->sleep(1);
+                this->m_bInitBox=false;
+            }
+        }
+        this->usleep(THREAD_SCHEDULE_MS*2);
+    }
+#endif
+
+#if 0
+    //Set up logging
+    FILELog::ReportingLevel()=logINFO;
+    Output2FILE::Stream()=stdout; //Log to stdout
+
+    //Create a CMT object
+    cmt::CMT cmt;
+    bool bBypassThisFrame=false;
+    while(!g_GblHelp.m_bExitFlag)
+    {
+        bBypassThisFrame=!bBypassThisFrame;
+        if(STATE_TRACKING_START==g_GblHelp.m_nTrackingState)
+        {
+            //1.fetch RGB data from ring buffer.
+            if(this->m_rb->ZGetElement((qint8*)pRGBBuffer,nBufSize)<0)
+            {
+                qDebug()<<"<Warning>:process,failed to get RGB from RGB queue.";
+                continue;
+            }
+
+            if(bBypassThisFrame)
+            {
+                continue;
+            }
+
+
+            //2.build a cvMat from plain RGB buffer.
+            cv::Mat matFrm=cv::Mat(CAP_IMG_SIZE_H,CAP_IMG_SIZE_W,CV_8UC3,pRGBBuffer);
+
+            if(this->m_bInitBox)
+            {
+                qint64 tStart=QDateTime::currentDateTime().toMSecsSinceEpoch();
+
+                Mat matFrmGray;
+                if (matFrm.channels() > 1)
+                {
+                    cv::cvtColor(matFrm, matFrmGray, CV_BGR2GRAY);
+                } else {
+                    matFrmGray = matFrm;
+                }
+
+                //Let CMT process the frame
+                cmt.processFrame(matFrmGray);
+                //get the active points.
+                g_GblHelp.m_vecActivePoints.clear();
+                for(size_t i=0;i<cmt.points_active.size();i++)
+                {
+                     g_GblHelp.m_vecActivePoints.append(QPointF(cmt.points_active[i].x,cmt.points_active[i].y));
+                }
+                //get the four lines.
+                Point2f vertices[4];
+                cmt.bb_rot.points(vertices);
+                for(int i=0;i<4;i++)
+                {
+                    g_GblHelp.m_lines[i].setP1(QPointF(vertices[i].x,vertices[i].y));
+                    g_GblHelp.m_lines[i].setP2(QPointF(vertices[(i+1)%4].x,vertices[(i+1)%4].y));
+                }
+
+                // Update the tracking result
+//                cv::Rect2d boxNewLocate;
+//                bool result=tracker->update(matFrm,boxNewLocate);
+//                if(result)
+//                {
+//                    qDebug("new locate:(%.2f,%.2f,%.2f,%.2f)\n",boxNewLocate.x,boxNewLocate.y,boxNewLocate.width,boxNewLocate.height);
+//                    g_GblHelp.m_rectTracked=QRect(boxNewLocate.x,boxNewLocate.y,boxNewLocate.width,boxNewLocate.height);
+//                    g_GblHelp.m_nTrackingState=STATE_TRACKING_START;
+//                }else{
+//                    // Tracking failure detected.
+//                    qDebug()<<"Tracking failure detected.";
+//                }
+                qint64 tEnd=QDateTime::currentDateTime().toMSecsSinceEpoch();
+                qDebug()<<"cost (ms):"<<(tEnd-tStart);
+                emit this->ZSigNewTracking();
+            }else{
+                //Convert im0 to grayscale
+                Mat matFrmGray;
+                if (matFrm.channels() > 1) {
+                    cv::cvtColor(matFrm,matFrmGray,CV_BGR2GRAY);
+                } else {
+                    matFrmGray=matFrm;
+                }
+
+                cv::Rect rect;
+                rect.x=g_GblHelp.ZMapScreenX2ImgX(g_GblHelp.m_nBoxX);
+                rect.y=g_GblHelp.ZMapScreenY2ImgY(g_GblHelp.m_nBoxY);
+                rect.width=g_GblHelp.ZMapScreenWidth2ImgWidth(g_GblHelp.m_nBoxWidth);
+                rect.height=g_GblHelp.ZMapScreenHeight2ImgHeight(g_GblHelp.m_nBoxHeight);
+                //Initialize CMT
+                cmt.initialize(matFrmGray, rect);
+
+
+                this->m_bInitBox=true;
+                cv::Mat matBox=cv::Mat(matFrm,rect);
+                QImage imgBox=cvMat2QImage(matBox);
+                emit this->ZSigNewInitBox(imgBox);
+
+                //save the feature frames.
+                //memcpy(pBackupBuffer,pRGBBuffer,nBufSize);
             }
             this->usleep(THREAD_SCHEDULE_MS);
         }else{

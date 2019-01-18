@@ -31,7 +31,16 @@ SOURCES += \
     zringbuffer.cpp \
     ztrackthread.cpp \
     zkeydetthread.cpp \
-    CSK_Tracker.cpp
+    CSK_Tracker.cpp \
+    CppMT/CMT.cpp  \
+    CppMT/common.cpp  \
+    CppMT/Consensus.cpp  \
+    CppMT/Fusion.cpp  \
+    CppMT/gui.cpp  \
+    CppMT/Matcher.cpp  \
+    CppMT/Tracker.cpp  \
+    #CppMT/trax.cpp \
+    CppMT/fastcluster/fastcluster.cpp
 
 HEADERS += \
         zmainui.h \
@@ -40,59 +49,71 @@ HEADERS += \
     zringbuffer.h \
     ztrackthread.h \
     zkeydetthread.h \
-    CSK_Tracker.h
+    CSK_Tracker.h \
+    CppMT/CMT.h  \
+    CppMT/common.h  \
+    CppMT/Consensus.h  \
+    CppMT/Fusion.h  \
+    CppMT/gui.h  \
+    CppMT/Matcher.h  \
+    CppMT/Tracker.h \
+    CppMT/fastcluster/fastcluster.h \
+    CppMT/logging/log.h
 
-INCLUDEPATH += /opt/EmbedSky/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/include
+#INCLUDEPATH += /opt/EmbedSky/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/include
 
 #opencv
-INCLUDEPATH += /home/zhangshaoyan/GunScan/opencvlaste/install32/include/opencv4
-LIBS += -L/home/zhangshaoyan/GunScan/opencvlaste/install32/lib
+#INCLUDEPATH += /home/zhangshaoyan/GunScan/opencvlaste/install32/include/opencv4
+INCLUDEPATH += /home/zhangshaoyan/MyWork/experiment/opencv4/install/include/opencv4
+#LIBS += -L/home/zhangshaoyan/GunScan/opencvlaste/install32/lib
+LIBS += -L/home/zhangshaoyan/MyWork/experiment/opencv4/install/lib
 LIBS += -lopencv_aruco
-LIBS += -lopencv_dnn
-LIBS += -lopencv_highgui
-LIBS += -lopencv_phase_unwrapping
-LIBS += -lopencv_stitching
-LIBS += -lopencv_videostab
 LIBS += -lopencv_bgsegm
-LIBS += -lopencv_dpm
-LIBS += -lopencv_imgcodecs
-LIBS += -lopencv_photo
-LIBS += -lopencv_structured_light
-LIBS += -lopencv_xfeatures2d
 LIBS += -lopencv_bioinspired
-LIBS += -lopencv_face
-LIBS += -lopencv_img_hash
-LIBS += -lopencv_plot
-LIBS += -lopencv_superres
-LIBS += -lopencv_ximgproc
 LIBS += -lopencv_calib3d
-LIBS += -lopencv_features2d
-LIBS += -lopencv_imgproc
-LIBS += -lopencv_reg
-LIBS += -lopencv_surface_matching
-LIBS += -lopencv_xobjdetect
 LIBS += -lopencv_ccalib
-LIBS += -lopencv_flann
-LIBS += -lopencv_line_descriptor
-LIBS += -lopencv_rgbd
-LIBS += -lopencv_text
-LIBS += -lopencv_xphoto
 LIBS += -lopencv_core
-LIBS += -lopencv_fuzzy
-LIBS += -lopencv_ml
-LIBS += -lopencv_saliency
-LIBS += -lopencv_tracking
 LIBS += -lopencv_datasets
-LIBS += -lopencv_gapi
-LIBS += -lopencv_objdetect
-LIBS += -lopencv_shape
-LIBS += -lopencv_videoio
 LIBS += -lopencv_dnn_objdetect
+LIBS += -lopencv_dnn
+LIBS += -lopencv_dpm
+LIBS += -lopencv_face
+LIBS += -lopencv_features2d
+LIBS += -lopencv_flann
+LIBS += -lopencv_fuzzy
 LIBS += -lopencv_hfs
+LIBS += -lopencv_highgui
+LIBS += -lopencv_imgcodecs
+LIBS += -lopencv_img_hash
+LIBS += -lopencv_imgproc
+LIBS += -lopencv_line_descriptor
+LIBS += -lopencv_ml
+LIBS += -lopencv_objdetect
 LIBS += -lopencv_optflow
+LIBS += -lopencv_phase_unwrapping
+LIBS += -lopencv_photo
+LIBS += -lopencv_plot
+LIBS += -lopencv_reg
+LIBS += -lopencv_rgbd
+LIBS += -lopencv_saliency
+LIBS += -lopencv_shape
 LIBS += -lopencv_stereo
+LIBS += -lopencv_stitching
+LIBS += -lopencv_structured_light
+LIBS += -lopencv_superres
+LIBS += -lopencv_surface_matching
+LIBS += -lopencv_text
+LIBS += -lopencv_tracking
+LIBS += -lopencv_videoio
 LIBS += -lopencv_video
+LIBS += -lopencv_videostab
+LIBS += -lopencv_xfeatures2d
+LIBS += -lopencv_ximgproc
+LIBS += -lopencv_xobjdetect
+LIBS += -lopencv_xphoto
 
-QMAKE_LFLAGS += -Wl,-rpath-link=/home/zhangshaoyan/armbuild/copyfromrk3399ubuntu1804/arm-linux-gnueabihf
-LIBS += -L/home/zhangshaoyan/armbuild/copyfromrk3399ubuntu1804/arm-linux-gnueabihf -lpthread
+
+
+#QMAKE_LFLAGS += -Wl,-rpath-link=/home/zhangshaoyan/armbuild/copyfromrk3399ubuntu1804/arm-linux-gnueabihf
+#LIBS += -L/home/zhangshaoyan/armbuild/copyfromrk3399ubuntu1804/arm-linux-gnueabihf -lpthread
 

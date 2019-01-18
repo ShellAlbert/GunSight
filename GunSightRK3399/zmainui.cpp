@@ -134,51 +134,106 @@ void ZMainUI::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
     QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    //draw the image.
     p.drawImage(QRect(0,0,this->width(),this->height()),this->m_img);
-#if 0
+
+    //draw the center cross marker.
     QPoint ptCenter(this->width()/2,this->height()/2);
-    QPoint ptTop1(ptCenter.x(),ptCenter.y()-200);
-    QPoint ptTop2(ptCenter.x(),ptCenter.y()-50);
-    QPoint ptBottom1(ptCenter.x(),ptCenter.y()+50);
-    QPoint ptBottom2(ptCenter.x(),ptCenter.y()+200);
+    QSizeF size1(40,40);
+    QRectF rect1(QPointF(ptCenter.x()-size1.width()/2,ptCenter.y()-size1.height()/2),size1);
 
-    QPoint ptLeft1(ptCenter.x()-200,ptCenter.y());
-    QPoint ptLeft2(ptCenter.x()-50,ptCenter.y());
-    QPoint ptRight1(ptCenter.x()+50,ptCenter.y());
-    QPoint ptRight2(ptCenter.x()+200,ptCenter.y());
+    QSizeF size2(100,100);
+    QRectF rect2(QPointF(ptCenter.x()-size2.width()/2,ptCenter.y()-size2.height()/2),size2);
 
-    p.drawLine(ptTop1,ptTop2);
-    p.drawLine(ptBottom1,ptBottom2);
-    p.drawLine(ptLeft1,ptLeft2);
-    p.drawLine(ptRight1,ptRight2);
-#endif
+    QSizeF size3(200,200);
+    QRectF rect3(QPointF(ptCenter.x()-size3.width()/2,ptCenter.y()-size3.height()/2),size3);
+
+    ///////////////////////////////////////////////////////
+    p.setPen(QPen(Qt::red,10));
+    //draw the left-top part.
+    p.drawLine(rect3.topLeft(),rect2.topLeft());
+    //draw the right-top part.
+    p.drawLine(rect3.topRight(),rect2.topRight());
+    //draw the left-bottom part.
+    p.drawLine(rect3.bottomLeft(),rect2.bottomLeft());
+    //draw the right-bottom part.
+    p.drawLine(rect3.bottomRight(),rect2.bottomRight());
+
+    //////////////////////////////////////////////////////////////
+    p.setPen(QPen(Qt::red,4));
+    //draw the left-top part.
+    p.drawLine(rect2.topLeft(),rect1.topLeft());
+    //draw the right-top part.
+    p.drawLine(rect2.topRight(),rect1.topRight());
+    //draw the left-bottom part.
+    p.drawLine(rect2.bottomLeft(),rect1.bottomLeft());
+    //draw the right-bottom part.
+    p.drawLine(rect2.bottomRight(),rect1.bottomRight());
+
+
+    //draw the bottom part.
+    qint32 nBottomLongerThanTop=100;
+    qint32 nBtmPartHeight=100;
+    qint32 nBtmPartWidth=this->width()/3;
+    QPointF ptBtmCenter(this->width()/2,this->height());
+    QPointF ptBtmTopLeft(ptBtmCenter.x()-nBtmPartWidth,ptBtmCenter.y()-nBtmPartHeight);
+    QPointF ptBtmBottomLeft(ptBtmCenter.x()-nBtmPartWidth-nBottomLongerThanTop,ptBtmCenter.y());
+    QPointF ptBtmTopRight(ptBtmCenter.x()+nBtmPartWidth,ptBtmCenter.y()-nBtmPartHeight);
+    QPointF ptBtmBottomRight(ptBtmCenter.x()+nBtmPartWidth+nBottomLongerThanTop,ptBtmCenter.y());
+    QPainterPath pathBtmPart;
+    pathBtmPart.moveTo(ptBtmTopLeft);
+    pathBtmPart.lineTo(ptBtmBottomLeft);
+    pathBtmPart.lineTo(ptBtmBottomRight);
+    pathBtmPart.lineTo(ptBtmTopRight);
+    pathBtmPart.lineTo(ptBtmTopLeft);
+    p.fillPath(pathBtmPart,QBrush(QColor(0,0,0,128)));
 
     switch(g_GblHelp.m_nTrackingState)
     {
-    case STATE_TRACKING_DRAWOBJ:
-    {
-        //p.setPen(QPen(Qt::red,6));
-        //draw a rectangle.
-        //        qreal fBoxWidth=TRACK_BOX_W*g_GblHelp.m_fImg2ScreenWScale;
-        //        qreal fBoxHeight=TRACK_BOX_H*g_GblHelp.m_fImg2ScreenHScale;
-        //        qreal fBoxX=(CAP_IMG_SIZE_W-TRACK_BOX_W)/2*g_GblHelp.m_fImg2ScreenWScale;
-        //        qreal fBoxY=(CAP_IMG_SIZE_H-TRACK_BOX_H)/2*g_GblHelp.m_fImg2ScreenHScale;
-        //        QRectF rectBox(fBoxX,fBoxY,fBoxWidth,fBoxHeight);
-        //        p.drawRect(rectBox);
-        if(this->m_bDrawRect)
-        {
-            QRectF rectBox(g_GblHelp.m_nBoxX,g_GblHelp.m_nBoxY,g_GblHelp.m_nBoxWidth,g_GblHelp.m_nBoxHeight);
-            p.setPen(QPen(Qt::red,6));
-            p.drawRect(rectBox);
-            qDebug()<<"drawBox:"<<rectBox;
-        }
-    }
-        break;
+//    case STATE_TRACKING_DRAWOBJ:
+//    {
+//        //p.setPen(QPen(Qt::red,6));
+//        //draw a rectangle.
+//        //        qreal fBoxWidth=TRACK_BOX_W*g_GblHelp.m_fImg2ScreenWScale;
+//        //        qreal fBoxHeight=TRACK_BOX_H*g_GblHelp.m_fImg2ScreenHScale;
+//        //        qreal fBoxX=(CAP_IMG_SIZE_W-TRACK_BOX_W)/2*g_GblHelp.m_fImg2ScreenWScale;
+//        //        qreal fBoxY=(CAP_IMG_SIZE_H-TRACK_BOX_H)/2*g_GblHelp.m_fImg2ScreenHScale;
+//        //        QRectF rectBox(fBoxX,fBoxY,fBoxWidth,fBoxHeight);
+//        //        p.drawRect(rectBox);
+//        if(this->m_bDrawRect)
+//        {
+//            QRectF rectBox(g_GblHelp.m_nBoxX,g_GblHelp.m_nBoxY,g_GblHelp.m_nBoxWidth,g_GblHelp.m_nBoxHeight);
+//            p.setPen(QPen(Qt::red,6));
+//            p.drawRect(rectBox);
+//            qDebug()<<"drawBox:"<<rectBox;
+//        }
+//    }
+//        break;
     case STATE_TRACKING_START:
     {
         p.setPen(QPen(Qt::green,6));
+        //CSK.
         QRectF rectBox(g_GblHelp.m_rectTracked.x(),g_GblHelp.m_rectTracked.y(),g_GblHelp.m_rectTracked.width(),g_GblHelp.m_rectTracked.height());
         p.drawRect(rectBox);
+#if 0
+        for(qint32 i=0;i<g_GblHelp.m_vecActivePoints.size();i++)
+        {
+            qreal nX=g_GblHelp.m_vecActivePoints.at(i).x();
+            qreal nY=g_GblHelp.m_vecActivePoints.at(i).y();
+            p.drawEllipse(QPointF(g_GblHelp.ZMapImgX2ScreenX(nX),g_GblHelp.ZMapImgY2ScreenY(nY)),2,2);
+        }
+        for(qint32 i=0;i<4;i++)
+        {
+            QPointF pt1,pt2;
+            pt1.setX(g_GblHelp.ZMapImgX2ScreenX(g_GblHelp.m_lines[i].x1()));
+            pt1.setY(g_GblHelp.ZMapImgX2ScreenX(g_GblHelp.m_lines[i].y1()));
+            pt2.setX(g_GblHelp.ZMapImgX2ScreenX(g_GblHelp.m_lines[i].x2()));
+            pt2.setY(g_GblHelp.ZMapImgX2ScreenX(g_GblHelp.m_lines[i].y2()));
+            p.drawLine(pt1,pt2);
+        }
+#endif
     }
         break;
     case STATE_TRACKING_FAILED:
@@ -206,28 +261,33 @@ void ZMainUI::paintEvent(QPaintEvent *event)
     //draw box image.
     p.drawImage(QRect(0,0,300,300),this->m_imgBox);
 }
-#if 0
+#if 1
 void ZMainUI::keyPressEvent(QKeyEvent *event)
 {
     if(event->key()==Qt::Key_F1)
     {
         qDebug()<<"key pressed.";
-        if(g_GblHelp.m_nTrackingState==STATE_TRACKING_STOP)
+        //exchange state to next state.
+        switch(g_GblHelp.m_nTrackingState)
         {
+        case STATE_TRACKING_STOP:
             //reset counter.
             this->m_nFrmCaptured=0;
             this->m_nFrmProcessed=0;
 
             //enter next state.
             g_GblHelp.m_nTrackingState=STATE_TRACKING_START;
-        }else if(g_GblHelp.m_nTrackingState==STATE_TRACKING_START)
-        {
+            break;
+        case STATE_TRACKING_START:
             //enter next state.
             g_GblHelp.m_nTrackingState=STATE_TRACKING_STOP;
-        }else if(g_GblHelp.m_nTrackingState==STATE_TRACKING_FAILED)
-        {
-            //enter next state.
+            break;
+        case STATE_TRACKING_FAILED:
+            //stop when tracking failed.wait for next user trigger.
+            //enter stop state.
             g_GblHelp.m_nTrackingState=STATE_TRACKING_STOP;
+        default:
+            break;
         }
         this->m_llTitle->setText(g_GblHelp.ZGetTipsByState(g_GblHelp.m_nTrackingState));
         this->update();
@@ -244,6 +304,8 @@ void ZMainUI::keyReleaseEvent(QKeyEvent *event)
     QWidget::keyReleaseEvent(event);
 }
 #endif
+
+#if 0
 void ZMainUI::mousePressEvent(QMouseEvent *event)
 {
     switch(event->button())
@@ -296,6 +358,7 @@ void ZMainUI::mouseReleaseEvent(QMouseEvent *event)
     }
     QWidget::mouseReleaseEvent(event);
 }
+#endif
 void ZMainUI::ZSlotUptImg(const QImage &img)
 {
     if(g_GblHelp.m_nTrackingState==STATE_TRACKING_START)

@@ -22,11 +22,11 @@ public slots:
     void ZSlotUptProcessed();
 protected:
     void paintEvent(QPaintEvent *event);
-//    void keyPressEvent(QKeyEvent *event);
-//    void keyReleaseEvent(QKeyEvent *event);
-    void mousePressEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
+    void keyPressEvent(QKeyEvent *event);
+    void keyReleaseEvent(QKeyEvent *event);
+//    void mousePressEvent(QMouseEvent *event);
+//    void mouseMoveEvent(QMouseEvent *event);
+//    void mouseReleaseEvent(QMouseEvent *event);
 private:
     QLabel *m_llTitle;
 

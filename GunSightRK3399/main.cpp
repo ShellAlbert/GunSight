@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     qDebug()<<"Tracking Box Size:"<<TRACK_BOX_W<<"*"<<TRACK_BOX_H;
 
     ZRingBuffer *rb=new ZRingBuffer(15,CAP_IMG_SIZE_W*CAP_IMG_SIZE_H*3);
-    ZCapThread *cap=new ZCapThread("/dev/video0",CAP_IMG_SIZE_W,CAP_IMG_SIZE_H,30);
+    ZCapThread *cap=new ZCapThread("/dev/video0",CAP_IMG_SIZE_W,CAP_IMG_SIZE_H,20);
     cap->ZBindRingBuffer(rb);
     ZTrackThread *track=new ZTrackThread;
     track->ZBindRingBuffer(rb);
