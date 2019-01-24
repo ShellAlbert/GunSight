@@ -18,7 +18,7 @@ public:
 
 public slots:
     void ZSlotUptImg(const QImage &img);
-    void ZSlotUptBoxImg(const QImage &img);
+    void ZSlotUptTrackBoxImg(const QImage &img);
     void ZSlotUptProcessed();
 protected:
     void paintEvent(QPaintEvent *event);
@@ -28,27 +28,17 @@ protected:
 //    void mouseMoveEvent(QMouseEvent *event);
 //    void mouseReleaseEvent(QMouseEvent *event);
 private:
-    QLabel *m_llTitle;
 
-    QToolButton *m_tbLeft[5];
-    QVBoxLayout *m_vLayoutTbLeft;
-    QLabel *m_llNum;
-    QHBoxLayout *m_hLayoutCenter;
-
-    QLabel *m_llTips[5];
-    QHBoxLayout *m_hLayoutTips;
-
-    QVBoxLayout *m_vLayout;
 private:
     quint64 m_nFrmCnt;
     quint64 m_nFrmCaptured;
     quint64 m_nFrmProcessed;
     QImage m_img;
-    QImage m_imgBox;
+    QImage m_imgTrackBox;
 
-private:
-    QPoint m_ptStart;
-    QPoint m_ptEnd;
+//private:
+//    QPoint m_ptStart;
+//    QPoint m_ptEnd;
 private:
     bool m_bDrawRect;
 };

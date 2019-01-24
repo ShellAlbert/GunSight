@@ -124,7 +124,7 @@ void ZTrackThread::run()
     }
 #endif
 
-#if 1
+#if 0
     // Create a tracker
     CSK_Tracker tracker;
     // Define initial bounding box
@@ -237,7 +237,7 @@ void ZTrackThread::run()
     }
 #endif
 
-#if 0
+#if 1
     //Set up logging
     FILELog::ReportingLevel()=logINFO;
     Output2FILE::Stream()=stdout; //Log to stdout
@@ -266,18 +266,17 @@ void ZTrackThread::run()
             //2.build a cvMat from plain RGB buffer.
             cv::Mat matFrm=cv::Mat(CAP_IMG_SIZE_H,CAP_IMG_SIZE_W,CV_8UC3,pRGBBuffer);
 
+            //Convert img to grayscale
+            Mat matFrmGray;
+            if (matFrm.channels()>1){
+                cv::cvtColor(matFrm,matFrmGray,CV_BGR2GRAY);
+            }else{
+                matFrmGray=matFrm;
+            }
+
             if(this->m_bInitBox)
             {
                 qint64 tStart=QDateTime::currentDateTime().toMSecsSinceEpoch();
-
-                Mat matFrmGray;
-                if (matFrm.channels() > 1)
-                {
-                    cv::cvtColor(matFrm, matFrmGray, CV_BGR2GRAY);
-                } else {
-                    matFrmGray = matFrm;
-                }
-
                 //Let CMT process the frame
                 cmt.processFrame(matFrmGray);
                 //get the active points.
@@ -294,39 +293,17 @@ void ZTrackThread::run()
                     g_GblHelp.m_lines[i].setP1(QPointF(vertices[i].x,vertices[i].y));
                     g_GblHelp.m_lines[i].setP2(QPointF(vertices[(i+1)%4].x,vertices[(i+1)%4].y));
                 }
-
-                // Update the tracking result
-//                cv::Rect2d boxNewLocate;
-//                bool result=tracker->update(matFrm,boxNewLocate);
-//                if(result)
-//                {
-//                    qDebug("new locate:(%.2f,%.2f,%.2f,%.2f)\n",boxNewLocate.x,boxNewLocate.y,boxNewLocate.width,boxNewLocate.height);
-//                    g_GblHelp.m_rectTracked=QRect(boxNewLocate.x,boxNewLocate.y,boxNewLocate.width,boxNewLocate.height);
-//                    g_GblHelp.m_nTrackingState=STATE_TRACKING_START;
-//                }else{
-//                    // Tracking failure detected.
-//                    qDebug()<<"Tracking failure detected.";
-//                }
                 qint64 tEnd=QDateTime::currentDateTime().toMSecsSinceEpoch();
                 qDebug()<<"cost (ms):"<<(tEnd-tStart);
                 emit this->ZSigNewTracking();
             }else{
-                //Convert im0 to grayscale
-                Mat matFrmGray;
-                if (matFrm.channels() > 1) {
-                    cv::cvtColor(matFrm,matFrmGray,CV_BGR2GRAY);
-                } else {
-                    matFrmGray=matFrm;
-                }
-
                 cv::Rect rect;
-                rect.x=g_GblHelp.ZMapScreenX2ImgX(g_GblHelp.m_nBoxX);
-                rect.y=g_GblHelp.ZMapScreenY2ImgY(g_GblHelp.m_nBoxY);
-                rect.width=g_GblHelp.ZMapScreenWidth2ImgWidth(g_GblHelp.m_nBoxWidth);
-                rect.height=g_GblHelp.ZMapScreenHeight2ImgHeight(g_GblHelp.m_nBoxHeight);
+                rect.x=CAP_IMG_SIZE_W/2-TRACK_BOX_W/2;
+                rect.y=CAP_IMG_SIZE_H/2-TRACK_BOX_H/2;
+                rect.width=TRACK_BOX_W;
+                rect.height=TRACK_BOX_H;
                 //Initialize CMT
                 cmt.initialize(matFrmGray, rect);
-
 
                 this->m_bInitBox=true;
                 cv::Mat matBox=cv::Mat(matFrm,rect);

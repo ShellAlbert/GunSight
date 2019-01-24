@@ -43,23 +43,25 @@ int main(int argc, char *argv[])
 
     ZMainUI *ui=new ZMainUI;
     g_GblHelp.m_mainWidget=ui;
-    ZKeyDetThread *key=new ZKeyDetThread;
+    //ZKeyDetThread *key=new ZKeyDetThread;
 
 
     QObject::connect(cap,SIGNAL(ZSigNewImgArrived(QImage)),ui,SLOT(ZSlotUptImg(QImage)));
-    QObject::connect(track,SIGNAL(ZSigNewInitBox(QImage)),ui,SLOT(ZSlotUptBoxImg(QImage)));
+    QObject::connect(track,SIGNAL(ZSigNewInitBox(QImage)),ui,SLOT(ZSlotUptTrackBoxImg(QImage)));
     QObject::connect(track,SIGNAL(ZSigNewTracking()),ui,SLOT(ZSlotUptProcessed()));
 
-    ui->showFullScreen();
+    //ui->showFullScreen();
+    //ui->setFixedSize(800,600);
+    ui->show();
     cap->start();
     track->start();
-    key->start();
+    //key->start();
     qint32 nRet=app.exec();
 
     delete cap;
     delete ui;
     delete rb;
-    delete key;
-    system("echo 32 >/sys/class/gpio/unexport");
+    //delete key;
+    //system("echo 32 >/sys/class/gpio/unexport");
     return nRet;
 }
