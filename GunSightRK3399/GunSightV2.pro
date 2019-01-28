@@ -117,3 +117,5 @@ LIBS += -lopencv_xphoto
 #QMAKE_LFLAGS += -Wl,-rpath-link=/home/zhangshaoyan/armbuild/copyfromrk3399ubuntu1804/arm-linux-gnueabihf
 #LIBS += -L/home/zhangshaoyan/armbuild/copyfromrk3399ubuntu1804/arm-linux-gnueabihf -lpthread
 
+RESOURCES += \
+    resource.qrc

@@ -1,6 +1,10 @@
 #include "zmainui.h"
 #include <QPainter>
+#include <QTime>
 #include <QDebug>
+#include <QPropertyAnimation>
+#include <QApplication>
+#include <QScreen>
 #include "zgblhelp.h"
 ZMainUI::ZMainUI(QWidget *parent)
     : QWidget(parent)
@@ -110,6 +114,13 @@ ZMainUI::ZMainUI(QWidget *parent)
     this->m_nFrmProcessed=0;
 
     this->m_bDrawRect=false;
+
+    this->m_llObjDistance=new QLabel(this);
+    this->m_llObjDistance->setAlignment(Qt::AlignCenter);
+    this->m_llObjDistance->setText(tr("<font size=\"20\" color=\"red\">---</font>"));
+    this->m_llObjDistance->setGeometry(QRect(200,0,80,44));
+    this->m_timer=new QTimer;
+    QObject::connect(this->m_timer,SIGNAL(timeout()),this,SLOT(ZSlotTimeout()));
 }
 
 ZMainUI::~ZMainUI()
@@ -130,6 +141,8 @@ ZMainUI::~ZMainUI()
     //    }
     //    delete this->m_hLayoutTips;
     //    delete this->m_vLayout;
+    delete this->m_timer;
+    delete this->m_llObjDistance;
 }
 void ZMainUI::paintEvent(QPaintEvent *event)
 {
@@ -145,6 +158,7 @@ void ZMainUI::paintEvent(QPaintEvent *event)
     p.setRenderHint(QPainter::Antialiasing);
     p.drawImage(0,0,this->m_img);
     p.drawPixmap(0,0,img.width(),img.height(),QPixmap(":/images/background1.png"));
+
 #if 0
     //draw the track box image.
     if(!this->m_imgTrackBox.isNull())
@@ -368,6 +382,48 @@ void ZMainUI::paintEvent(QPaintEvent *event)
         p.drawEllipse(ptCenter,TRACK_BOX_W/3,TRACK_BOX_H/3);
         p.setBrush(QBrush(QColor(255,0,0)));
         p.drawEllipse(ptCenter,3,3);
+
+
+        this->m_timer->stop();
+        for(qint32 i=0;i<4;i++)
+        {
+            g_GblHelp.m_bFlashIndicator[i]=false;
+        }
+
+        //draw the object distance.
+        //        {
+        //            p.setPen(QPen(Qt::red,3));
+        //            p.setBrush(Qt::NoBrush);
+        //            QFont nFontBackup=p.font();
+        //            QFont nFont=p.font();
+        //            nFont.setPixelSize(30);
+        //            p.setFont(nFont);
+        //            QString strObjDistance("---");
+        //            QRectF rectObjDistance(200,0,80,44);
+        //            //p.drawRect(rectObjDistance);
+        //            qreal nPosX=rectObjDistance.x()+(rectObjDistance.width()-p.fontMetrics().width(strObjDistance))/2;
+        //            qreal nPosY=rectObjDistance.y()+rectObjDistance.height()/2;
+        //            //qDebug()<<"nPosX:"<<nPosX<<",nPosY:"<<nPosY;
+        //            p.drawText(QPointF(nPosX,nPosY),strObjDistance);
+        //            p.setFont(nFontBackup);
+        //        }
+        //draw the wind speed.
+        {
+            p.setPen(QPen(Qt::red,3));
+            p.setBrush(Qt::NoBrush);
+            QFont nFontBackup=p.font();
+            QFont nFont=p.font();
+            nFont.setPixelSize(30);
+            p.setFont(nFont);
+            QString strWindSpeed("---");
+            QRectF rectWindSpeed(520,0,80,44);
+            //p.drawRect(rectObjDistance);
+            qreal nPosX=rectWindSpeed.x()+(rectWindSpeed.width()-p.fontMetrics().width(strWindSpeed))/2;
+            qreal nPosY=rectWindSpeed.y()+rectWindSpeed.height()/2;
+            //qDebug()<<"nPosX:"<<nPosX<<",nPosY:"<<nPosY;
+            p.drawText(QPointF(nPosX,nPosY),strWindSpeed);
+            p.setFont(nFontBackup);
+        }
     }
         break;
         //    case STATE_TRACKING_DRAWOBJ:
@@ -454,6 +510,124 @@ void ZMainUI::paintEvent(QPaintEvent *event)
         }
 
 #endif
+        //draw the object distance.
+        //        {
+        //            p.setPen(QPen(Qt::red,3));
+        //            p.setBrush(Qt::NoBrush);
+        //            QFont nFontBackup=p.font();
+        //            QFont nFont=p.font();
+        //            nFont.setPixelSize(24);
+        //            p.setFont(nFont);
+        //            QString strObjDistance=QString::number(g_GblHelp.m_nObjDistance,10);
+        //            QRectF rectObjDistance(200,0,80,44);
+        //            //p.drawRect(rectObjDistance);
+        //            qreal nPosX=rectObjDistance.x()+(rectObjDistance.width()-p.fontMetrics().width(strObjDistance))/2;
+        //            qreal nPosY=rectObjDistance.y()+rectObjDistance.height()/2;
+        //            //qDebug()<<"nPosX:"<<nPosX<<",nPosY:"<<nPosY;
+        //            p.drawText(QPointF(nPosX,nPosY),strObjDistance);
+        //            p.setFont(nFontBackup);
+        //        }
+        this->m_llObjDistance->setText(QString("<font size=\"20\" color=\"red\">%1</font>").arg(g_GblHelp.m_nObjDistance));
+
+        //draw the wind speed.
+        {
+            p.setPen(QPen(Qt::red,3));
+            p.setBrush(Qt::NoBrush);
+            QFont nFontBackup=p.font();
+            QFont nFont=p.font();
+            nFont.setPixelSize(30);
+            p.setFont(nFont);
+            QString strWindSpeed=QString::number(g_GblHelp.m_nWindSpeed,10);
+            QRectF rectWindSpeed(520,0,80,44);
+            //p.drawRect(rectObjDistance);
+            qreal nPosX=rectWindSpeed.x()+(rectWindSpeed.width()-p.fontMetrics().width(strWindSpeed))/2;
+            qreal nPosY=rectWindSpeed.y()+rectWindSpeed.height()/2;
+            //qDebug()<<"nPosX:"<<nPosX<<",nPosY:"<<nPosY;
+            p.drawText(QPointF(nPosX,nPosY),strWindSpeed);
+            p.setFont(nFontBackup);
+        }
+
+        //draw the top human-find indicator.
+        if(g_GblHelp.m_bFlashIndicator[0])
+        {
+            QRectF rectTopIndicator(380,0,40,50);
+            QPoint ptTop[3];
+            //top middle point.
+            ptTop[0].setX(rectTopIndicator.x()+rectTopIndicator.width()/2);
+            ptTop[0].setY(rectTopIndicator.y());
+            //bottom left point.
+            ptTop[1].setX(rectTopIndicator.x());
+            ptTop[1].setY(rectTopIndicator.y()+rectTopIndicator.height());
+            //bottom righ point.
+            ptTop[2].setX(rectTopIndicator.x()+rectTopIndicator.width());
+            ptTop[2].setY(rectTopIndicator.y()+rectTopIndicator.height());
+            p.setPen(Qt::NoPen);
+            p.setBrush(QBrush(Qt::red));
+            p.drawConvexPolygon(ptTop,3);
+            p.drawPixmap(rectTopIndicator.x()+10,rectTopIndicator.y()+20,rectTopIndicator.width()-20,rectTopIndicator.height()-20,QPixmap(":/images/man_top.png"));
+        }
+        //draw the bottom human-find indicator.
+        if(g_GblHelp.m_bFlashIndicator[1])
+        {
+            QRectF rectBtmIndicator(380,480,40,50);
+            QPoint ptBtm[3];
+            //top left point.
+            ptBtm[0].setX(rectBtmIndicator.x());
+            ptBtm[0].setY(rectBtmIndicator.y());
+            //top right point.
+            ptBtm[1].setX(rectBtmIndicator.x()+rectBtmIndicator.width());
+            ptBtm[1].setY(rectBtmIndicator.y());
+            //bottom middle point.
+            ptBtm[2].setX(rectBtmIndicator.x()+rectBtmIndicator.width()/2);
+            ptBtm[2].setY(rectBtmIndicator.y()+rectBtmIndicator.height());
+            p.setPen(Qt::NoPen);
+            p.setBrush(QBrush(Qt::red));
+            p.drawConvexPolygon(ptBtm,3);
+            p.drawPixmap(rectBtmIndicator.x()+10,rectBtmIndicator.y(),rectBtmIndicator.width()-20,rectBtmIndicator.height()-10,QPixmap(":/images/man_bottom.png"));
+        }
+        //draw the left human-find indicator.
+        if(g_GblHelp.m_bFlashIndicator[2])
+        {
+            QRectF rectLeftIndicator(0,280,50,40);
+            QPoint ptLeft[3];
+            //left middle point.
+            ptLeft[0].setX(rectLeftIndicator.x());
+            ptLeft[0].setY(rectLeftIndicator.y()+rectLeftIndicator.height()/2);
+            //right top point.
+            ptLeft[1].setX(rectLeftIndicator.x()+rectLeftIndicator.width());
+            ptLeft[1].setY(rectLeftIndicator.y());
+            //right bottom point.
+            ptLeft[2].setX(rectLeftIndicator.x()+rectLeftIndicator.width());
+            ptLeft[2].setY(rectLeftIndicator.y()+rectLeftIndicator.height());
+            p.setPen(Qt::NoPen);
+            p.setBrush(QBrush(Qt::red));
+            p.drawConvexPolygon(ptLeft,3);
+            p.drawPixmap(rectLeftIndicator.x()+20,rectLeftIndicator.y()+10,rectLeftIndicator.width()-20,rectLeftIndicator.height()-20,QPixmap(":/images/man_left.png"));
+        }
+        //draw the right human-find indicator.
+        if(g_GblHelp.m_bFlashIndicator[2])
+        {
+            QRectF rectRightIndicator(750,280,50,40);
+            QPoint ptRight[3];
+            //left top point.
+            ptRight[0].setX(rectRightIndicator.x());
+            ptRight[0].setY(rectRightIndicator.y());
+            //left bottom point.
+            ptRight[1].setX(rectRightIndicator.x());
+            ptRight[1].setY(rectRightIndicator.y()+rectRightIndicator.height());
+            //right middle point.
+            ptRight[2].setX(rectRightIndicator.x()+rectRightIndicator.width());
+            ptRight[2].setY(rectRightIndicator.y()+rectRightIndicator.height()/2);
+            p.setPen(Qt::NoPen);
+            p.setBrush(QBrush(Qt::red));
+            p.drawConvexPolygon(ptRight,3);
+            p.drawPixmap(rectRightIndicator.x(),rectRightIndicator.y()+10,rectRightIndicator.width()-20,rectRightIndicator.height()-20,QPixmap(":/images/man_right.png"));
+        }
+
+        if(!this->m_timer->isActive())
+        {
+            this->m_timer->start(250);
+        }
     }
         break;
     case STATE_TRACKING_FAILED:
@@ -488,9 +662,20 @@ void ZMainUI::paintEvent(QPaintEvent *event)
     //    p.drawText(rectTarget,tr("TARGET"));
     //    p.drawRect(rectTarget);
 
+    ////////////////////////////////////////////////////////////////////////////////////
     //draw the right marker.
     p.save();
     p.translate(400,600);
+    //draw the current position indicator.
+    QPoint ptPosition[3];
+    ptPosition[0]=QPoint(-10,-140);
+    ptPosition[1]=QPoint(10,-140);
+    ptPosition[2]=QPoint(0,-130);
+    p.setBrush(QBrush(Qt::blue));
+    p.setPen(Qt::NoPen);
+    p.drawConvexPolygon(ptPosition,3);
+    p.setBrush(Qt::NoBrush);
+
     //0,(5),10,(15),20,(25),30,(35),40,(45),50.
     //so num gap=10,big gap=5,small gap=5,90 degreen/10=9 degreen.
     for(qint32 i=0;i<10;i++)
@@ -531,6 +716,17 @@ void ZMainUI::paintEvent(QPaintEvent *event)
     //draw the right-bottom indicator.
     p.save();
     p.translate(400,300);
+
+    //draw the current position indicator.
+    QPoint ptPosition2[3];
+    ptPosition2[0]=QPoint(340,0);
+    ptPosition2[1]=QPoint(350,-10);
+    ptPosition2[2]=QPoint(350,10);
+    p.setBrush(QBrush(Qt::blue));
+    p.setPen(Qt::NoPen);
+    p.drawConvexPolygon(ptPosition2,3);
+    p.setBrush(Qt::NoBrush);
+
     p.setPen(QPen(Qt::green,3));
     p.drawLine(QPointF(330,0),QPointF(320,0));
     p.drawText(QPointF(300,0),"0");
@@ -566,9 +762,22 @@ void ZMainUI::paintEvent(QPaintEvent *event)
     p.drawLine(QPointF(330,0),QPointF(320,0));
     p.drawText(QPointF(300,0),"40");
     p.restore();
+
+
     //draw the left-bottom indicator.
     p.save();
     p.translate(400,300);
+
+    //draw the current position indicator.
+    QPoint ptPosition3[3];
+    ptPosition3[0]=QPoint(-340,0);
+    ptPosition3[1]=QPoint(-350,-10);
+    ptPosition3[2]=QPoint(-350,10);
+    p.setBrush(QBrush(Qt::blue));
+    p.setPen(Qt::NoPen);
+    p.drawConvexPolygon(ptPosition3,3);
+    p.setBrush(Qt::NoBrush);
+
     p.setPen(QPen(Qt::green,3));
     p.drawLine(QPointF(-330,0),QPointF(-320,0));
     p.drawText(QPointF(-310,0),"0");
@@ -652,6 +861,15 @@ void ZMainUI::keyPressEvent(QKeyEvent *event)
 
             //enter next state.
             g_GblHelp.m_nTrackingState=STATE_TRACKING_START;
+            //generate the distance object animation.
+        {
+            QPropertyAnimation *animation=new QPropertyAnimation(this->m_llObjDistance,"geometry");
+            animation->setDuration(1000);
+            animation->setStartValue(QRect(400,300,80,44));
+            animation->setEndValue(QRect(200,0,80,44));
+            animation->setEasingCurve(QEasingCurve::InOutSine);
+            animation->start(QAbstractAnimation::DeleteWhenStopped);
+        }
             break;
         case STATE_TRACKING_START:
             //enter next state.
@@ -754,4 +972,14 @@ void ZMainUI::ZSlotUptTrackBoxImg(const QImage &img)
 void ZMainUI::ZSlotUptProcessed()
 {
     this->m_nFrmProcessed++;
+}
+void ZMainUI::ZSlotTimeout()
+{
+    for(qint32 i=0;i<4;i++)
+    {
+        g_GblHelp.m_bFlashIndicator[i]=!g_GblHelp.m_bFlashIndicator[i];
+    }
+    qsrand(QTime(0,0,0).secsTo(QTime::currentTime()));
+    g_GblHelp.m_nObjDistance=200+qrand()%9;
+    g_GblHelp.m_nWindSpeed=10+qrand()%5;
 }

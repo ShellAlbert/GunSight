@@ -68,6 +68,12 @@ public:
 public:
     QVector<QPointF> m_vecActivePoints;
     QLineF m_lines[4];
+
+public:
+    //0:top,1:bottom,2:left,3:right.
+    bool m_bFlashIndicator[4];
+    qint32 m_nObjDistance;
+    qint32 m_nWindSpeed;
 };
 extern ZGblHelp g_GblHelp;
 

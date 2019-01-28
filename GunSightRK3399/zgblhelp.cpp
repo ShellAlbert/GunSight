@@ -13,6 +13,13 @@ ZGblHelp::ZGblHelp()
     this->m_nBoxHeight=TRACK_BOX_H;
     this->m_nBoxX=(CAP_IMG_SIZE_W-this->m_nBoxWidth)/2;
     this->m_nBoxY=(CAP_IMG_SIZE_H-this->m_nBoxHeight)/2;
+
+    for(qint32 i=0;i<4;i++)
+    {
+        this->m_bFlashIndicator[i]=false;
+    }
+    this->m_nObjDistance=0;
+    this->m_nWindSpeed=0;
 }
 qreal ZGblHelp::ZMapImgX2ScreenX(qreal x)
 {

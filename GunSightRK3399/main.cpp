@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     qDebug()<<"Camera Image Size:"<<CAP_IMG_SIZE_W<<"*"<<CAP_IMG_SIZE_H;
     qDebug()<<"Tracking Box Size:"<<TRACK_BOX_W<<"*"<<TRACK_BOX_H;
 
-    ZRingBuffer *rb=new ZRingBuffer(15,CAP_IMG_SIZE_W*CAP_IMG_SIZE_H*3);
+    ZRingBuffer *rb=new ZRingBuffer(30,CAP_IMG_SIZE_W*CAP_IMG_SIZE_H*3);
     ZCapThread *cap=new ZCapThread("/dev/video0",CAP_IMG_SIZE_W,CAP_IMG_SIZE_H,20);
     cap->ZBindRingBuffer(rb);
     ZTrackThread *track=new ZTrackThread;
@@ -43,25 +43,25 @@ int main(int argc, char *argv[])
 
     ZMainUI *ui=new ZMainUI;
     g_GblHelp.m_mainWidget=ui;
-    //ZKeyDetThread *key=new ZKeyDetThread;
+    ZKeyDetThread *key=new ZKeyDetThread;
 
 
     QObject::connect(cap,SIGNAL(ZSigNewImgArrived(QImage)),ui,SLOT(ZSlotUptImg(QImage)));
     QObject::connect(track,SIGNAL(ZSigNewInitBox(QImage)),ui,SLOT(ZSlotUptTrackBoxImg(QImage)));
     QObject::connect(track,SIGNAL(ZSigNewTracking()),ui,SLOT(ZSlotUptProcessed()));
 
-    //ui->showFullScreen();
+    ui->showFullScreen();
     //ui->setFixedSize(800,600);
-    ui->show();
+    //ui->show();
     cap->start();
     track->start();
-    //key->start();
+    key->start();
     qint32 nRet=app.exec();
 
     delete cap;
     delete ui;
     delete rb;
-    //delete key;
-    //system("echo 32 >/sys/class/gpio/unexport");
+    delete key;
+    system("echo 32 >/sys/class/gpio/unexport");
     return nRet;
 }

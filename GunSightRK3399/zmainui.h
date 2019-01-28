@@ -8,6 +8,7 @@
 #include <QToolButton>
 #include <QPaintEvent>
 #include <QImage>
+#include <QTimer>
 class ZMainUI : public QWidget
 {
     Q_OBJECT
@@ -27,8 +28,8 @@ protected:
 //    void mousePressEvent(QMouseEvent *event);
 //    void mouseMoveEvent(QMouseEvent *event);
 //    void mouseReleaseEvent(QMouseEvent *event);
-private:
-
+private slots:
+    void ZSlotTimeout();
 private:
     quint64 m_nFrmCnt;
     quint64 m_nFrmCaptured;
@@ -36,11 +37,14 @@ private:
     QImage m_img;
     QImage m_imgTrackBox;
 
+    QLabel *m_llObjDistance;
 //private:
 //    QPoint m_ptStart;
 //    QPoint m_ptEnd;
 private:
     bool m_bDrawRect;
+private:
+    QTimer *m_timer;
 };
 
 #endif // ZMAINUI_H
