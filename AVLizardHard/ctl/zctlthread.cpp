@@ -266,6 +266,9 @@ QByteArray ZJsonThread::ZParseJson(const QJsonDocument &jsonDoc)
                 }else if(deNoise=="Bevis")
                 {
                     gGblPara.m_audio.m_nDeNoiseMethod=3;
+                }else if(deNoise=="mmse")
+                {
+                    gGblPara.m_audio.m_nDeNoiseMethod=4;
                 }else if(deNoise=="query")
                 {
                     //仅用于查询当前状态.
@@ -284,6 +287,9 @@ QByteArray ZJsonThread::ZParseJson(const QJsonDocument &jsonDoc)
                 case 3:
                     jsonObjFeedBack.insert("DeNoise","Bevis");
                     break;
+                case 4:
+                    jsonObjFeedBack.insert("DeNoise","mmse");
+                    break;
                 default:
                     break;
                 }
@@ -296,16 +302,16 @@ QByteArray ZJsonThread::ZParseJson(const QJsonDocument &jsonDoc)
             {
                 QString bevisGrade=val.toVariant().toString();
                 //qDebug()<<"bevisGrade:"<<bevisGrade;
-                if(bevisGrade=="1")
+                if(bevisGrade=="0")
                 {
                     gGblPara.m_audio.m_nBevisGrade=1;
-                }else if(bevisGrade=="2")
+                }else if(bevisGrade=="1")
                 {
                     gGblPara.m_audio.m_nBevisGrade=2;
-                }else if(bevisGrade=="3")
+                }else if(bevisGrade=="2")
                 {
                     gGblPara.m_audio.m_nBevisGrade=3;
-                }else if(bevisGrade=="4")
+                }else if(bevisGrade=="3")
                 {
                     gGblPara.m_audio.m_nBevisGrade=4;
                 }else if(bevisGrade=="query")
@@ -315,16 +321,52 @@ QByteArray ZJsonThread::ZParseJson(const QJsonDocument &jsonDoc)
                 switch(gGblPara.m_audio.m_nBevisGrade)
                 {
                 case 1:
-                    jsonObjFeedBack.insert("BevisGrade","1");
+                    jsonObjFeedBack.insert("BevisGrade","0");
                     break;
                 case 2:
-                    jsonObjFeedBack.insert("BevisGrade","2");
+                    jsonObjFeedBack.insert("BevisGrade","1");
                     break;
                 case 3:
-                    jsonObjFeedBack.insert("BevisGrade","3");
+                    jsonObjFeedBack.insert("BevisGrade","2");
                     break;
                 case 4:
-                    jsonObjFeedBack.insert("BevisGrade","4");
+                    jsonObjFeedBack.insert("BevisGrade","3");
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+        if(jsonObj.contains("WebRtcGrade"))
+        {
+            QJsonValue val=jsonObj.take("WebRtcGrade");
+            if(val.isString())
+            {
+                QString webRtcGrade=val.toVariant().toString();
+                //qDebug()<<"webRtcGrade:"<<webRtcGrade;
+                if(webRtcGrade=="0")
+                {
+                    gGblPara.m_audio.m_nWebRtcNsPolicy=0;
+                }else if(webRtcGrade=="1")
+                {
+                    gGblPara.m_audio.m_nWebRtcNsPolicy=1;
+                }else if(webRtcGrade=="2")
+                {
+                    gGblPara.m_audio.m_nWebRtcNsPolicy=2;
+                }else if(webRtcGrade=="query")
+                {
+                    //仅用于查询当前状态.
+                }
+                switch(gGblPara.m_audio.m_nBevisGrade)
+                {
+                case 0:
+                    jsonObjFeedBack.insert("WebRtcGrade","0");
+                    break;
+                case 1:
+                    jsonObjFeedBack.insert("WebRtcGrade","1");
+                    break;
+                case 2:
+                    jsonObjFeedBack.insert("WebRtcGrade","2");
                     break;
                 default:
                     break;
@@ -509,6 +551,9 @@ QByteArray ZJsonThread::ZParseJson(const QJsonDocument &jsonDoc)
                     break;
                 case 3:
                     jsonObjFeedBack.insert("DeNoise","Bevis");
+                    break;
+                case 4:
+                    jsonObjFeedBack.insert("DeNoise","mmse");
                     break;
                 default:
                     break;

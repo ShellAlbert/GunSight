@@ -13,10 +13,18 @@ ZAudioTxThread::ZAudioTxThread()
     this->m_bExitFlag=false;
     this->m_bCleanup=true;
 }
-qint32 ZAudioTxThread::ZStartThread(ZRingBuffer *rbTx)
+void ZAudioTxThread::ZBindFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                               QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull)
+{
+    this->m_freeQueue=freeQueue;
+    this->m_usedQueue=usedQueue;
+    this->m_mutex=mutex;
+    this->m_condQueueEmpty=condQueueEmpty;
+    this->m_condQueueFull=condQueueFull;
+}
+qint32 ZAudioTxThread::ZStartThread()
 {
     this->m_bExitFlag=false;
-    this->m_rbTx=rbTx;
     this->start();
     return 0;
 }
@@ -32,7 +40,7 @@ bool ZAudioTxThread::ZIsExitCleanup()
 void ZAudioTxThread::run()
 {
 #ifdef AUDIO_ENC_OPUS
-    char *pEncBuffer=new char[BLOCK_SIZE];
+    char *pEncBuffer=new char[PERIOD_SIZE];
     char *pOpusTails=new char[OPUS_BLKFRM_SIZEx2];
     qint32 nOpusTailsLen=0;
     int err;
@@ -188,10 +196,10 @@ void ZAudioTxThread::run()
       *          negative error code (see @ref opus_errorcodes) on failure.
       */
     //hold the pcm data.
-    char *pPCMBuffer=new char[BLOCK_SIZE];
+    char *pPCMBuffer=new char[PERIOD_SIZE];
     qint32 nPCMLen=0;
 
-    char *txBuffer=new char[BLOCK_SIZE];
+    char *txBuffer=new char[PERIOD_SIZE];
     qDebug()<<"<MainLoop>:AudioTxThread starts.";
     this->m_bCleanup=false;
     //bind thread to cpu core.
@@ -250,11 +258,28 @@ void ZAudioTxThread::run()
                     bool bSocketBreaking=false;
 
                     //1.fetch data from clear queue and enc to opus.
-                    if((nPCMLen=this->m_rbTx->ZGetElement((qint8*)pPCMBuffer,BLOCK_SIZE))<0)
-                    {
-                        qDebug()<<"<Error>:timeout to get opus data from encode queue.";
-                        continue;
+                    //                    if((nPCMLen=this->m_rbTx->ZGetElement((qint8*)pPCMBuffer,BLOCK_SIZE))<0)
+                    //                    {
+                    //                        qDebug()<<"<Error>:timeout to get opus data from encode queue.";
+                    //                        continue;
+                    //                    }
+                    this->m_mutex->lock();
+                    while(this->m_usedQueue->isEmpty())
+                    {//timeout 5s to check exit flag.
+                        if(!this->m_condQueueFull->wait(this->m_mutex,5000))
+                        {
+                            this->m_mutex->unlock();
+                            if(gGblPara.m_bGblRst2Exit)
+                            {
+                                goto ExceptHandler;
+                            }
+                        }
                     }
+                    QByteArray *pcmNs=this->m_usedQueue->dequeue();
+                    nPCMLen=PERIOD_SIZE;
+                    this->m_mutex->unlock();
+
+
 #ifdef AUDIO_ENC_OPUS
                     //encode pcm to opus.
                     qint32 nNewPCMBytes=nPCMLen;
@@ -267,7 +292,7 @@ void ZAudioTxThread::run()
                         if(nPaddingBytes>=0)
                         {
                             //将新的PCM数据复制一段至小尾巴缓冲区拼成一帧.
-                            memcpy(pOpusTails+nOpusTailsLen,pPCMBuffer,nPaddingBytes);
+                            memcpy(pOpusTails+nOpusTailsLen,pcmNs->data(),nPaddingBytes);
 
                             //执行编码操作.
                             //48000Hz,2 Channels.
@@ -275,7 +300,7 @@ void ZAudioTxThread::run()
                             //but because we are 2 channels.so the length of pcm data should be 2880*2.
                             //frameSize in 16 bit sample here we choose 2880,so the input pcm buffer size is 2880*sizeof(opus_int16) for mono channel.
                             //but we are using two channels,so here is 2880*sizeof(opus_int16)*2.
-                            qint32 nBytes=opus_multistream_encode(encoder,(const opus_int16*)pOpusTails,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,BLOCK_SIZE);
+                            qint32 nBytes=opus_multistream_encode(encoder,(const opus_int16*)pOpusTails,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,PERIOD_SIZE);
                             //qint32 nBytes=opus_multistream_encode_float(encoder,(const float *)pOpusTails,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,BLOCK_SIZE);
                             if(nBytes<0)
                             {
@@ -344,8 +369,8 @@ void ZAudioTxThread::run()
                         //当T0=40.0ms时，则有采样数量N=T0/T=40.0ms/(1/48ms)=1920.
                         //当T0=60.0ms时，则有采样数量N=T0/T=60.0ms/(1/48ms)=2880.
 
-                        const opus_int16 *pcmData=(int16_t*)(pPCMBuffer+nPaddingBytes+nOffsetIndex);
-                        qint32 nBytes=opus_multistream_encode(encoder,pcmData,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,BLOCK_SIZE);
+                        const opus_int16 *pcmData=(int16_t*)(pcmNs->data()+nPaddingBytes+nOffsetIndex);
+                        qint32 nBytes=opus_multistream_encode(encoder,pcmData,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,PERIOD_SIZE);
                         //qint32 nBytes=opus_multistream_encode_float(encoder,(const float *)pcmData,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,BLOCK_SIZE);
                         if(nBytes<0)
                         {
@@ -382,7 +407,7 @@ void ZAudioTxThread::run()
                     //如果存在遗留字节则当作小尾巴处理，复制到尾巴缓冲区作为下一帧数据的头部数据
                     if(nRemainBytes>0)
                     {
-                        char *pTailBytes=(char*)(pPCMBuffer+nPaddingBytes+nOffsetIndex);
+                        char *pTailBytes=(char*)(pcmNs->data()+nPaddingBytes+nOffsetIndex);
                         memcpy(pOpusTails,pTailBytes,nRemainBytes);
                         nOpusTailsLen=nRemainBytes;
                         //qDebug()<<"hold remaing "<<nRemainBytes;
@@ -406,12 +431,19 @@ void ZAudioTxThread::run()
                         bSocketBreaking=true;
                     }
 #endif
+
+                    this->m_mutex->lock();
+                    this->m_freeQueue->enqueue(pcmNs);
+                    this->m_condQueueEmpty->wakeAll();
+                    this->m_mutex->unlock();
+
                     if(bSocketBreaking)
                     {
                         break;
                     }
-//                    this->usleep(AUDIO_THREAD_SCHEDULE_US);
+                    //                    this->usleep(AUDIO_THREAD_SCHEDULE_US);
                 }
+ExceptHandler:
                 //设置连接标志，这样编码器线程就会停止工作.
                 gGblPara.m_audio.m_bAudioTcpConnected=false;
                 //qDebug()<<"audio disconnected.";

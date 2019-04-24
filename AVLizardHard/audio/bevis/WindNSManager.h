@@ -2,9 +2,8 @@
 #ifndef _WINDNSMANAGER_H_
 #define _WINDNSMANAGER_H_
 
-#include "common.h"
-#include "fft.h"
-
+#include "audio/bevis/common.h"
+#include "audio/bevis/fft.h"
 #define FFT_LEN	512
 #define FRAME_LEN 512
 #define FRAME_SHT 256

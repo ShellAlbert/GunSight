@@ -76,9 +76,9 @@
 
 //这里我们设置period为10，即1秒发生10次中断，则中断间隔为1s/10=100ms.
 //则每次中断发生时，我们至少需要填充192000Bytes/(1s/100ms)=19200Bytes
-#define     ALSA_PERIOD     20
-//#define     BLOCK_SIZE      19200
-#define     BLOCK_SIZE      48000
+
+#define PERIODS 4
+#define PERIOD_SIZE 48000
 
 //for opus encode/decode.
 #define OPUS_SAMPLE_FRMSIZE     (2880) //frame size in 16 bit sample.
@@ -125,6 +125,8 @@ public:
 
     qint32 m_nGaindB;
     qint32 m_nBevisGrade;
+    //default webRTC grade.0,1,2.
+    qint32 m_nWebRtcNsPolicy;
 public:
     //capture thread thread buffer overrun.
     qint32 m_nCapOverrun;

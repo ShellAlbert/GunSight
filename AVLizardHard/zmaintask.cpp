@@ -76,10 +76,6 @@ qint32 ZMainTask::ZStartTask()
     QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigNewMatchedSetArrived(ZImgMatchedSet)),this->m_ui,SLOT(ZSlotFlushMatchedSet(ZImgMatchedSet)),Qt::AutoConnection);
     QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigSSIMImgSimilarity(qint32)),this->m_ui,SLOT(ZSlotSSIMImgSimilarity(qint32)),Qt::AutoConnection);
 
-    //use signal-slot event to flush wave form.
-    QObject::connect(this->m_audio->ZGetNoiseCutThread(),SIGNAL(ZSigNewWaveBeforeArrived(QByteArray)),this->m_ui,SLOT(ZSlotFlushWaveBefore(QByteArray)),Qt::AutoConnection);
-    QObject::connect(this->m_audio->ZGetNoiseCutThread(),SIGNAL(ZSigNewWaveAfterArrived(QByteArray)),this->m_ui,SLOT(ZSlotFlushWaveAfter(QByteArray)),Qt::AutoConnection);
-
     this->m_ui->showMaximized();
 
     return 0;

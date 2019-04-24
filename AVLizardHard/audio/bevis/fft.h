@@ -7,8 +7,8 @@
 #define MAX_FFT_SIZE 2048
 #define MAX_FFT_TABLE   5
 
-Float Hann(int m,int HannSize);
-Bool FFT (Float real[],Float imag[],Int32 nFFT);
-Bool IFFT(Float real[],Float imag[],Int32 nFFT);
+extern Float bevisHann(int m,int HannSize);
+extern Bool bevisFFT (Float real[],Float imag[],Int32 nFFT);
+extern Bool bevisIFFT(Float real[],Float imag[],Int32 nFFT);
 
 #endif

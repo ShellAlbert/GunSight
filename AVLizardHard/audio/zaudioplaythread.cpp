@@ -2,7 +2,7 @@
 #include "../zgblpara.h"
 #include <sys/time.h>
 #include <QDebug>
-
+#include <QDateTime>
 ZAudioPlayThread::ZAudioPlayThread(QString playCardName)
 {
     this->m_playCardName=playCardName;
@@ -12,17 +12,22 @@ ZAudioPlayThread::~ZAudioPlayThread()
 {
 
 }
-
-qint32 ZAudioPlayThread::ZStartThread(ZRingBuffer *rbPlay)
+void ZAudioPlayThread::ZBindFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+               QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull)
 {
-    this->m_rbPlay=rbPlay;
-    this->m_bExitFlag=false;
+    this->m_freeQueue=freeQueue;
+    this->m_usedQueue=usedQueue;
+    this->m_mutex=mutex;
+    this->m_condQueueEmpty=condQueueEmpty;
+    this->m_condQueueFull=condQueueFull;
+}
+qint32 ZAudioPlayThread::ZStartThread()
+{
     this->start();
     return 0;
 }
 qint32 ZAudioPlayThread::ZStopThread()
 {
-    this->m_bExitFlag=true;
     return 0;
 }
 bool ZAudioPlayThread::ZIsExitCleanup()
@@ -32,13 +37,10 @@ bool ZAudioPlayThread::ZIsExitCleanup()
 
 void ZAudioPlayThread::run()
 {
-    unsigned int nSampleRate=SAMPLE_RATE;
     // Input and output driver variables
     snd_pcm_hw_params_t *hwparams;
-    snd_pcm_uframes_t pcmFrames;
-
-    int pcmBlkSize=BLOCK_SIZE;	// Raw input or output frame size in bytes
-    //pcmFrames=pcmBlkSize/BYTES_PER_FRAME;	// Convert bytes to frames
+    int periods=PERIODS;
+    snd_pcm_uframes_t periodSize=PERIOD_SIZE;
 
     // Now we can open the PCM device:
     /* Open PCM. The last parameter of this function is the mode. */
@@ -126,7 +128,7 @@ void ZAudioPlayThread::run()
 
     /* Set sample rate. If the exact rate is not supported */
     /* by the hardware, use nearest possible rate.         */
-    unsigned int nRealSampleRate=nSampleRate;
+    unsigned int nRealSampleRate=SAMPLE_RATE;
     if(snd_pcm_hw_params_set_rate_near(this->m_pcmHandle,hwparams,&nRealSampleRate,0u)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_rate_near().";
@@ -134,9 +136,9 @@ void ZAudioPlayThread::run()
         gGblPara.m_bGblRst2Exit=true;
         return;
     }
-    if(nRealSampleRate!=nSampleRate)
+    if(nRealSampleRate!=SAMPLE_RATE)
     {
-        qDebug()<<"<Warning>:Audio PlayThread,the rate "<<nSampleRate<<" Hz is not supported by hardware.";
+        qDebug()<<"<Warning>:Audio PlayThread,the rate "<<SAMPLE_RATE<<" Hz is not supported by hardware.";
         qDebug()<<"<Warning>:Using "<<nRealSampleRate<<" instead.";
     }
 
@@ -151,12 +153,10 @@ void ZAudioPlayThread::run()
 
     /* Set number of periods. Periods used to be called fragments. */
     /* Number of periods, See http://www.alsa-project.org/main/index.php/FramesPeriods */
-    unsigned int periods=ALSA_PERIOD;
-    unsigned int request_periods;
+    unsigned int request_periods=periods;
     int dir=0;
-    request_periods=periods;
     //	Restrict a configuration space to contain only one periods count
-    if(snd_pcm_hw_params_set_periods_near(this->m_pcmHandle,hwparams,&periods,&dir)<0)
+    if(snd_pcm_hw_params_set_periods_near(this->m_pcmHandle,hwparams,&request_periods,&dir)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_periods_near().";
         //set global request to exit flag to cause other threads to exit.
@@ -174,14 +174,19 @@ void ZAudioPlayThread::run()
         One frame is the sample data vector for all channels.
         For 16 Bit stereo data, one frame has a length of four bytes.
     */
-    if(snd_pcm_hw_params_set_buffer_size_near(this->m_pcmHandle,hwparams,&pcmFrames)<0)
+    snd_pcm_uframes_t bufferSizeInFrames=(periods*periodSize)>>2;
+    snd_pcm_uframes_t bufferSizeInFrames2=bufferSizeInFrames;
+    if(snd_pcm_hw_params_set_buffer_size_near(this->m_pcmHandle,hwparams,&bufferSizeInFrames)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_buffer_size_near().";
         //set global request to exit flag to cause other threads to exit.
         gGblPara.m_bGblRst2Exit=true;
         return;
     }
-
+    if(bufferSizeInFrames!=bufferSizeInFrames2)
+    {
+        qDebug()<<"request buffer size:"<<bufferSizeInFrames2<<",really:"<<bufferSizeInFrames;
+    }
     /*
         If your hardware does not support a buffersize of 2^n,
         you can use the function snd_pcm_hw_params_set_buffer_size_near.
@@ -198,9 +203,6 @@ void ZAudioPlayThread::run()
         return;
     }
 
-    char *pcmBuffer=new char[BLOCK_SIZE];
-    qint32 nPCMBufferLen=0;
-    qint32 nRemaingBytes=0;
     //the main loop.
     qDebug()<<"<MainLoop>:PlaybackThread starts.";
     this->m_bCleanup=false;
@@ -220,80 +222,44 @@ void ZAudioPlayThread::run()
     //enter event-loop until exit() is called.
     //this->exec();
 
-    while(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+    while(!gGblPara.m_bGblRst2Exit)
     {
-        qint32 nPCMLen;
-        nPCMLen=this->m_rbPlay->ZGetElement((qint8*)pcmBuffer,BLOCK_SIZE);
-        if(nPCMLen<=0)
-        {
-            qDebug()<<"<Error>:Audio PlayThread get 0 length of pcm data from clear queue.";
-            continue;
-        }
-
-#if 0
-        //如果数据量不够，则开始整理数据.
-        if(nPCMBufferLen<BLOCK_SIZE)
-        {
-            if((baPCMData.size()+nPCMBufferLen)>=BLOCK_SIZE)
+        //get a data buffer from fifo.
+        this->m_mutex->lock();
+        while(this->m_usedQueue->isEmpty())
+        {//timeout 5s to check exit flag.
+            if(!this->m_condQueueFull->wait(this->m_mutex,5000))
             {
-                qint32 nPaddingBytes=BLOCK_SIZE-nPCMBufferLen;
-                memcpy(pcmBuffer+nPCMBufferLen,baPCMData.data(),nPaddingBytes);
-                nPCMBufferLen+=nPaddingBytes;
-                nRemaingBytes=baPCMData.size()-nPaddingBytes;
-                //qDebug()<<"more:"<<nPCMBufferLen<<"pcmSize:"<<baPCMData.size()<<",remaing:"<<nRemaingBytes;
+                this->m_mutex->unlock();
+                if(gGblPara.m_bGblRst2Exit)
+                {
+                    break;
+                }
+            }
+        }
+        if(gGblPara.m_bGblRst2Exit)
+        {
+            break;
+        }
+        QByteArray *bufferIn=this->m_usedQueue->dequeue();
+        this->m_mutex->unlock();
+        //qDebug()<<"play one frame";
+        while(1)
+        {
+            qint32 ret=snd_pcm_writei(this->m_pcmHandle,bufferIn->data(),PERIOD_SIZE>>2);
+            if(ret==-EPIPE)
+            {
+                snd_pcm_prepare(this->m_pcmHandle);
+                qDebug()<<QDateTime::currentDateTime()<<",<Playback>:Buffer Underrun\n";
+                continue;
             }else{
-                qint32 nPaddingBytes=baPCMData.size();
-                memcpy(pcmBuffer+nPCMBufferLen,baPCMData.data(),nPaddingBytes);
-                nPCMBufferLen+=nPaddingBytes;
-                nRemaingBytes=0;
-                //qDebug()<<"less:"<<nPCMBufferLen<<"pcmSize:"<<baPCMData.size()<<",remaing:"<<nRemaingBytes;
+                break;
             }
-        }else{
-            nRemaingBytes=baPCMData.size();
         }
-
-        //如果数据量够了，则写声卡.
-        if(nPCMBufferLen>=BLOCK_SIZE)
-        {
-            snd_pcm_uframes_t pcmFrames=nPCMBufferLen/BYTES_PER_FRAME;
-            qDebug()<<"playback: get pcm data:"<<nPCMBufferLen<<",pcmFrames:"<<(int)pcmFrames;
-            //send data to pcm.
-            while(snd_pcm_writei(pcmHandle,pcmBuffer,pcmFrames)<0)
-            {
-                snd_pcm_prepare(pcmHandle);
-                //qDebug("<playback>:Buffer Underrun");
-                gGblParam.m_nPlayUnderrun++;
-            }
-
-            //reset.
-            nPCMBufferLen=0;
-        }
-
-        //如果有遗留数据.
-        if(nRemaingBytes>0)
-        {
-            qint32 nOffsetIndex=baPCMData.size()-nRemaingBytes;
-            memcpy(pcmBuffer,baPCMData.data()+nOffsetIndex,nRemaingBytes);
-            nPCMBufferLen=nRemaingBytes;
-            //qDebug()<<"reserve remaing bytes:"<<nRemaingBytes;
-        }
-#else
-        snd_pcm_uframes_t pcmFrames=nPCMLen/BYTES_PER_FRAME;
-        //qDebug()<<"playback: get pcm data:"<<baPCMData.size()<<",pcmFrames:"<<(int)pcmFrames;
-        //send data to pcm.
-        if(pcmFrames<=0)
-        {
-            qDebug()<<"<Error>:Audio PlayThread,error conversation at snd_pcm_uframes_t.";
-            continue;
-        }
-        while(snd_pcm_writei(this->m_pcmHandle,pcmBuffer,pcmFrames)<0)
-        {
-            snd_pcm_prepare(this->m_pcmHandle);
-            //qDebug("<playback>:Buffer Underrun");
-            gGblPara.m_audio.m_nPlayUnderrun++;
-        }
-//        this->usleep(AUDIO_THREAD_SCHEDULE_US);
-#endif
+        this->m_mutex->lock();
+        this->m_freeQueue->enqueue(bufferIn);
+        this->m_condQueueEmpty->wakeAll();
+        this->m_mutex->unlock();
     }
 
 
@@ -308,8 +274,6 @@ void ZAudioPlayThread::run()
 
     /* Stop PCM device after pending frames have been played */
     //snd_pcm_drain(pcmHandle);
-
-    delete [] pcmBuffer;
 
     qDebug()<<"<MainLoop>:PlaybackThread ends.";
     //set global request to exit flag to help other thread to exit.

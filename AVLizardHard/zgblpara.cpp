@@ -34,6 +34,10 @@ ZAudioParam::ZAudioParam()
 
     //for noise view.
     this->m_nRNNoiseView=0;
+
+    //default webRTC grade is 0.
+    //valid range is 0.1.2.
+    this->m_nWebRtcNsPolicy=0;
 }
 ZVideoParam::ZVideoParam()
 {

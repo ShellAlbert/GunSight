@@ -3,14 +3,13 @@
 #include "../zgblpara.h"
 #include <QThread>
 #include <QTimer>
-
+#include <QWaitCondition>
 /* Use the newer ALSA API */
 #include <stdio.h>
 #define ALSA_PCM_NEW_HW_PARAMS_API
 #include <alsa/asoundlib.h>
 #include <QSemaphore>
 #include <QQueue>
-#include <zringbuffer.h>
 
 #define RSIZE    64    //buf的大小
 
@@ -61,7 +60,9 @@ public:
     ZAudioCaptureThread(QString capDevName,bool bDump2WavFile);
     ~ZAudioCaptureThread();
 
-    qint32 ZStartThread(ZRingBuffer *rbNoise);
+    void ZBindFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                   QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull);
+    qint32 ZStartThread();
     qint32 ZStopThread();
     bool ZIsExitCleanup();
 protected:
@@ -69,8 +70,6 @@ protected:
 signals:
     void ZSigThreadFinished();
 private:
-    qint32 ZWriteWavHead2File();
-    qint32 ZUpdateWavHead2File();
 
     quint64 ZGetTimestamp();
 private:
@@ -79,20 +78,15 @@ private:
 
     qint32 m_fd;
     QTimer *m_timerCapture;
-    snd_pcm_uframes_t m_pcmFrames;
-    char *m_pcmBuffer;
-    int m_pcmBufferSize;
-
-    qint32 m_nTotalBytes;
-
-    //escape seconds.
-    qint32 m_nEscapeMsec;
-    qint64 m_nEscapeSec;
 private:
-    bool m_bExitFlag;
     bool m_bCleanup;
 private:
-    ZRingBuffer *m_rbNoise;
+    QQueue<QByteArray*> *m_freeQueue;
+    QQueue<QByteArray*> *m_usedQueue;
+
+    QMutex *m_mutex;
+    QWaitCondition *m_condQueueEmpty;
+    QWaitCondition *m_condQueueFull;
 };
 
 #endif // ZAUDIOCAPTURETHREAD_H

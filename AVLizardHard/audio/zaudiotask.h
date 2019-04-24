@@ -7,7 +7,6 @@
 #include <audio/zaudioplaythread.h>
 #include <audio/zaudiotxthread.h>
 #include <QTimer>
-#include <zringbuffer.h>
 
 class ZAudioTask : public QObject
 {
@@ -15,8 +14,6 @@ class ZAudioTask : public QObject
 public:
      ZAudioTask(QObject *parent = 0);
     ~ZAudioTask();
-     qint32 ZBindWaveFormQueueBefore(ZRingBuffer *rbWave);
-     qint32 ZBindWaveFormQueueAfter(ZRingBuffer *rbWave);
      qint32 ZStartTask();
 
      ZNoiseCutThread* ZGetNoiseCutThread();
@@ -33,17 +30,30 @@ private:
     ZNoiseCutThread *m_cutThread;
     ZAudioPlayThread *m_playThread;
     ZAudioTxThread *m_txThread;
-
-    //ringBuffer.
-    ZRingBuffer *m_rbNoise;
-    ZRingBuffer *m_rbPlay;
-    ZRingBuffer *m_rbTx;
 private:
     QTimer *m_timerExit;
 private:
-   //波形显示队列，降噪算法处理之前与处理之后波形比对
-    ZRingBuffer *m_rbWaveBefore;
-    ZRingBuffer *m_rbWaveAfter;
+    //capture to noise queue(fifo).
+    QByteArray* m_Cap2NsFIFO[5];
+    QQueue<QByteArray*> m_Cap2NsFIFOFree;
+    QQueue<QByteArray*> m_Cap2NsFIFOUsed;
+    QMutex m_Cap2NsFIFOMutex;
+    QWaitCondition m_condCap2NsFIFOFull;
+    QWaitCondition m_condCap2NsFIFOEmpty;
+    //noise to playback fifo.
+    QByteArray* m_Ns2PbFIFO[5];
+    QQueue<QByteArray*> m_Ns2PbFIFOFree;
+    QQueue<QByteArray*> m_Ns2PbFIFOUsed;
+    QMutex m_Ns2PbFIFOMutex;
+    QWaitCondition m_condNs2PbFIFOFull;
+    QWaitCondition m_condNs2PbFIFOEmpty;
+    //noise to tx fifo.
+    QByteArray* m_Ns2TxFIFO[5];
+    QQueue<QByteArray*> m_Ns2TxFIFOFree;
+    QQueue<QByteArray*> m_Ns2TxFIFOUsed;
+    QMutex m_Ns2TxFIFOMutex;
+    QWaitCondition m_condNs2TxFIFOFull;
+    QWaitCondition m_condNs2TxFIFOEmpty;
 };
 
 #endif // ZAUDIOTASK_H

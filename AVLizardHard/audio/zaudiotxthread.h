@@ -7,13 +7,15 @@
 #include <QMap>
 #include <QQueue>
 #include <QSemaphore>
-#include <zringbuffer.h>
+#include <QWaitCondition>
 class ZAudioTxThread:public QThread
 {
     Q_OBJECT
 public:
     ZAudioTxThread();
-    qint32 ZStartThread(ZRingBuffer *rbTx);
+    void ZBindFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                   QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull);
+    qint32 ZStartThread();
     qint32 ZStopThread();
     bool ZIsExitCleanup();
 signals:
@@ -21,8 +23,14 @@ signals:
 protected:
     void run();
 private:
-    ZRingBuffer *m_rbTx;
     bool m_bExitFlag;
     bool m_bCleanup;
+private:
+    QQueue<QByteArray*> *m_freeQueue;
+    QQueue<QByteArray*> *m_usedQueue;
+
+    QMutex *m_mutex;
+    QWaitCondition *m_condQueueEmpty;
+    QWaitCondition *m_condQueueFull;
 };
 #endif // ZAUDIOTXTHREAD_H

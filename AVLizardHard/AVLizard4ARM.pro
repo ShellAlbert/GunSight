@@ -5,7 +5,7 @@ QT += core gui serialport network charts
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
-TARGET = AVLizard.bin
+TARGET = AVLizard.bin.a
 TEMPLATE = app
 
 
@@ -69,9 +69,8 @@ SOURCES += \
     audio/webrtc/spl_sqrt.c \
     audio/webrtc/splitting_filter.c \
     audio/webrtc/vector_scaling_operations.c \
-    audio/bevis/fft.cpp \
+    audio/bevis/bevisfft.cpp \
     audio/bevis/WindNSManager.cpp \
-    audio/zpcmencthread.cpp \
     audio/zaudiotask.cpp \
     ctl/zctlthread.cpp \
     zavui.cpp \
@@ -122,7 +121,6 @@ HEADERS += \
     audio/bevis/fft.h \
     audio/bevis/common.h \
     audio/bevis/WindNSManager.h \
-    audio/zpcmencthread.h \
     audio/zaudiotask.h \
     ctl/zctlthread.h \
     zavui.h \
@@ -157,6 +155,7 @@ LIBS += -L/home/zhangshaoyan/armbuild/libopus4arm/lib -lopus
 INCLUDEPATH += /home/zhangshaoyan/armbuild/librnnoise4arm/include
 LIBS += -L/home/zhangshaoyan/armbuild/librnnoise4arm/lib -lrnnoise
 
+
 #GStreamer.
 #INCLUDEPATH += /home/zhangshaoyan/armbuild/copyfromrk3399ubuntu1804/include/glib-2.0
 #INCLUDEPATH += /home/zhangshaoyan/armbuild/copyfromrk3399ubuntu1804/arm-linux-gnueabihf/glib-2.0/include
@@ -173,3 +172,11 @@ INCLUDEPATH += /home/zhangshaoyan/armbuild/rk3399-mpp/mpp/osal/inc
 
 #LIBS += -L/home/zhangshaoyan/armbuild/rk3399-mpp/mpp/build/linux/aarch64/mpp -lrockchip_mpp
 LIBS += -L/home/zhangshaoyan/armbuild/copyfromrk3399ubuntu1804/arm-linux-gnueabihf -lrockchip_mpp
+
+
+#logMMSE.
+INCLUDEPATH += /home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/audio/LogMMSE
+LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/audio/LogMMSE -llogmmse
+
+target.path=/home/pi/AVLizardDeploy
+INSTALLS += target
