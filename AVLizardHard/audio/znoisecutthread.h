@@ -91,6 +91,10 @@ private:
     QMutex *m_mutexOut2;
     QWaitCondition *m_condQueueEmptyOut2;
     QWaitCondition *m_condQueueFullOut2;
+
+private:
+    WebRtcSpl_State48khzTo16khz m_state4816;
+    WebRtcSpl_State16khzTo48khz m_state1648;
 };
 
 #endif // ZNOISECUTTHREAD_H
