@@ -81,7 +81,7 @@
 #define PERIOD_SIZE 48000
 
 //for opus encode/decode.
-#define OPUS_SAMPLE_FRMSIZE     (2880) //frame size in 16 bit sample.
+#define OPUS_SAMPLE_FRMSIZE     (960) //frame size in 16 bit sample.
 #define OPUS_BLKFRM_SIZEx2      (OPUS_SAMPLE_FRMSIZE*CHANNELS_NUM*sizeof(opus_int16)) //2 channels.
 #define OPUS_BITRATE            64000
 

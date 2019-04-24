@@ -501,14 +501,15 @@ qint32 ZNoiseCutThread::ZCutNoiseByWebRTC(QByteArray *baPCM)
     qint32 nOffset16k=0;
     //downsample 48khz to 16khz.48000/(480*2)=50.
     qint32 nLoopNum1=baPCM->size()/(480*sizeof(int16_t));
+    WebRtcSpl_State48khzTo16khz state4816;
+    WebRtcSpl_ResetResample48khzTo16khz(&state4816);
     for(qint32 i=0;i<nLoopNum1;i++)
     {
-        WebRtcSpl_State48khzTo16khz state4816;
+
         int16_t tmpIn[480];//48khz,480=10ms.
         int16_t tmpOut[160];//16khz,160=10ms.
         int tmpMem[960];
         memcpy(tmpIn,baPCM->data()+i*sizeof(tmpIn),sizeof(tmpIn));
-        WebRtcSpl_ResetResample48khzTo16khz(&state4816);
         WebRtcSpl_Resample48khzTo16khz(tmpIn,tmpOut,&state4816,tmpMem);
         //save data.
         memcpy(this->m_pcm16k+nOffset16k,tmpOut,sizeof(tmpOut));
@@ -560,16 +561,16 @@ qint32 ZNoiseCutThread::ZCutNoiseByWebRTC(QByteArray *baPCM)
     //16000/(160*2)=50.
     qint32 xTmpOffset=0;
     qint32 nLoopNum2=nOffset16k/(sizeof(int16_t)*160);
+    WebRtcSpl_State16khzTo48khz state1648;
+    WebRtcSpl_ResetResample16khzTo48khz(&state1648);
     for(qint32 i=0;i<nLoopNum2;i++)
     {
-        WebRtcSpl_State16khzTo48khz state1648;
+
         int16_t xTmpIn[160];
         int16_t xTmpOut[480];
         int xTmpMem[960];
         memcpy(xTmpIn,this->m_pcm16k+i*sizeof(xTmpIn),sizeof(xTmpIn));
-        WebRtcSpl_ResetResample16khzTo48khz(&state1648);
         WebRtcSpl_Resample16khzTo48khz(xTmpIn,xTmpOut,&state1648,xTmpMem);
-
         //save data.
         memcpy(baPCM->data()+xTmpOffset,xTmpOut,sizeof(xTmpOut));
         xTmpOffset+=sizeof(xTmpOut);
@@ -646,14 +647,16 @@ qint32 ZNoiseCutThread::ZCutNoiseByLogMMSE(QByteArray *baPCM)
     qint32 nOffset16k=0;
     //downsample 48khz to 16khz.
     qint32 nLoopNum1=baPCM->size()/(480*sizeof(int16_t));
+    WebRtcSpl_State48khzTo16khz state4816;
+    WebRtcSpl_ResetResample48khzTo16khz(&state4816);
     for(qint32 i=0;i<nLoopNum1;i++)
     {
-        WebRtcSpl_State48khzTo16khz state4816;
+
         int16_t tmpIn[480];//48khz,480=10ms.
         int16_t tmpOut[160];//16khz,160=10ms.
         int tmpMem[960];
         memcpy(tmpIn,baPCM->data()+i*sizeof(tmpIn),sizeof(tmpIn));
-        WebRtcSpl_ResetResample48khzTo16khz(&state4816);
+
         WebRtcSpl_Resample48khzTo16khz(tmpIn,tmpOut,&state4816,tmpMem);
         //save data.
         memcpy(baPCM16k.data()+nOffset16k,tmpOut,sizeof(tmpOut));
@@ -695,14 +698,16 @@ qint32 ZNoiseCutThread::ZCutNoiseByLogMMSE(QByteArray *baPCM)
     //16000/(160*2)=50.
     qint32 xTmpOffset=0;
     qint32 nLoopNum2=baPCM16k.size()/(sizeof(int16_t)*160);
+    WebRtcSpl_State16khzTo48khz state1648;
+    WebRtcSpl_ResetResample16khzTo48khz(&state1648);
     for(qint32 i=0;i<nLoopNum2;i++)
     {
-        WebRtcSpl_State16khzTo48khz state1648;
+
         int16_t xTmpIn[160];
         int16_t xTmpOut[480];
         int xTmpMem[960];
         memcpy(xTmpIn,baPCM16k.data()+i*sizeof(xTmpIn),sizeof(xTmpIn));
-        WebRtcSpl_ResetResample16khzTo48khz(&state1648);
+
         WebRtcSpl_Resample16khzTo48khz(xTmpIn,xTmpOut,&state1648,xTmpMem);
 
         //save data.
