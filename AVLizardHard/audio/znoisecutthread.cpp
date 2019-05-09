@@ -2,8 +2,10 @@
 #include "../zgblpara.h"
 #include <QDebug>
 #include <QFile>
-
-
+extern "C"
+{
+    #include "libns.h"
+}
 #define FRAME_SIZE_SHIFT 2
 #define FRAME_SIZE (120<<FRAME_SIZE_SHIFT)
 
@@ -76,6 +78,15 @@ bool ZNoiseCutThread::ZIsExitCleanup()
 }
 void ZNoiseCutThread::run()
 {
+    //initial libns.
+    if(ns_init()<0)
+    {
+        qDebug()<<"<Error>:failed to init libns.";
+        //set global request to exit flag to cause other threads to exit.
+        gGblPara.m_bGblRst2Exit=true;
+        return;
+    }
+
     //LogMMSE.
     X_INT16 *pBuffer;
     X_FLOAT32 *OutBuf;
@@ -332,7 +343,8 @@ void ZNoiseCutThread::run()
             break;
         case 4:
             //logMMSE.
-            this->ZCutNoiseByLogMMSE(pcmIn);
+            //this->ZCutNoiseByLogMMSE(pcmIn);
+            ns_processing(pcmIn->data(),pcmIn->size());
             break;
         default:
             break;
@@ -413,6 +425,9 @@ void ZNoiseCutThread::run()
     delete [] this->m_pcm16k;
     //    bevis.vp_uninit();
     //    delete [] pFilterBuffer;
+
+    //uninit libns.
+    ns_uninit();
 
     qDebug()<<"<MainLoop>:NoiseSuppressThread ends.";
     //set global request to exit flag to help other thread to exit.
