@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>videoHandlerDifference</class>
+ <widget class="QWidget" name="videoHandlerDifference">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>177</width>
+    <height>130</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="wrapperLayout">
+   <item>
+    <layout class="QVBoxLayout" name="topVBoxLayout">
+     <item>
+      <widget class="QCheckBox" name="markDifferenceCheckBox">
+       <property name="toolTip">
+        <string>Highlight all differences in red</string>
+       </property>
+       <property name="text">
+        <string>Mark Differences</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="toolTip">
+          <string>Multiply every difference value with this factor</string>
+         </property>
+         <property name="text">
+          <string>Amplify</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="amplificationFactorSpinBox">
+         <property name="toolTip">
+          <string>Multiply every difference value with this factor</string>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>1000</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox_2">
+       <property name="toolTip">
+        <string>Calculate the first position of a difference according to a specific coding scheme.</string>
+       </property>
+       <property name="title">
+        <string>First difference position</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout" columnstretch="0,1">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="toolTip">
+           <string>Calculate the first position of a difference according to a specific coding scheme.</string>
+          </property>
+          <property name="text">
+           <string>Coding order</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="codingOrderComboBox">
+          <property name="toolTip">
+           <string>Calculate the first position of a difference according to a specific coding scheme.</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>videoHandlerRGB</class>
+ <widget class="QWidget" name="videoHandlerRGB">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>213</width>
+    <height>179</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="wrapperLayout">
+   <item>
+    <layout class="QVBoxLayout" name="topVerticalLayout">
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the format of the raw RGB data that is read from file. This defines: In what order are the RGB components, what is the bit depth, is there an alpha channel...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>RGB Format</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="rgbFormatComboBox">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the format of the raw RGB data that is read from file. This defines: In what order are the RGB components, what is the bit depth, is there an alpha channel...&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Custom: &lt;/span&gt;Select 'custom...' to define a custom format of the raw RGB data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="editable">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox_2">
+       <property name="title">
+        <string>RGB Display</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,0">
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="toolTip">
+           <string>Scale every value in the blue channel with this factor</string>
+          </property>
+          <property name="text">
+           <string>Scale B</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QSpinBox" name="BScaleSpinBox">
+          <property name="toolTip">
+           <string>Scale every value in the blue channel with this factor</string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="GScaleSpinBox">
+          <property name="toolTip">
+           <string>Scale every value in the green channel with this factor</string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <widget class="QCheckBox" name="BInvertCheckBox">
+          <property name="toolTip">
+           <string>Invert every value of the blue channel</string>
+          </property>
+          <property name="text">
+           <string>Invert</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="RScaleSpinBox">
+          <property name="toolTip">
+           <string>Scale every value in the red channel with this factor</string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QCheckBox" name="GInvertCheckBox">
+          <property name="toolTip">
+           <string>Invert every value of the green channel</string>
+          </property>
+          <property name="text">
+           <string>Invert</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="toolTip">
+           <string>Scale every value in the green channel with this factor</string>
+          </property>
+          <property name="text">
+           <string>Scale G</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QCheckBox" name="RInvertCheckBox">
+          <property name="toolTip">
+           <string>Invert every value of the red channel</string>
+          </property>
+          <property name="text">
+           <string>Invert</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label">
+          <property name="toolTip">
+           <string>Scale every value in the red channel with this factor</string>
+          </property>
+          <property name="text">
+           <string>Scale R</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which of the RGB components should be displayed? You can choose all or one of the three color planes individually.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Components</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1" colspan="2">
+         <widget class="QComboBox" name="colorComponentsComboBox">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which of the RGB components should be displayed? You can choose all or one of the three color planes individually.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>rgbFormatComboBox</tabstop>
+  <tabstop>colorComponentsComboBox</tabstop>
+  <tabstop>RScaleSpinBox</tabstop>
+  <tabstop>RInvertCheckBox</tabstop>
+  <tabstop>GScaleSpinBox</tabstop>
+  <tabstop>GInvertCheckBox</tabstop>
+  <tabstop>BScaleSpinBox</tabstop>
+  <tabstop>BInvertCheckBox</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

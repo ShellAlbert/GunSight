@@ -1,0 +1,39 @@
+#ifndef ZVIDEOTXTHREADH2642_H
+#define ZVIDEOTXTHREADH2642_H
+
+#include <QThread>
+#include <QQueue>
+#include <QSemaphore>
+#include <QTcpServer>
+#include <QTcpSocket>
+#include <QWaitCondition>
+class ZVideoTxThreadHard2642 : public QThread
+{
+    Q_OBJECT
+public:
+    ZVideoTxThreadHard2642(qint32 nTcpPort,qint32 nTcpPort2);
+    //main capture -> encTxThread.
+    void ZBindInFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                   QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull);
+    qint32 ZStartThread();
+    qint32 ZStopThread();
+    bool ZIsExitCleanup();
+signals:
+    void ZSigThreadFinished();
+
+protected:
+    void run();
+private:
+    bool m_bCleanup;
+    qint32 m_nTcpPort;
+    qint32 m_nTcpPort2;
+private:
+    //in fifo.(aux capture -> encTxThread).
+    QQueue<QByteArray*> *m_freeQueueIn;
+    QQueue<QByteArray*> *m_usedQueueIn;
+    QMutex *m_mutexIn;
+    QWaitCondition *m_condQueueEmptyIn;
+    QWaitCondition *m_condQueueFullIn;
+};
+
+#endif // ZVIDEOTXTHREADH2642_H

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PlaybackController</class>
+ <widget class="QWidget" name="PlaybackController">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>848</width>
+    <height>50</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <item>
+    <widget class="QPushButton" name="playPauseButton">
+     <property name="toolTip">
+      <string>Start/Pause playback</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="stopButton">
+     <property name="toolTip">
+      <string>Stop playback</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QSlider" name="frameSlider">
+     <property name="toolTip">
+      <string>Slide to select a frame from the sequence</string>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="tickPosition">
+      <enum>QSlider::TicksBothSides</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QSpinBox" name="frameSpinBox">
+     <property name="toolTip">
+      <string>Select a frame from the sequence</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="fpsLabel">
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="toolTip">
+      <string>When playback is running, the number of frames displayed per second (fps) will be shown here</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="fpsTextLabel">
+     <property name="toolTip">
+      <string>When playback is running, the number of frames displayed per second (fps) will be shown here</string>
+     </property>
+     <property name="text">
+      <string>fps</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="repeatModeButton">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select what repeat mode to use if playback reaches the end of a sequence:&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/img_repeat.png&quot;/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Repeat Off&lt;/span&gt;: Play the next item in the playlist. Stop at the end of the playlist.&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/img_repeat_one.png&quot;/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Repeat One&lt;/span&gt;: Repeat the current sequence from the beginning.&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/img_repeat_on.png&quot;/&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Repeat All&lt;/span&gt;: Play the next item in the playlist. Repeat the playlist at the end.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../images/images.qrc"/>
+ </resources>
+ <connections/>
+</ui>

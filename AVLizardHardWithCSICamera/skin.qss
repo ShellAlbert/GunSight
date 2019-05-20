@@ -1,0 +1,34 @@
+QSlider{
+border-color: #bcbcbc;
+}
+QSlider::groove:horizontal {
+     border: 1px solid #999999;
+     height: 1px;
+     margin: 0px 0;
+     left: 5px; right: 5px;
+ }
+
+QSlider::handle:horizontal {
+     border: 0px ;
+     min-width: 30px;
+     min-height:10px;
+     margin: -7px -7px -7px -7px;
+}
+
+QSlider::add-page:horizontal{
+background:
+qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0,
+stop:0 #bcbcbc,
+stop:0.25 #bcbcbc,
+stop:0.5 #bcbcbc,
+stop:1 #bcbcbc);
+}
+
+QSlider::sub-page:horizontal{
+ background:
+ qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0,
+ stop:0 #439cf3,
+ stop:0.25 #439cf3,
+ stop:0.5 #439cf3,
+ stop:1 #439cf3);
+}
