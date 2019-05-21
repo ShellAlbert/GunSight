@@ -230,22 +230,8 @@ public:
     //the global request to exit flag.
     //it will cause every thread occurs errors.
     bool m_bGblRst2Exit;
-public:
-//    //主摄像头采集线程.
-//    bool m_bMainCapThreadExitFlag;
-//    bool m_bMainExCapThreadExitFlag;
 
 public:
-//    //辅摄像头采集线程.
-//    bool m_bAuxCapThreadExitFlag;
-
-public:
-//    //图像比对处理线程.
-//    bool m_bImgCmpThreadExitFlag;
-
-public:
-//    //图像传输线程.
-//    bool m_bVideoTxThreadExitFlag;
     bool m_bVideoTcpConnected;
     bool m_bVideoTcpConnected2;
 
@@ -261,7 +247,6 @@ public:
     //控制端口线程.
     bool m_bCtlThreadExitFlag;
     bool m_bCtlClientConnected;
-
 
 public:
     //JSON协议控制标志位.
@@ -312,10 +297,6 @@ extern qint32 QByteArrayToqint32(QByteArray ba);
 
 #define MAX_AUDIO_RING_BUFFER  (30)
 #define MAX_VIDEO_RING_BUFFER  (30)
-
-
-
-
 
 
 #endif // ZGBLPARA_H

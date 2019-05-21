@@ -32,6 +32,7 @@ SOURCES += \
     video/zh264encthread.cpp \
     video/zvideotxthread.cpp \
     video/zvideotask.cpp \
+    video/yuv2rgb.cpp \
     forward/ztcp2uartforwardthread.cpp \
     audio/zaudiocapturethread.cpp \
     audio/zaudioplaythread.cpp \
@@ -93,6 +94,7 @@ HEADERS += \
     video/zh264encthread.h \
     video/zvideotxthread.h \
     video/zvideotask.h \
+    video/yuv2rgb.h \
     forward/ztcp2uartforwardthread.h \
     audio/zaudiocapturethread.h \
     audio/zaudioplaythread.h \
@@ -178,5 +180,5 @@ LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/audio/
 
 #libns.so
 LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/libns -lns
-target.path=/home/pi/AVLizardDeploy
+target.path=/home/wh/AVLizardDeploy
 INSTALLS += target

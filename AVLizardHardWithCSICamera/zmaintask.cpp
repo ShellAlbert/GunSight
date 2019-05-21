@@ -11,20 +11,27 @@ ZMainTask::ZMainTask()
 ZMainTask::~ZMainTask()
 {
     delete this->m_timerExit;
+
+#if 0
     //wait until tcp2Uart thread ends.
     this->m_tcp2Uart->quit();
-    this->m_tcp2Uart->wait();
+    this->m_tcp2Uart->wait(1000);
     delete this->m_tcp2Uart;
+
     //wait until ctlJson thread ends.
     this->m_ctlJson->quit();
-    this->m_ctlJson->wait();
+    this->m_ctlJson->wait(1000);
     delete this->m_ctlJson;
+
     //wait until audio task clean up.
     while(!this->m_audio->ZIsExitCleanup());
     delete this->m_audio;
+#endif
+
     //wait until video task clean up.
     while(!this->m_video->ZIsExitCleanup());
     delete this->m_video;
+
     delete this->m_ui;
 }
 qint32 ZMainTask::ZStartTask()
@@ -32,6 +39,7 @@ qint32 ZMainTask::ZStartTask()
     this->m_timerExit=new QTimer;
     QObject::connect(this->m_timerExit,SIGNAL(timeout()),this,SLOT(ZSlotChkAllExitFlags()));
 
+#if 0
     //start Android(tcp) <--> STM32(uart) forward task.
     this->m_tcp2Uart=new ZTcp2UartForwardThread;
     QObject::connect(this->m_tcp2Uart,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
@@ -50,10 +58,11 @@ qint32 ZMainTask::ZStartTask()
         qDebug()<<"<Error>:failed to start audio task.";
         return -1;
     }
+#endif
 
     //video task.
     this->m_video=new ZVideoTask;
-    QObject::connect(this->m_video,SIGNAL(ZSigVideoTaskExited()),this,SLOT(ZSlotSubThreadsExited()));
+    QObject::connect(this->m_video,SIGNAL(ZSigVideoTaskExited()),this,SLOT(ZSlotSubThreadsFinished()));
     if(this->m_video->ZDoInit()<0)
     {
         qDebug()<<"<Error>:failed to init video task.";
@@ -73,14 +82,14 @@ qint32 ZMainTask::ZStartTask()
     QObject::connect(this->m_video->ZGetImgCapThread(1),SIGNAL(ZSigNewImgArrived(QImage)),this->m_ui->ZGetImgDisp(1),SLOT(ZSlotFlushImg(QImage)),Qt::AutoConnection);
 
     //use signal-slot event to notify UI to flush new image process set.
-    QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigNewMatchedSetArrived(ZImgMatchedSet)),this->m_ui,SLOT(ZSlotFlushMatchedSet(ZImgMatchedSet)),Qt::AutoConnection);
-    QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigSSIMImgSimilarity(qint32)),this->m_ui,SLOT(ZSlotSSIMImgSimilarity(qint32)),Qt::AutoConnection);
+    //QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigNewMatchedSetArrived(ZImgMatchedSet)),this->m_ui,SLOT(ZSlotFlushMatchedSet(ZImgMatchedSet)),Qt::AutoConnection);
+    //QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigSSIMImgSimilarity(qint32)),this->m_ui,SLOT(ZSlotSSIMImgSimilarity(qint32)),Qt::AutoConnection);
 
     this->m_ui->showMaximized();
 
     return 0;
 }
-void ZMainTask::ZSlotSubThreadsExited()
+void ZMainTask::ZSlotSubThreadsFinished()
 {
     if(!this->m_timerExit->isActive())
     {
@@ -90,9 +99,10 @@ void ZMainTask::ZSlotSubThreadsExited()
 void ZMainTask::ZSlotChkAllExitFlags()
 {
     qDebug()<<"<Waiting>:main task waiting working threads...";
+#if 0
     if(!this->m_tcp2Uart->ZIsExitCleanup())
     {
-        qDebug()<<"<Exit>:wait for tcp2uart thread.";
+        qDebug()<<"<Exit>:waiting for tcp2uart thread...";
         return;
     }
     //    if(!this->m_ctlJson->ZIsExitCleanup())
@@ -102,12 +112,13 @@ void ZMainTask::ZSlotChkAllExitFlags()
     //    }
     if(!this->m_audio->ZIsExitCleanup())
     {
-        qDebug()<<"<Exit>:wait for audio task.";
+        qDebug()<<"<Exit>:waiting for audio task...";
         return;
     }
+#endif
     if(!this->m_video->ZIsExitCleanup())
     {
-        qDebug()<<"<Exit>:wait for m_video task.";
+        qDebug()<<"<Exit>:waiting for video task...";
         return;
     }
 

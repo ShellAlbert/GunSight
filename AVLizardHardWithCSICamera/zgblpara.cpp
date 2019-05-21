@@ -78,7 +78,7 @@ ZGblPara::ZGblPara()
 
     //json control flags.
     this->m_bJsonImgPro=false;
-    this->m_bJsonFlushUIImg=false;
+    this->m_bJsonFlushUIImg=true;//flush local UI or not.
     this->m_bJsonFlushUIWav=false;
 
     //accumulated run seconds.

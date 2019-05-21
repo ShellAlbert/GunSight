@@ -38,7 +38,7 @@ signals:
     void ZSigSSIMImgSimilarity(qint32 nVal);
 
     ///////////////////////////////////////////////////
-    void ZSigThreadFinished();
+    void ZSigFinished();
     void ZSigMsg(const QString &msg,const qint32 &type);
     void ZSigImgGlobal(QImage img);
     void ZSigImgLocal(QImage img);

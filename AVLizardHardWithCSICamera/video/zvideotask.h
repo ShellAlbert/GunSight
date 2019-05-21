@@ -36,26 +36,13 @@ public:
 signals:
     void ZSigVideoTaskExited();
 private slots:
-    void ZSlotSubThreadsExited();
+    void ZSlotSubThreadsFinished();
     void ZSlotChkAllExitFlags();
 private:
-    ZImgCapThread *m_capThread[3];//主/辅摄像头Main/Aux图像采集线程+MainEx.
-    ZImgProcessThread *m_process;//图像处理线程.
-    ZVideoTxThreadHard264 *m_encTxThread;//h264 soft encode图像编码&TCP传输线程.
-    ZVideoTxThreadHard2642 *m_encTx2Thread;//h264 hard encode.
-
-    //Main/Aux CaptureThread put QImage to this queue.
-    //ImgProcessThread get QImage from this queue.
-    ZRingBuffer *m_rbProcess[2];
-
-    //Main CaptureThread put yuv to this queue.
-    //H264 EncodeThread get yuv from this queue.
-    ZRingBuffer *m_rbYUV[2];
-
-    //H264EncThread put h264 frame to this queue.
-    //TcpTxThread get data from this queue.
-    ZRingBuffer *m_rbH264[2];
-
+    ZImgCapThread *m_capThread[3];//main camera+aux camera+mainEx camera.
+    ZImgProcessThread *m_process;//openCV image process.
+    ZHardEncTxThread *m_encTxThread;//main h264 encode&tx.
+    ZHardEncTx2Thread *m_encTx2Thread;//aux h264 encode&tx.
 
     //main capture to h264 encoder queue(fifo).
     QByteArray* m_Cap2EncFIFOMain[5];

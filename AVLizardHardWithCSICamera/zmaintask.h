@@ -18,7 +18,7 @@ public:
     ~ZMainTask();
     qint32 ZStartTask();
 private slots:
-    void ZSlotSubThreadsExited();
+    void ZSlotSubThreadsFinished();
     void ZSlotChkAllExitFlags();
 //    void ZSlotFwdImgMatchedSet2Ctl(const ZImgMatchedSet &set);
 private:

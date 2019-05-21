@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.5.0, 2019-05-17T17:39:11. -->
+<!-- Written by QtCreator 4.5.0, 2019-05-21T11:52:51. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -268,23 +268,18 @@
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinux.DirectUploadStep</value>
       <valuelist type="QVariantList" key="ProjectExplorer.RunConfiguration.LastDeployedFiles">
        <value type="QString">/home/zhangshaoyan/MyWork/github/GunSight/GunSight/build-AVLizard4ARM-arm_linux_gnueabihf-Debug/AVLizard.bin.a</value>
-       <value type="QString">/home/zhangshaoyan/MyWork/github/GunSight/GunSight/build-AVLizard4ARM-arm_linux_gnueabihf-Debug/AVLizard.bin</value>
       </valuelist>
       <valuelist type="QVariantList" key="ProjectExplorer.RunConfiguration.LastDeployedHosts">
-       <value type="QString">10.42.0.1</value>
-       <value type="QString">10.42.0.1</value>
+       <value type="QString">192.168.137.1</value>
       </valuelist>
       <valuelist type="QVariantList" key="ProjectExplorer.RunConfiguration.LastDeployedRemotePaths">
-       <value type="QString">/home/pi/AVLizardDeploy</value>
-       <value type="QString">/home/pi/AVLizardDeploy</value>
+       <value type="QString">/home/wh/AVLizardDeploy</value>
       </valuelist>
       <valuelist type="QVariantList" key="ProjectExplorer.RunConfiguration.LastDeployedSysroots">
        <value type="QString">/opt/EmbedSky/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf</value>
-       <value type="QString">/opt/EmbedSky/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf</value>
       </valuelist>
       <valuelist type="QVariantList" key="ProjectExplorer.RunConfiguration.LastDeployedTimes">
-       <value type="QDateTime">2019-05-10T13:43:09</value>
-       <value type="QDateTime">2019-04-22T10:45:31</value>
+       <value type="QDateTime">2019-05-21T11:31:27</value>
       </valuelist>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.IgnoreMissingFiles">false</value>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.Incremental">true</value>
@@ -343,12 +338,12 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">1</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes">
-     <value type="QString">LIB_QT=/home/pi/AVLizardDeploy/libqt</value>
-     <value type="QString">LIB_OPENCV=/home/pi/AVLizardDeploy/libopencv</value>
-     <value type="QString">LIB_ALSA=/home/pi/AVLizardDeploy/libalsa</value>
-     <value type="QString">LIB_OPUS=/home/pi/AVLizardDeploy/libopus</value>
-     <value type="QString">LIB_RNNOISE=/home/pi/AVLizardDeploy/librnnoise</value>
-     <value type="QString">LIB_X264=/home/pi/AVLizardDeploy/libx264</value>
+     <value type="QString">LIB_ALSA=/home/wh/AVLizardDeploy/libalsa</value>
+     <value type="QString">LIB_OPENCV=/home/wh/AVLizardDeploy/libopencv</value>
+     <value type="QString">LIB_OPUS=/home/wh/AVLizardDeploy/libopus</value>
+     <value type="QString">LIB_QT=/home/wh/AVLizardDeploy/libqt</value>
+     <value type="QString">LIB_RNNOISE=/home/wh/AVLizardDeploy/librnnoise</value>
+     <value type="QString">LIB_X264=/home/wh/AVLizardDeploy/libx264</value>
      <value type="QString">LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LIB_QT:$LIB_OPENCV:$LIB_ALSA:$LIB_OPUS:$LIB_RNNOISE:$LIB_X264</value>
     </valuelist>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">AVLizard.bin.a (在远端设备上)</value>
@@ -358,7 +353,7 @@
     <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.TargetName">AVLizard.bin.a</value>
     <value type="int" key="RemoteLinux.EnvironmentAspect.Version">1</value>
     <value type="QString" key="RemoteLinux.RunConfig.AlternateRemoteExecutable">/home/wh/AVLizardDeploy/a.sh</value>
-    <value type="bool" key="RemoteLinux.RunConfig.UseAlternateRemoteExecutable">true</value>
+    <value type="bool" key="RemoteLinux.RunConfig.UseAlternateRemoteExecutable">false</value>
     <value type="QString" key="RemoteLinux.RunConfig.WorkingDirectory">/home/wh/AVLizardDeploy</value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>

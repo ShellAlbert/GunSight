@@ -43,7 +43,7 @@ public:
 signals:
     void ZSigNewImgArrived(QImage img);
     void ZSigMsg(const QString &msg,const qint32 &type);
-    void ZSigThreadFinished();
+    void ZSigFinished();
     void ZSigCAMIDFind(QString camID);
 protected:
     void run();

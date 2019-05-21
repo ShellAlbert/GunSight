@@ -66,16 +66,14 @@ typedef struct {
     RK_S32 fps;
     RK_S32 bps;
 } MpiEncTestData2;
-//#define YUYV_CHUNK_SIZE  (640*480*2) //614400.
 
-ZVideoTxThreadHard2642::ZVideoTxThreadHard2642(qint32 nTcpPort,qint32 nTcpPort2)
+ZHardEncTx2Thread::ZHardEncTx2Thread(qint32 nTcpPort)
 {
     this->m_bCleanup=true;
     this->m_nTcpPort=nTcpPort;
-    this->m_nTcpPort2=nTcpPort2;
 }
 //aux capture -> encTxThread.
-void ZVideoTxThreadHard2642::ZBindInFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+void ZHardEncTx2Thread::ZBindInFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
                QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull)
 {
     //in fifo.(aux capture -> encTxThread).
@@ -85,23 +83,23 @@ void ZVideoTxThreadHard2642::ZBindInFIFO(QQueue<QByteArray*> *freeQueue,QQueue<Q
     this->m_condQueueEmptyIn=condQueueEmpty;
     this->m_condQueueFullIn=condQueueFull;
 }
-qint32 ZVideoTxThreadHard2642::ZStartThread()
+qint32 ZHardEncTx2Thread::ZStartThread()
 {
     this->start();
     return 0;
 }
-qint32 ZVideoTxThreadHard2642::ZStopThread()
+qint32 ZHardEncTx2Thread::ZStopThread()
 {
     this->quit();
     this->wait(100);
     return 0;
 }
-bool ZVideoTxThreadHard2642::ZIsExitCleanup()
+bool ZHardEncTx2Thread::ZIsExitCleanup()
 {
     return this->m_bCleanup;
 }
 
-void ZVideoTxThreadHard2642::run()
+void ZHardEncTx2Thread::run()
 {
 
     cpu_set_t cpuSet;
@@ -382,13 +380,13 @@ void ZVideoTxThreadHard2642::run()
 
     while(!gGblPara.m_bGblRst2Exit)
     {
-#if 1
+#if 0
         //tcp video aux camera.
         QTcpServer *tcpServerAux=new QTcpServer;
         int on2=1;
         int sockFd2=tcpServerAux->socketDescriptor();
         setsockopt(sockFd2,SOL_SOCKET,SO_REUSEADDR,&on2,sizeof(on2));
-        if(!tcpServerAux->listen(QHostAddress::Any,this->m_nTcpPort2))
+        if(!tcpServerAux->listen(QHostAddress::Any,this->m_nTcpPort))
         {
             qDebug()<<"<Error>:VideoTx tcp server error listen on port"<<this->m_nTcpPort;
             delete tcpServerAux;
@@ -533,14 +531,14 @@ void ZVideoTxThreadHard2642::run()
                 p->pkt_eos=mpp_packet_get_eos(packet);
                 p->stream_size+=nH264DataLen2;
                 p->frame_count++;
-                //qDebug("aux h264 encoded frame %d size %d\n",p->frame_count,nH264DataLen2);
+                qDebug("aux h264 encoded frame %d size %d                     ***\n",p->frame_count,nH264DataLen2);
 
 #if 0
                 //write encode h264 frames to local file for debugging.
                 fileH2642.write((const char*)pH264Data2,nH264DataLen2);
                 fileH2642.flush();
 #endif
-#if 1
+#if 0
                 //tx out.
                 QByteArray baH264PktLen2=qint32ToQByteArray(nH264DataLen2);
                 if(tcpSocketAux->write(baH264PktLen2)!=baH264PktLen2.size())
@@ -567,11 +565,11 @@ void ZVideoTxThreadHard2642::run()
             }
             this->usleep(VIDEO_THREAD_SCHEDULE_US);
         }
-        tcpSocketAux->close();
+        //tcpSocketAux->close();
         //clean here.
         //设置连接标志，这样编码器线程就会停止工作.
         gGblPara.m_bVideoTcpConnected2=false;
-#if 1
+#if 0
         delete tcpServerAux;
         tcpServerAux=NULL;
 #endif
@@ -600,7 +598,7 @@ void ZVideoTxThreadHard2642::run()
     free(p);
     //set global request to exit flag to notify other threads to exit.
     gGblPara.m_bGblRst2Exit=true;
-    emit this->ZSigThreadFinished();
     this->m_bCleanup=true;
+    emit this->ZSigFinished();
     return;
 }

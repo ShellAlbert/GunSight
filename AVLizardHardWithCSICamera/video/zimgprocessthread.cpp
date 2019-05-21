@@ -191,8 +191,8 @@ void ZImgProcessThread::run()
     qDebug()<<"<MainLoop>:ImgProcessThread ends.";
     //set global request to exit flag to help other threads to exit.
     gGblPara.m_bGblRst2Exit=true;
-    emit this->ZSigThreadFinished();
     this->m_bCleanup=true;
+    emit this->ZSigFinished();
     return;
 }
 

@@ -68,110 +68,6 @@ ZVideoTask::~ZVideoTask()
 }
 qint32 ZVideoTask::ZDoInit()
 {
-#if 0
-    //需要排除的设备节点列表.
-    QStringList extractNode;
-    //extractNode.append("video0");
-    //    extractNode.append("video1");
-    //    extractNode.append("video16");
-    //    extractNode.append("video17");
-
-    //列出/dev目录下所有的videoX设备节点.
-    QStringList nodeNameList;
-    QDir dir("/dev");
-    QStringList fileList=dir.entryList(QDir::System);
-    for(qint32 i=0;i<fileList.size();i++)
-    {
-        QString nodeName=fileList.at(i);
-        if(nodeName.startsWith("video"))
-        {
-            if(!extractNode.contains(nodeName))
-            {
-                nodeNameList.append(nodeName);
-            }
-        }
-    }
-
-    if(nodeNameList.size()<3)
-    {
-        qDebug()<<"<Error>:No 3 cameras found at least.";
-        return -1;
-    }
-
-    //比对配置文件ini设置的CamID来决定哪一个是主摄像头，哪一个是主摄像头Ex,哪一个是辅摄像头.
-    bool bMainIdChk=false,bMainExIdChk=false,bAuxIdChk=false;
-    QFile fileUSBBusId("usb_bus_id.txt");
-    fileUSBBusId.open(QIODevice::WriteOnly);
-    for(qint32 i=0;i<nodeNameList.size();i++)
-    {
-        struct v4l2_capability cap;
-        QString nodeDev="/dev/"+nodeNameList.at(i);
-        int fd=open(nodeDev.toStdString().c_str(),O_RDWR);
-        if(ioctl(fd,VIDIOC_QUERYCAP,&cap)<0)
-        {
-            qDebug()<<"<Error>:failed to query capability "<<nodeDev;
-            return -1;
-        }
-        qDebug()<<"<Info>:"<<nodeDev<<","<<QString((char*)cap.bus_info);
-        fileUSBBusId.write(QString(nodeDev+QString((char*)cap.bus_info)).toUtf8()+"\n");
-        if(QString((char*)cap.bus_info)==gGblPara.m_video.m_Cam1ID)
-        {
-            bMainIdChk=true;
-        }else if(QString((char*)cap.bus_info)==gGblPara.m_video.m_Cam1IDEx)
-        {
-            bMainExIdChk=true;
-        }else if(QString((char*)cap.bus_info)==gGblPara.m_video.m_Cam2ID)
-        {
-            bAuxIdChk=true;
-        }
-        gGblPara.m_video.m_mapID2Fd.insert(QString((char*)cap.bus_info),nodeDev);
-        close(fd);
-    }
-    fileUSBBusId.close();
-    if(!(bMainIdChk && bMainExIdChk && bAuxIdChk))
-    {
-        qDebug()<<"<Error>:config file USB IDs do not match real USB IDs!";
-        return -1;
-    }
-    for(qint32 i=0;i<2;i++)
-    {
-        //main/aux capture thread to img process thread queue.
-        this->m_rbProcess[i]=new ZRingBuffer(MAX_VIDEO_RING_BUFFER,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3*2);
-        //main/aux cap thread to h264 enc thread.
-        this->m_rbYUV[i]=new ZRingBuffer(MAX_VIDEO_RING_BUFFER,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3*2);
-    }
-    //create capture thread.
-    this->m_capThread[0]=new ZImgCapThread(gGblPara.m_video.m_Cam1ID,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1,gGblPara.m_fpsCAM1,CAM1_ID_Main);//Main Camera.
-    this->m_capThread[1]=new ZImgCapThread(gGblPara.m_video.m_Cam2ID,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1,gGblPara.m_fpsCAM1,CAM2_ID_Aux);//Aux Camera.
-    this->m_capThread[2]=new ZImgCapThread(gGblPara.m_video.m_Cam1IDEx,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1,gGblPara.m_fpsCAM1,CAM3_ID_MainEx);//MainEx Camera.
-    QObject::connect(this->m_capThread[0],SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
-    QObject::connect(this->m_capThread[1],SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
-    QObject::connect(this->m_capThread[2],SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
-    this->m_capThread[0]->ZBindProcessQueue(this->m_rbProcess[0]);
-    this->m_capThread[1]->ZBindProcessQueue(this->m_rbProcess[1]);
-    this->m_capThread[2]->ZBindProcessQueue(this->m_rbProcess[0]);
-    //MainEx camera does not bind process queue.
-    this->m_capThread[0]->ZBindYUVQueue(this->m_rbYUV[0]);//main camera.
-    this->m_capThread[1]->ZBindYUVQueue(this->m_rbYUV[1]);//aux camera.
-    this->m_capThread[2]->ZBindYUVQueue(this->m_rbYUV[0]);//mainEx camera.
-
-
-    this->m_videoTxThreadSoft=new ZVideoTxThreadHard264(TCP_PORT_VIDEO,TCP_PORT_VIDEO2);
-    this->m_videoTxThreadSoft->ZBindQueue(this->m_rbYUV[0],this->m_rbYUV[1]);
-    QObject::connect(this->m_videoTxThreadSoft,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
-
-    //create video tx thread.
-    this->m_videoTxThreadHard=new ZVideoTxThreadHard2642(TCP_PORT_VIDEO,TCP_PORT_VIDEO2);
-    this->m_videoTxThreadHard->ZBindQueue(this->m_rbYUV[0],this->m_rbYUV[1]);
-    QObject::connect(this->m_videoTxThreadHard,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
-
-    //create image process thread.
-    this->m_process=new ZImgProcessThread;
-    QObject::connect(this->m_process,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
-    this->m_process->ZBindMainAuxImgQueue(this->m_rbProcess[0],this->m_rbProcess[1]);
-
-#endif
-
     //find out how many videoX device file we have.
     QStringList devFileList;
     QDir dir("/dev");
@@ -184,7 +80,7 @@ qint32 ZVideoTask::ZDoInit()
             devFileList.append(devFile);
         }
     }
-
+    qDebug()<<devFileList;
     if(devFileList.size()<3)
     {
         qDebug()<<"<Error>:Greater than 3 cameras are needed for run this app.";
@@ -205,7 +101,7 @@ qint32 ZVideoTask::ZDoInit()
         }
         struct v4l2_capability cap;
         ioctl(fd,VIDIOC_QUERYCAP,&cap);
-        printf("Driver Name:%s\nCard Name:%s\nBus info:%s\n",cap.driver,cap.card,cap.bus_info);
+        qDebug()<<devFileName<<",driver:"<<cap.driver<<",card:"<<cap.card<<",bus:"<<cap.bus_info;
         if((cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) && (cap.capabilities & V4L2_CAP_STREAMING))
         {
             validDevFileList.append(devFileName);
@@ -213,12 +109,14 @@ qint32 ZVideoTask::ZDoInit()
             qDebug()<<"<Warning>:"<<devFileName<<"has no capability to capture &streaming.";
         }
     }
+    qDebug()<<validDevFileList;
     if(validDevFileList.size()<3)
     {
         qDebug()<<"<Error>:Less than 3 cameras support video capture & streaming.";
         qDebug()<<"<Error>:So this app cannot run correctly! please check cameras!";
         return -1;
     }
+
 
     //main capture to h264 encoder queue(fifo).
     for(qint32 i=0;i<5;i++)
@@ -258,10 +156,12 @@ qint32 ZVideoTask::ZDoInit()
     this->m_capThread[0]=new ZImgCapThread(validDevFileList.at(0),CAM1_ID_Main);
     this->m_capThread[0]->ZBindOut1FIFO(&this->m_Cap2ProFIFOFreeMain,&this->m_Cap2ProFIFOUsedMain,&this->m_Cap2ProFIFOMutexMain,&this->m_condCap2ProFIFOEmptyMain,&this->m_condCap2ProFIFOFullMain);
     this->m_capThread[0]->ZBindOut2FIFO(&this->m_Cap2EncFIFOFreeMain,&this->m_Cap2EncFIFOUsedMain,&this->m_Cap2EncFIFOMutexMain,&this->m_condCap2EncFIFOEmptyMain,&this->m_condCap2EncFIFOFullMain);
+    QObject::connect(this->m_capThread[0],SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
 
     this->m_capThread[1]=new ZImgCapThread(validDevFileList.at(1),CAM2_ID_Aux);
     this->m_capThread[1]->ZBindOut1FIFO(&this->m_Cap2ProFIFOFreeAux,&this->m_Cap2ProFIFOUsedAux,&this->m_Cap2ProFIFOMutexAux,&this->m_condCap2ProFIFOEmptyAux,&this->m_condCap2ProFIFOFullAux);
     this->m_capThread[1]->ZBindOut2FIFO(&this->m_Cap2EncFIFOFreeAux,&this->m_Cap2EncFIFOUsedAux,&this->m_Cap2EncFIFOMutexAux,&this->m_condCap2EncFIFOEmptyAux,&this->m_condCap2EncFIFOFullAux);
+    QObject::connect(this->m_capThread[1],SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
 
     this->m_capThread[2]=new ZImgCapThread(validDevFileList.at(2),CAM3_ID_MainEx);
     this->m_capThread[2]->ZBindOut1FIFO(&this->m_Cap2ProFIFOFreeMain,&this->m_Cap2ProFIFOUsedMain,&this->m_Cap2ProFIFOMutexMain,&this->m_condCap2ProFIFOEmptyMain,&this->m_condCap2ProFIFOFullMain);
@@ -271,15 +171,16 @@ qint32 ZVideoTask::ZDoInit()
     this->m_process=new ZImgProcessThread;
     this->m_process->ZBindIn1FIFO(&this->m_Cap2ProFIFOFreeMain,&this->m_Cap2ProFIFOUsedMain,&this->m_Cap2ProFIFOMutexMain,&this->m_condCap2ProFIFOEmptyMain,&this->m_condCap2ProFIFOFullMain);
     this->m_process->ZBindIn2FIFO(&this->m_Cap2ProFIFOFreeAux,&this->m_Cap2ProFIFOUsedAux,&this->m_Cap2ProFIFOMutexAux,&this->m_condCap2ProFIFOEmptyAux,&this->m_condCap2ProFIFOFullAux);
+    QObject::connect(this->m_process,SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
 
     //create encode/tx thread & bind FIFO.
-    this->m_encTxThread=new ZVideoTxThreadHard264(TCP_PORT_VIDEO,TCP_PORT_VIDEO2);
+    this->m_encTxThread=new ZHardEncTxThread(TCP_PORT_VIDEO);
     this->m_encTxThread->ZBindInFIFO(&this->m_Cap2EncFIFOFreeMain,&this->m_Cap2EncFIFOUsedMain,&this->m_Cap2EncFIFOMutexMain,&this->m_condCap2EncFIFOEmptyMain,&this->m_condCap2EncFIFOFullMain);
-    QObject::connect(this->m_encTxThread,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
+    QObject::connect(this->m_encTxThread,SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
 
-    this->m_encTx2Thread=new ZVideoTxThreadHard2642(TCP_PORT_VIDEO,TCP_PORT_VIDEO2);
+    this->m_encTx2Thread=new ZHardEncTx2Thread(TCP_PORT_VIDEO2);
     this->m_encTx2Thread->ZBindInFIFO(&this->m_Cap2EncFIFOFreeAux,&this->m_Cap2EncFIFOUsedAux,&this->m_Cap2EncFIFOMutexAux,&this->m_condCap2EncFIFOEmptyAux,&this->m_condCap2EncFIFOFullAux);
-    QObject::connect(this->m_encTx2Thread,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
+    QObject::connect(this->m_encTx2Thread,SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
 
     return 0;
 }
@@ -314,7 +215,7 @@ qint32 ZVideoTask::ZStartTask()
     this->m_process->ZStartThread();
     return 0;
 }
-void ZVideoTask::ZSlotSubThreadsExited()
+void ZVideoTask::ZSlotSubThreadsFinished()
 {
     if(!this->m_timerExit->isActive())
     {
