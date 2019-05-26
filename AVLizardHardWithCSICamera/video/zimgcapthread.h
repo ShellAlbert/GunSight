@@ -71,5 +71,10 @@ private:
     QMutex *m_mutexOut2;
     QWaitCondition *m_condQueueEmptyOut2;
     QWaitCondition *m_condQueueFullOut2;
+private:
+    //calculate the fps.
+    qint64 m_nTotalTime;
+    qint64 m_nTotalFrames;
+    qint64 m_nLastTsMsec;//in millsecond.
 };
 #endif // ZIMGCAPTHREAD_H

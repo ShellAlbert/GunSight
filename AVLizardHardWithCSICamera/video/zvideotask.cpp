@@ -37,14 +37,14 @@ ZVideoTask::~ZVideoTask()
 
     //clean FIFOs.
     //main capture to h264 encoder queue(fifo).
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_SIZE;i++)
     {
         delete this->m_Cap2EncFIFOMain[i];
     }
     this->m_Cap2EncFIFOFreeMain.clear();
     this->m_Cap2EncFIFOUsedMain.clear();
     //aux capture to h264 encoder queue(fifo).
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_SIZE;i++)
     {
         delete this->m_Cap2EncFIFOAux[i];
     }
@@ -52,14 +52,14 @@ ZVideoTask::~ZVideoTask()
     this->m_Cap2EncFIFOUsedAux.clear();
 
     //main capture to ImgProcess queue(fifo).
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_SIZE;i++)
     {
         delete this->m_Cap2ProFIFOMain[i];
     }
     this->m_Cap2ProFIFOFreeMain.clear();
     this->m_Cap2ProFIFOUsedMain.clear();
     //aux capture to ImgProcess queue(fifo).
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_SIZE;i++)
     {
         delete this->m_Cap2ProFIFOAux[i];
     }
@@ -119,7 +119,7 @@ qint32 ZVideoTask::ZDoInit()
 
 
     //main capture to h264 encoder queue(fifo).
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_SIZE;i++)
     {
         this->m_Cap2EncFIFOMain[i]=new QByteArray;
         this->m_Cap2EncFIFOMain[i]->resize(MIPI_CSI2_YUV_SIZE);
@@ -127,7 +127,7 @@ qint32 ZVideoTask::ZDoInit()
     }
     this->m_Cap2EncFIFOUsedMain.clear();
     //aux capture to h264 encoder queue(fifo).
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_SIZE;i++)
     {
         this->m_Cap2EncFIFOAux[i]=new QByteArray;
         this->m_Cap2EncFIFOAux[i]->resize(MIPI_CSI2_YUV_SIZE);
@@ -136,18 +136,18 @@ qint32 ZVideoTask::ZDoInit()
     this->m_Cap2EncFIFOUsedAux.clear();
 
     //main capture to ImgProcess queue(fifo).
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_SIZE;i++)
     {
         this->m_Cap2ProFIFOMain[i]=new QByteArray;
-        this->m_Cap2ProFIFOMain[i]->resize(MIPI_CSI2_YUV_SIZE);
+        this->m_Cap2ProFIFOMain[i]->resize(MIPI_CSI2_RGB_SIZE);
         this->m_Cap2ProFIFOFreeMain.enqueue(this->m_Cap2ProFIFOMain[i]);
     }
     this->m_Cap2ProFIFOUsedMain.clear();
     //aux capture to ImgProcess queue(fifo).
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_SIZE;i++)
     {
         this->m_Cap2ProFIFOAux[i]=new QByteArray;
-        this->m_Cap2ProFIFOAux[i]->resize(MIPI_CSI2_YUV_SIZE);
+        this->m_Cap2ProFIFOAux[i]->resize(MIPI_CSI2_RGB_SIZE);
         this->m_Cap2ProFIFOFreeAux.enqueue(this->m_Cap2ProFIFOAux[i]);
     }
     this->m_Cap2ProFIFOUsedAux.clear();

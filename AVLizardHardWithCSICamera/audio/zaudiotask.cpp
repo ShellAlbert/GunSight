@@ -89,7 +89,7 @@ qint32 ZAudioTask::ZStartTask()
 
     //Audio Capture --noise queue-->  Noise Cut --play queue--> Local Play.
     //                                          -- tx queue --> Tcp Tx.
-    this->m_capThread=new ZAudioCaptureThread(gGblPara.m_audio.m_capCardName,false);
+    this->m_capThread=new ZAudioCaptureThread(/*gGblPara.m_audio.m_capCardName*/"plughw:CARD=USB20,DEV=0",false);
     this->m_capThread->ZBindFIFO(&this->m_Cap2NsFIFOFree,&this->m_Cap2NsFIFOUsed,&this->m_Cap2NsFIFOMutex,&this->m_condCap2NsFIFOEmpty,&this->m_condCap2NsFIFOFull);
     QObject::connect(this->m_capThread,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotHelpThreads2Exit()));
 
@@ -101,7 +101,7 @@ qint32 ZAudioTask::ZStartTask()
     QObject::connect(this->m_cutThread,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotHelpThreads2Exit()));
 
     //create playback thread.
-    this->m_playThread=new ZAudioPlayThread(gGblPara.m_audio.m_playCardName);
+    this->m_playThread=new ZAudioPlayThread(/*gGblPara.m_audio.m_playCardName*/"plughw:CARD=realtekrt5651co,DEV=0");
     this->m_playThread->ZBindFIFO(&this->m_Ns2PbFIFOFree,&this->m_Ns2PbFIFOUsed,&this->m_Ns2PbFIFOMutex,&this->m_condNs2PbFIFOEmpty,&this->m_condNs2PbFIFOFull);
     QObject::connect(this->m_playThread,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotHelpThreads2Exit()));
 

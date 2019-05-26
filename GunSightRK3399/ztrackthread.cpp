@@ -124,7 +124,7 @@ void ZTrackThread::run()
     }
 #endif
 
-#if 0
+#if 1
     // Create a tracker
     CSK_Tracker tracker;
     // Define initial bounding box

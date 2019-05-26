@@ -20,6 +20,7 @@
 #include <video/zvideotxthread_h2642.h>
 #include "zgblpara.h"
 
+#define FIFO_SIZE   30
 class ZVideoTask : public QObject
 {
     Q_OBJECT
@@ -45,7 +46,7 @@ private:
     ZHardEncTx2Thread *m_encTx2Thread;//aux h264 encode&tx.
 
     //main capture to h264 encoder queue(fifo).
-    QByteArray* m_Cap2EncFIFOMain[5];
+    QByteArray* m_Cap2EncFIFOMain[FIFO_SIZE];
     QQueue<QByteArray*> m_Cap2EncFIFOFreeMain;
     QQueue<QByteArray*> m_Cap2EncFIFOUsedMain;
     QMutex m_Cap2EncFIFOMutexMain;
@@ -53,7 +54,7 @@ private:
     QWaitCondition m_condCap2EncFIFOEmptyMain;
 
     //aux capture to h264 encoder queue(fifo).
-    QByteArray* m_Cap2EncFIFOAux[5];
+    QByteArray* m_Cap2EncFIFOAux[FIFO_SIZE];
     QQueue<QByteArray*> m_Cap2EncFIFOFreeAux;
     QQueue<QByteArray*> m_Cap2EncFIFOUsedAux;
     QMutex m_Cap2EncFIFOMutexAux;
@@ -61,14 +62,14 @@ private:
     QWaitCondition m_condCap2EncFIFOEmptyAux;
 
     //main capture to ImgProcess queue(fifo).
-    QByteArray* m_Cap2ProFIFOMain[5];
+    QByteArray* m_Cap2ProFIFOMain[FIFO_SIZE];
     QQueue<QByteArray*> m_Cap2ProFIFOFreeMain;
     QQueue<QByteArray*> m_Cap2ProFIFOUsedMain;
     QMutex m_Cap2ProFIFOMutexMain;
     QWaitCondition m_condCap2ProFIFOFullMain;
     QWaitCondition m_condCap2ProFIFOEmptyMain;
     //aux capture to ImgProcess queue(fifo).
-    QByteArray* m_Cap2ProFIFOAux[5];
+    QByteArray* m_Cap2ProFIFOAux[FIFO_SIZE];
     QQueue<QByteArray*> m_Cap2ProFIFOFreeAux;
     QQueue<QByteArray*> m_Cap2ProFIFOUsedAux;
     QMutex m_Cap2ProFIFOMutexAux;

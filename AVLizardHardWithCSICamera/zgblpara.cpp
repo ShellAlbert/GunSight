@@ -58,13 +58,6 @@ ZGblPara::ZGblPara()
 
     this->m_bGblRst2Exit=false;
 
-//    this->m_bMainCapThreadExitFlag=false;
-//    this->m_bAuxCapThreadExitFlag=false;
-//    this->m_bImgCmpThreadExitFlag=false;
-//    this->m_bVideoTxThreadExitFlag=false;
-    //Tcp2Uart thread exit flag.
-    this->m_bTcp2UartThreadExitFlag=false;
-
     this->m_bVideoTcpConnected=false;
     this->m_bVideoTcpConnected2=false;
     this->m_bTcp2UartConnected=false;
@@ -112,9 +105,6 @@ void ZGblPara::readCfgFile()
     //read calibrate center.
     QSettings iniFile("AVLizard.ini",QSettings::IniFormat);
     iniFile.beginGroup("CAM1");
-    gGblPara.m_widthCAM1=iniFile.value("width",0).toInt();
-    gGblPara.m_heightCAM1=iniFile.value("height",0).toInt();
-    gGblPara.m_fpsCAM1=iniFile.value("fps",0).toInt();
     gGblPara.m_calibrateX1=iniFile.value("x1",0).toInt();
     gGblPara.m_calibrateY1=iniFile.value("y1",0).toInt();
     gGblPara.m_video.m_Cam1ID=iniFile.value("id","cam1").toString();
@@ -122,9 +112,6 @@ void ZGblPara::readCfgFile()
     gGblPara.m_video.m_Cam1IDNow=gGblPara.m_video.m_Cam1ID;
     iniFile.endGroup();
     iniFile.beginGroup("CAM2");
-    gGblPara.m_widthCAM2=iniFile.value("width",0).toInt();
-    gGblPara.m_heightCAM2=iniFile.value("height",0).toInt();
-    gGblPara.m_fpsCAM2=iniFile.value("fps",0).toInt();
     gGblPara.m_calibrateX2=iniFile.value("x2",0).toInt();
     gGblPara.m_calibrateY2=iniFile.value("y2",0).toInt();
     gGblPara.m_video.m_Cam2ID=iniFile.value("id","cam2").toString();

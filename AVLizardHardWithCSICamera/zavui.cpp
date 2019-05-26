@@ -214,7 +214,7 @@ void ZAVUI::closeEvent(QCloseEvent *event)
 void ZAVUI::mousePressEvent(QMouseEvent *event)
 {
     this->m_chartAfter->setTheme(QChart::ChartThemeBlueCerulean);
-    this->m_chartAfter->setTitle("Denosie OFF");
+    this->m_chartAfter->setTitle("Denoise OFF");
     gGblPara.m_audio.m_nDeNoiseMethod=0;//DeNoise Off.
     for(qint32 i=0;i<7;i++)
     {
@@ -318,25 +318,25 @@ void ZAVUI::ZSlot1sTimeout()
         switch(gGblPara.m_audio.m_nRNNoiseView)
         {
         case 0:
-            this->m_chartAfter->setTitle("Denosie White Noise");
+            this->m_chartAfter->setTitle("Denoise White Noise");
             break;
         case 1:
-            this->m_chartAfter->setTitle("Denosie Pink Noise");
+            this->m_chartAfter->setTitle("Denoise Pink Noise");
             break;
         case 2:
-            this->m_chartAfter->setTitle("Denosie Babble Noise");
+            this->m_chartAfter->setTitle("Denoise Babble Noise");
             break;
         case 3:
-            this->m_chartAfter->setTitle("Denosie Vehicle Noise");
+            this->m_chartAfter->setTitle("Denoise Vehicle Noise");
             break;
         case 4:
-            this->m_chartAfter->setTitle("Denosie Machine Noise");
+            this->m_chartAfter->setTitle("Denoise Machine Noise");
             break;
         case 5:
-            this->m_chartAfter->setTitle("Denosie Current Noise");
+            this->m_chartAfter->setTitle("Denoise Current Noise");
             break;
         case 6:
-            this->m_chartAfter->setTitle("Denosie Custom Noise");
+            this->m_chartAfter->setTitle("Denoise Custom Noise");
             break;
         default:
             break;
@@ -348,7 +348,7 @@ void ZAVUI::ZSlot1sTimeout()
         }
     }else{
         this->m_chartAfter->setTheme(QChart::ChartThemeBlueCerulean);
-        this->m_chartAfter->setTitle("Denosie OFF");
+        this->m_chartAfter->setTitle("Denoise OFF");
         gGblPara.m_audio.m_nDeNoiseMethod=0;//DeNoise Off.
         for(qint32 i=0;i<7;i++)
         {
@@ -399,43 +399,43 @@ void ZAVUI::ZSlotNoiseViewApply()
     QToolButton *rbSender=qobject_cast<QToolButton*>(this->sender());
     if(rbSender==this->m_tbNoiseView[0])//Cut White Noise.
     {
-        this->m_chartAfter->setTitle("Denosie White Noise");
+        this->m_chartAfter->setTitle("Denoise White Noise");
 
         gGblPara.m_audio.m_nRNNoiseView=0;//Enable White Noise Cut.
         gGblPara.m_audio.m_nDeNoiseMethod=1;//Enable RNNoise Method.
     }else if(rbSender==this->m_tbNoiseView[1])//Cut Pink Noise.
     {
-        this->m_chartAfter->setTitle("Denosie Pink Noise");
+        this->m_chartAfter->setTitle("Denoise Pink Noise");
 
         gGblPara.m_audio.m_nRNNoiseView=1;//Enable Pink Noise Cut.
         gGblPara.m_audio.m_nDeNoiseMethod=1;//Enable RNNoise Method.
     }else if(rbSender==this->m_tbNoiseView[2])//Cut Babble Noise.
     {
-        this->m_chartAfter->setTitle("Denosie Babble Noise");
+        this->m_chartAfter->setTitle("Denoise Babble Noise");
 
         gGblPara.m_audio.m_nRNNoiseView=2;//Enable Babble Noise Cut.
         gGblPara.m_audio.m_nDeNoiseMethod=1;//Enable RNNoise Method.
     }else if(rbSender==this->m_tbNoiseView[3])//Cut Vehicle Noise Cut.
     {
-        this->m_chartAfter->setTitle("Denosie Vehicle Noise");
+        this->m_chartAfter->setTitle("Denoise Vehicle Noise");
 
         gGblPara.m_audio.m_nRNNoiseView=3;//Enable Vehicle Noise Cut.
         gGblPara.m_audio.m_nDeNoiseMethod=1;//Enable RNNoise Method.
     }else if(rbSender==this->m_tbNoiseView[4])//Cut Machine Noise.
     {
-        this->m_chartAfter->setTitle("Denosie Machine Noise");
+        this->m_chartAfter->setTitle("Denoise Machine Noise");
 
         gGblPara.m_audio.m_nRNNoiseView=4;//Enable Machine Noise Cut.
         gGblPara.m_audio.m_nDeNoiseMethod=1;//Enable RNNoise Method.
     }else if(rbSender==this->m_tbNoiseView[5])//Cut Current Noise.
     {
-        this->m_chartAfter->setTitle("Denosie Current Noise");
+        this->m_chartAfter->setTitle("Denoise Current Noise");
 
         gGblPara.m_audio.m_nRNNoiseView=5;//Enable Current Noise Cut.
         gGblPara.m_audio.m_nDeNoiseMethod=1;//Enable RNNoise Method.
     }else if(rbSender==this->m_tbNoiseView[6])//Cut Custom Noise.
     {
-        this->m_chartAfter->setTitle("Denosie Custom Noise");
+        this->m_chartAfter->setTitle("Denoise Custom Noise");
 
         gGblPara.m_audio.m_nRNNoiseView=6;//Enable Custom Noise Cut.
         gGblPara.m_audio.m_nDeNoiseMethod=1;//Enable RNNoise Method.
@@ -446,3 +446,27 @@ void ZAVUI::ZSlotNoiseViewApply()
         this->m_tbNoiseView[i]->setEnabled(false);
     }
 }
+void ZAVUI::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key()==Qt::Key_F1)
+    {
+        gGblPara.m_bJsonImgPro=!gGblPara.m_bJsonImgPro;
+        if(gGblPara.m_bJsonImgPro)
+        {
+            qDebug()<<"KeyPress to on ImgProcess";
+        }else{
+            qDebug()<<"KeyPress to off ImgProcess";
+        }
+    }
+    QWidget::keyPressEvent(event);
+}
+void ZAVUI::keyReleaseEvent(QKeyEvent *event)
+{
+
+    if(event->key()==Qt::Key_F1)
+    {
+        qDebug()<<"KeyRelase";
+    }
+    QWidget::keyReleaseEvent(event);
+}
+

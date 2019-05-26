@@ -157,12 +157,10 @@ void ZTcp2UartForwardThread::run()
     uart->close();
     delete uart;
     qDebug()<<"<MainLoop>:Tcp2UartThread ends.";
-    //此处设置本线程退出标志.
-    //同时设置全局请求退出标志，请求其他线程退出.
-    gGblPara.m_bTcp2UartThreadExitFlag=true;
+    //set global request to exit flag to notify other threads to exit.
     gGblPara.m_bGblRst2Exit=true;
-    emit this->ZSigThreadFinished();
     this->m_bCleanup=true;
+    emit this->ZSigThreadFinished();
     return;
 }
 bool ZTcp2UartForwardThread::ZIsExitCleanup()

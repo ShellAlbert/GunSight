@@ -4,7 +4,7 @@
 #include <QFile>
 extern "C"
 {
-    #include "libns.h"
+#include "libns.h"
 }
 #define FRAME_SIZE_SHIFT 2
 #define FRAME_SIZE (120<<FRAME_SIZE_SHIFT)
@@ -70,11 +70,21 @@ qint32 ZNoiseCutThread::ZStartThread()
 }
 qint32 ZNoiseCutThread::ZStopThread()
 {
+    this->quit();
+    this->wait(1000);
     return 0;
 }
 bool ZNoiseCutThread::ZIsExitCleanup()
 {
     return this->m_bCleanup;
+}
+void ZNoiseCutThread::ZDoCleanBeforeExit()
+{
+    qDebug()<<"<MainLoop>:NoiseSuppressThread ends.";
+    //set global request exit flag to notify other threads to exit.
+    gGblPara.m_bGblRst2Exit=true;
+    this->m_bCleanup=true;
+    emit this->ZSigThreadFinished();
 }
 void ZNoiseCutThread::run()
 {
@@ -82,8 +92,7 @@ void ZNoiseCutThread::run()
     if(ns_init()<0)
     {
         qDebug()<<"<Error>:failed to init libns.";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
 
@@ -102,8 +111,7 @@ void ZNoiseCutThread::run()
     if(this->m_st==NULL)
     {
         qDebug()<<"<Error>:NoiseCut,error at rnnoise_create().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
 
@@ -114,8 +122,7 @@ void ZNoiseCutThread::run()
     if(0!=WebRtcNs_Create(&this->m_pNS_inst))
     {
         qDebug()<<"<Error>:NoiseCut,error at WebRtcNs_Create().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
     //webRtc only supports 8KHz,16KHz,32KHz.
@@ -123,15 +130,13 @@ void ZNoiseCutThread::run()
     if(0!=WebRtcNs_Init(this->m_pNS_inst,/*32000*/16000))
     {
         qDebug()<<"<Error>:NoiseCut,error at WebRtcNs_Init().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
     if(0!=WebRtcNs_set_policy(this->m_pNS_inst,nWebRtcNsPolicy))
     {
         qDebug()<<"<Error>:NoiseCut,error at WebRtcNs_set_policy().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
     //auto gain control.
@@ -226,22 +231,19 @@ void ZNoiseCutThread::run()
             if(0!=WebRtcNs_Create(&this->m_pNS_inst))
             {
                 qDebug()<<"<Error>:NoiseCut,error at WebRtcNs_Create().";
-                //set global request to exit flag to cause other threads to exit.
-                gGblPara.m_bGblRst2Exit=true;
+                this->ZDoCleanBeforeExit();
                 break;
             }
             if(0!=WebRtcNs_Init(this->m_pNS_inst,/*32000*/16000))
             {
                 qDebug()<<"<Error>:NoiseCut,error at WebRtcNs_Init().";
-                //set global request to exit flag to cause other threads to exit.
-                gGblPara.m_bGblRst2Exit=true;
+                this->ZDoCleanBeforeExit();
                 break;
             }
             if(0!=WebRtcNs_set_policy(this->m_pNS_inst,nWebRtcNsPolicy))
             {
                 qDebug()<<"<Error>:NoiseCut,error at WebRtcNs_set_policy().";
-                //set global request to exit flag to cause other threads to exit.
-                gGblPara.m_bGblRst2Exit=true;
+                this->ZDoCleanBeforeExit();
                 break;
             }
             //auto gain control.
@@ -323,7 +325,7 @@ void ZNoiseCutThread::run()
         //qDebug()<<"noisecut,get one frame";
 
         //noise cut processing by different algorithm.
-        qDebug()<<"noisecut:size:"<<pcmIn->size();
+        //qDebug()<<"noisecut:size:"<<pcmIn->size();
         switch(gGblPara.m_audio.m_nDeNoiseMethod)
         {
         case 0:
@@ -428,12 +430,7 @@ void ZNoiseCutThread::run()
 
     //uninit libns.
     ns_uninit();
-
-    qDebug()<<"<MainLoop>:NoiseSuppressThread ends.";
-    //set global request to exit flag to help other thread to exit.
-    gGblPara.m_bGblRst2Exit=true;
-    emit this->ZSigThreadFinished();
-    this->m_bCleanup=true;
+    this->ZDoCleanBeforeExit();
     return;
 }
 

@@ -10,7 +10,6 @@
 #define AUDIO_ENC_OPUS  1
 ZAudioTxThread::ZAudioTxThread()
 {
-    this->m_bExitFlag=false;
     this->m_bCleanup=true;
 }
 void ZAudioTxThread::ZBindFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
@@ -24,13 +23,13 @@ void ZAudioTxThread::ZBindFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*
 }
 qint32 ZAudioTxThread::ZStartThread()
 {
-    this->m_bExitFlag=false;
     this->start();
     return 0;
 }
 qint32 ZAudioTxThread::ZStopThread()
 {
-    this->m_bExitFlag=true;
+    this->quit();
+    this->wait(1000);
     return 0;
 }
 bool ZAudioTxThread::ZIsExitCleanup()
@@ -103,8 +102,7 @@ void ZAudioTxThread::run()
     if(err!=OPUS_OK || encoder==NULL)
     {
         qDebug()<<"<Error>:error at create opus encode "<<opus_strerror(err);
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
 #endif
@@ -213,7 +211,7 @@ void ZAudioTxThread::run()
         qDebug()<<"<Info>:success to bind AudioTx thread to cpu core 3.";
     }
 
-    while(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+    while(!gGblPara.m_bGblRst2Exit)
     {
         QTcpServer *tcpServer=new QTcpServer;
         int on=1;
@@ -223,12 +221,11 @@ void ZAudioTxThread::run()
         {
             qDebug()<<"<Error>: audio tx tcp server error listen on port"<<TCP_PORT_AUDIO;
             delete tcpServer;
-            //set global request to exit flag to cause other threads to exit.
-            gGblPara.m_bGblRst2Exit=true;
+            this->ZDoCleanBeforeExit();
             break;
         }
         //wait until get a new connection.
-        while(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+        while(!gGblPara.m_bGblRst2Exit)
         {
             //qDebug()<<"wait for tcp connection";
             if(tcpServer->waitForNewConnection(1000*10))
@@ -237,7 +234,7 @@ void ZAudioTxThread::run()
             }
         }
 
-        if(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+        if(!gGblPara.m_bGblRst2Exit)
         {
             QTcpSocket *tcpSocket=tcpServer->nextPendingConnection();
             if(NULL==tcpSocket)
@@ -252,7 +249,7 @@ void ZAudioTxThread::run()
                 //qDebug()<<"audio connected.";
 
                 //向客户端发送音频数据包.
-                while(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+                while(!gGblPara.m_bGblRst2Exit)
                 {
                     //main loop exit flag.
                     bool bSocketBreaking=false;
@@ -452,11 +449,14 @@ ExceptHandler:
         delete tcpServer;
     }
     delete [] txBuffer;
+    this->ZDoCleanBeforeExit();
+    return;
+}
+void ZAudioTxThread::ZDoCleanBeforeExit()
+{
     qDebug()<<"<MainLoop>:AudioTxThread ends.";
-    //set global request to exit flag to help other thread to exit.
+    //set global request exit flag to notify other threads to exit.
     gGblPara.m_bGblRst2Exit=true;
     emit this->ZSigThreadFinished();
     this->m_bCleanup=true;
-    return;
 }
-

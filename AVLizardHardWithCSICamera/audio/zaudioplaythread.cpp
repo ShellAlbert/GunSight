@@ -13,7 +13,7 @@ ZAudioPlayThread::~ZAudioPlayThread()
 
 }
 void ZAudioPlayThread::ZBindFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
-               QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull)
+                                 QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull)
 {
     this->m_freeQueue=freeQueue;
     this->m_usedQueue=usedQueue;
@@ -50,11 +50,10 @@ void ZAudioPlayThread::run()
     /* PCM device will return immediately. If SND_PCM_ASYNC is    */
     /* specified, SIGIO will be emitted whenever a period has     */
     /* been completely processed by the soundcard.                */
-    if(snd_pcm_open(&this->m_pcmHandle,(char*)gGblPara.m_audio.m_playCardName.toStdString().c_str(),SND_PCM_STREAM_PLAYBACK,0)<0)
+    if(snd_pcm_open(&this->m_pcmHandle,(char*)this->m_playCardName.toStdString().c_str(),SND_PCM_STREAM_PLAYBACK,0)<0)
     {
-        qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_open():"<<gGblPara.m_audio.m_playCardName;
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_open():"<<this->m_playCardName;
+        this->ZDoCleanBeforeExit();
         return;
     }
 
@@ -71,8 +70,7 @@ void ZAudioPlayThread::run()
     if(snd_pcm_hw_params_any(this->m_pcmHandle,hwparams)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_any().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
 
@@ -112,8 +110,7 @@ void ZAudioPlayThread::run()
     if(snd_pcm_hw_params_set_access(this->m_pcmHandle,hwparams,SND_PCM_ACCESS_RW_INTERLEAVED)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_access().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
 
@@ -121,8 +118,7 @@ void ZAudioPlayThread::run()
     if(snd_pcm_hw_params_set_format(this->m_pcmHandle,hwparams,SND_PCM_FORMAT_S16_LE)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_format().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
 
@@ -132,8 +128,7 @@ void ZAudioPlayThread::run()
     if(snd_pcm_hw_params_set_rate_near(this->m_pcmHandle,hwparams,&nRealSampleRate,0u)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_rate_near().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
     if(nRealSampleRate!=SAMPLE_RATE)
@@ -146,8 +141,7 @@ void ZAudioPlayThread::run()
     if(snd_pcm_hw_params_set_channels(this->m_pcmHandle,hwparams,CHANNELS_NUM)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_channels().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
 
@@ -159,8 +153,7 @@ void ZAudioPlayThread::run()
     if(snd_pcm_hw_params_set_periods_near(this->m_pcmHandle,hwparams,&request_periods,&dir)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_periods_near().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
     if(request_periods!=periods)
@@ -179,8 +172,7 @@ void ZAudioPlayThread::run()
     if(snd_pcm_hw_params_set_buffer_size_near(this->m_pcmHandle,hwparams,&bufferSizeInFrames)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_buffer_size_near().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
     if(bufferSizeInFrames!=bufferSizeInFrames2)
@@ -198,8 +190,7 @@ void ZAudioPlayThread::run()
     if(snd_pcm_hw_params(this->m_pcmHandle,hwparams)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
 
@@ -274,13 +265,16 @@ void ZAudioPlayThread::run()
 
     /* Stop PCM device after pending frames have been played */
     //snd_pcm_drain(pcmHandle);
-
-    qDebug()<<"<MainLoop>:PlaybackThread ends.";
-    //set global request to exit flag to help other thread to exit.
-    gGblPara.m_bGblRst2Exit=true;
-    emit this->ZSigThreadFinished();
-    this->m_bCleanup=true;
+    this->ZDoCleanBeforeExit();
     return;
+}
+void ZAudioPlayThread::ZDoCleanBeforeExit()
+{
+    qDebug()<<"<MainLoop>:PlaybackThread ends.";
+    //set global request exit flag to notify other threads to exit.
+    gGblPara.m_bGblRst2Exit=true;
+    this->m_bCleanup=true;
+    emit this->ZSigThreadFinished();
 }
 quint64 ZAudioPlayThread::ZGetTimestamp()
 {

@@ -7,6 +7,7 @@ ZMainTask::ZMainTask()
     this->m_audio=NULL;
     this->m_video=NULL;
     this->m_ui=NULL;
+    this->m_keyDet=NULL;
 }
 ZMainTask::~ZMainTask()
 {
@@ -22,17 +23,18 @@ ZMainTask::~ZMainTask()
     this->m_ctlJson->quit();
     this->m_ctlJson->wait(1000);
     delete this->m_ctlJson;
-
+#endif
     //wait until audio task clean up.
     while(!this->m_audio->ZIsExitCleanup());
     delete this->m_audio;
-#endif
+
 
     //wait until video task clean up.
     while(!this->m_video->ZIsExitCleanup());
     delete this->m_video;
 
     delete this->m_ui;
+    delete this->m_keyDet;
 }
 qint32 ZMainTask::ZStartTask()
 {
@@ -49,16 +51,16 @@ qint32 ZMainTask::ZStartTask()
     this->m_ctlJson=new ZJsonThread(0);
     QObject::connect(this->m_ctlJson,SIGNAL(ZSigThreadExited()),this,SLOT(ZSlotSubThreadsExited()));
     this->m_ctlJson->ZStartThread();
-
+#endif
     //audio task.
     this->m_audio=new ZAudioTask;
-    QObject::connect(this->m_audio,SIGNAL(ZSigAudioTaskExited()),this,SLOT(ZSlotSubThreadsExited()));
+    QObject::connect(this->m_audio,SIGNAL(ZSigAudioTaskExited()),this,SLOT(ZSlotSubThreadsFinished()));
     if(this->m_audio->ZStartTask()<0)
     {
         qDebug()<<"<Error>:failed to start audio task.";
         return -1;
     }
-#endif
+
 
     //video task.
     this->m_video=new ZVideoTask;
@@ -82,10 +84,15 @@ qint32 ZMainTask::ZStartTask()
     QObject::connect(this->m_video->ZGetImgCapThread(1),SIGNAL(ZSigNewImgArrived(QImage)),this->m_ui->ZGetImgDisp(1),SLOT(ZSlotFlushImg(QImage)),Qt::AutoConnection);
 
     //use signal-slot event to notify UI to flush new image process set.
-    //QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigNewMatchedSetArrived(ZImgMatchedSet)),this->m_ui,SLOT(ZSlotFlushMatchedSet(ZImgMatchedSet)),Qt::AutoConnection);
+    QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigNewMatchedSetArrived(ZImgMatchedSet)),this->m_ui,SLOT(ZSlotFlushMatchedSet(ZImgMatchedSet)),Qt::AutoConnection);
     //QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigSSIMImgSimilarity(qint32)),this->m_ui,SLOT(ZSlotSSIMImgSimilarity(qint32)),Qt::AutoConnection);
 
     this->m_ui->showMaximized();
+
+    //start key detect thread.
+    gGblPara.m_mainWidget=this->m_ui;
+    this->m_keyDet=new ZKeyDetThread;
+    this->m_keyDet->start();
 
     return 0;
 }
@@ -110,12 +117,13 @@ void ZMainTask::ZSlotChkAllExitFlags()
     //        qDebug()<<"<Exit>:wait for ctlJson thread.";
     //        return;
     //    }
+#endif
     if(!this->m_audio->ZIsExitCleanup())
     {
         qDebug()<<"<Exit>:waiting for audio task...";
         return;
     }
-#endif
+
     if(!this->m_video->ZIsExitCleanup())
     {
         qDebug()<<"<Exit>:waiting for video task...";

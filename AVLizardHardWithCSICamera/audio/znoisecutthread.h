@@ -37,6 +37,8 @@ signals:
 protected:
     void run();
 private:
+    void ZDoCleanBeforeExit();
+private:
     bool m_bCleanup;
 
 private:

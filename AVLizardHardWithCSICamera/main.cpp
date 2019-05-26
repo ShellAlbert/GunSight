@@ -120,7 +120,7 @@ int main(int argc,char **argv)
 
 #author:ShellAlbert.
 #date:July 19,2018.
-#this script is used to check the wifi hotspot by periodly.
+#this script is used to check the wifi hotspot periodly.
 #if the hotspot is not exist then restart it.
 #
 

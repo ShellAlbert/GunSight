@@ -101,7 +101,7 @@
 //csi1 csi2
 //only support 1920*1080 yuv420p format.
 #define MIPI_CSI2_YUV_SIZE  (1920*1080*2)
-
+#define MIPI_CSI2_RGB_SIZE  (1920*1080*3)
 
 //audio related parameters.
 class ZAudioParam
@@ -165,6 +165,10 @@ public:
     bool m_bDoNotCmpCamId;
     //主视场摄像头切换标志位.
     bool m_bMainViewSwFlag;
+
+    //fps.
+    qint32 m_nCam1Fps;
+    qint32 m_nCam2Fps;
 public:
     //图像匹配后的结果值集合.
     QRect m_rectTemplate;
@@ -238,7 +242,6 @@ public:
 public:
     //Android(tcp) <--> STM32(uart) 串口透传线程相关.
     //Tcp2Uart thread related flags.
-    bool m_bTcp2UartThreadExitFlag;
     bool m_bTcp2UartConnected;
     qint64 m_nTcp2UartBytes;
     qint64 m_nUart2TcpBytes;
@@ -267,6 +270,9 @@ public:
 public:
     qint64 m_nTx6803Cnt;
     qint64 m_nTx6805Cnt;
+
+public:
+    QWidget *m_mainWidget;
 };
 extern ZGblPara gGblPara;
 extern cv::Mat QImage2cvMat(const QImage &img);

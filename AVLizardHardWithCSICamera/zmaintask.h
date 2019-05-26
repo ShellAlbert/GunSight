@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <audio/zaudiotask.h>
 #include <video/zvideotask.h>
+#include <video/zkeydetthread.h>
 #include <forward/ztcp2uartforwardthread.h>
 #include <ctl/zctlthread.h>
 #include <zavui.h>
@@ -27,6 +28,7 @@ private:
     ZAudioTask *m_audio;
     ZVideoTask *m_video;
     ZAVUI *m_ui;
+    ZKeyDetThread *m_keyDet;
 private:
     QTimer *m_timerExit;
 private:

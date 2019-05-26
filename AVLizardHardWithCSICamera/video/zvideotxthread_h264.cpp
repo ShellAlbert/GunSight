@@ -533,7 +533,7 @@ void ZHardEncTxThread::run()
                 p->pkt_eos=mpp_packet_get_eos(packet);
                 p->stream_size+=nH264DataLen;
                 p->frame_count++;
-                qDebug("main h264 encoded frame %d size %d ==============================\n",p->frame_count,nH264DataLen);
+                //qDebug("main h264 encoded frame %d size %d ==============================\n",p->frame_count,nH264DataLen);
 
 
 #if 0

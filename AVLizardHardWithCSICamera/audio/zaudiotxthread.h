@@ -23,7 +23,8 @@ signals:
 protected:
     void run();
 private:
-    bool m_bExitFlag;
+    void ZDoCleanBeforeExit();
+private:
     bool m_bCleanup;
 private:
     QQueue<QByteArray*> *m_freeQueue;

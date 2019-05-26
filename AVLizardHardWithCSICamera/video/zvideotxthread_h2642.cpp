@@ -531,7 +531,7 @@ void ZHardEncTx2Thread::run()
                 p->pkt_eos=mpp_packet_get_eos(packet);
                 p->stream_size+=nH264DataLen2;
                 p->frame_count++;
-                qDebug("aux h264 encoded frame %d size %d                     ***\n",p->frame_count,nH264DataLen2);
+                //qDebug("aux h264 encoded frame %d size %d                     ***\n",p->frame_count,nH264DataLen2);
 
 #if 0
                 //write encode h264 frames to local file for debugging.

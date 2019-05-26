@@ -23,6 +23,8 @@ public:
     bool ZIsExitCleanup();
 protected:
     void run();
+private:
+    void ZDoCleanBeforeExit();
 signals:
     void ZSigThreadFinished();
 private:

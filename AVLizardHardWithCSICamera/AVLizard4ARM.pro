@@ -33,6 +33,8 @@ SOURCES += \
     video/zvideotxthread.cpp \
     video/zvideotask.cpp \
     video/yuv2rgb.cpp \
+    video/zkeydetthread.cpp \
+    video/CSK_Tracker.cpp \
     forward/ztcp2uartforwardthread.cpp \
     audio/zaudiocapturethread.cpp \
     audio/zaudioplaythread.cpp \
@@ -95,6 +97,8 @@ HEADERS += \
     video/zvideotxthread.h \
     video/zvideotask.h \
     video/yuv2rgb.h \
+    video/CSK_Tracker.h \
+    video/zkeydetthread.h \
     forward/ztcp2uartforwardthread.h \
     audio/zaudiocapturethread.h \
     audio/zaudioplaythread.h \

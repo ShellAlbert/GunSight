@@ -33,6 +33,8 @@ public:
     bool ZIsExitCleanup();
 protected:
     void run();
+private:
+    void ZDoCleanBeforeExit();
 signals:
     void ZSigNewMatchedSetArrived(const ZImgMatchedSet &imgMatched);
     void ZSigSSIMImgSimilarity(qint32 nVal);
