@@ -42,6 +42,8 @@ private:
 protected:
     void closeEvent(QCloseEvent *event);
     void mousePressEvent(QMouseEvent *event);
+    void keyPressEvent(QKeyEvent *event);
+    void keyReleaseEvent(QKeyEvent *event);
 private:
     //像素坐标差值及算法消耗时间.
     QLabel *m_llDiffXY;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.5.0, 2019-05-16T14:44:03. -->
+<!-- Written by QtCreator 4.5.0, 2019-05-27T17:33:07. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -267,8 +267,8 @@
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinux.DirectUploadStep</value>
       <valuelist type="QVariantList" key="ProjectExplorer.RunConfiguration.LastDeployedFiles">
-       <value type="QString">/home/zhangshaoyan/MyWork/github/GunSight/GunSight/build-AVLizard4ARM-arm_linux_gnueabihf-Debug/AVLizard.bin.a</value>
        <value type="QString">/home/zhangshaoyan/MyWork/github/GunSight/GunSight/build-AVLizard4ARM-arm_linux_gnueabihf-Debug/AVLizard.bin</value>
+       <value type="QString">/home/zhangshaoyan/MyWork/github/GunSight/GunSight/build-AVLizard4ARM-arm_linux_gnueabihf-Debug/AVLizard.bin.a</value>
       </valuelist>
       <valuelist type="QVariantList" key="ProjectExplorer.RunConfiguration.LastDeployedHosts">
        <value type="QString">10.42.0.1</value>
@@ -283,8 +283,8 @@
        <value type="QString">/opt/EmbedSky/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf</value>
       </valuelist>
       <valuelist type="QVariantList" key="ProjectExplorer.RunConfiguration.LastDeployedTimes">
-       <value type="QDateTime">2019-05-10T13:43:09</value>
        <value type="QDateTime">2019-04-22T10:45:31</value>
+       <value type="QDateTime">2019-05-10T13:43:09</value>
       </valuelist>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.IgnoreMissingFiles">false</value>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.Incremental">true</value>

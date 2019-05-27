@@ -19,8 +19,6 @@
 #include <video/zvideotxthread_h264.h>
 #include <video/zvideotxthread_h2642.h>
 #include "zgblpara.h"
-#include <zringbuffer.h>
-
 class ZVideoTask : public QObject
 {
     Q_OBJECT
@@ -37,25 +35,45 @@ public:
 signals:
     void ZSigVideoTaskExited();
 private slots:
-    void ZSlotSubThreadsExited();
+    void ZSlotSubThreadsFinished();
     void ZSlotChkAllExitFlags();
 private:
     ZImgCapThread *m_capThread[3];//主/辅摄像头Main/Aux图像采集线程+MainEx.
     ZImgProcessThread *m_process;//图像处理线程.
-    ZVideoTxThreadHard264 *m_videoTxThreadSoft;//h264 soft encode图像编码&TCP传输线程.
-    ZVideoTxThreadHard2642 *m_videoTxThreadHard;//h264 hard encode.
+    ZHardEncTxThread *m_encTxThread;//main h264 encoder&tx thread.
+    ZHardEncTx2Thread *m_encTx2Thread;//aux h264 encoder&tx thread.
 
-    //Main/Aux CaptureThread put QImage to this queue.
-    //ImgProcessThread get QImage from this queue.
-    ZRingBuffer *m_rbProcess[2];
+private:
+    //main capture to h264 encoder queue(fifo).
+    QByteArray* m_Cap2EncFIFOMain[FIFO_DEPTH];
+    QQueue<QByteArray*> m_Cap2EncFIFOFreeMain;
+    QQueue<QByteArray*> m_Cap2EncFIFOUsedMain;
+    QMutex m_Cap2EncFIFOMutexMain;
+    QWaitCondition m_condCap2EncFIFOFullMain;
+    QWaitCondition m_condCap2EncFIFOEmptyMain;
 
-    //Main CaptureThread put yuv to this queue.
-    //H264 EncodeThread get yuv from this queue.
-    ZRingBuffer *m_rbYUV[2];
+    //aux capture to h264 encoder queue(fifo).
+    QByteArray* m_Cap2EncFIFOAux[FIFO_DEPTH];
+    QQueue<QByteArray*> m_Cap2EncFIFOFreeAux;
+    QQueue<QByteArray*> m_Cap2EncFIFOUsedAux;
+    QMutex m_Cap2EncFIFOMutexAux;
+    QWaitCondition m_condCap2EncFIFOFullAux;
+    QWaitCondition m_condCap2EncFIFOEmptyAux;
 
-    //H264EncThread put h264 frame to this queue.
-    //TcpTxThread get data from this queue.
-    ZRingBuffer *m_rbH264[2];
+    //main capture to ImgProcess queue(fifo).
+    QByteArray* m_Cap2ProFIFOMain[FIFO_DEPTH];
+    QQueue<QByteArray*> m_Cap2ProFIFOFreeMain;
+    QQueue<QByteArray*> m_Cap2ProFIFOUsedMain;
+    QMutex m_Cap2ProFIFOMutexMain;
+    QWaitCondition m_condCap2ProFIFOFullMain;
+    QWaitCondition m_condCap2ProFIFOEmptyMain;
+    //aux capture to ImgProcess queue(fifo).
+    QByteArray* m_Cap2ProFIFOAux[FIFO_DEPTH];
+    QQueue<QByteArray*> m_Cap2ProFIFOFreeAux;
+    QQueue<QByteArray*> m_Cap2ProFIFOUsedAux;
+    QMutex m_Cap2ProFIFOMutexAux;
+    QWaitCondition m_condCap2ProFIFOFullAux;
+    QWaitCondition m_condCap2ProFIFOEmptyAux;
 private:
     QTimer *m_timerExit;
 };

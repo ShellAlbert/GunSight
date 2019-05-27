@@ -6,28 +6,35 @@
 #include <QSemaphore>
 #include <QTcpServer>
 #include <QTcpSocket>
-#include <zringbuffer.h>
-class ZVideoTxThreadHard2642 : public QThread
+#include <QWaitCondition>
+class ZHardEncTx2Thread : public QThread
 {
     Q_OBJECT
 public:
-    ZVideoTxThreadHard2642(qint32 nTcpPort,qint32 nTcpPort2);
-    qint32 ZBindQueue(ZRingBuffer *rbYUVMain,ZRingBuffer *rbYUVAux);
+    ZHardEncTx2Thread(qint32 nTcpPort);
+    //aux capture -> encTxThread.
+    void ZBindInFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                   QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull);
     qint32 ZStartThread();
     qint32 ZStopThread();
     bool ZIsExitCleanup();
+private:
+    void ZDoCleanBeforeExit();
 signals:
-    void ZSigThreadFinished();
+    void ZSigFinished();
 
 protected:
     void run();
 private:
-    ZRingBuffer *m_rbYUVMain;
-    ZRingBuffer *m_rbYUVAux;
-    bool m_bExitFlag;
     bool m_bCleanup;
     qint32 m_nTcpPort;
-    qint32 m_nTcpPort2;
+private:
+    //in fifo.(aux capture -> encTxThread).
+    QQueue<QByteArray*> *m_freeQueueIn;
+    QQueue<QByteArray*> *m_usedQueueIn;
+    QMutex *m_mutexIn;
+    QWaitCondition *m_condQueueEmptyIn;
+    QWaitCondition *m_condQueueFullIn;
 };
 
 #endif // ZVIDEOTXTHREADH2642_H

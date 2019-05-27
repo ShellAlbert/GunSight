@@ -33,6 +33,9 @@ SOURCES += \
     video/zh264encthread.cpp \
     video/zvideotxthread.cpp \
     video/zvideotask.cpp \
+    video/CSK_Tracker.cpp \
+    video/yuv2rgb.cpp \
+    video/zkeydetthread.cpp \
     forward/ztcp2uartforwardthread.cpp \
     audio/zaudiocapturethread.cpp \
     audio/zaudioplaythread.cpp \
@@ -95,6 +98,9 @@ HEADERS += \
     video/zh264encthread.h \
     video/zvideotxthread.h \
     video/zvideotask.h \
+    video/CSK_Tracker.h \
+    video/yuv2rgb.h \
+    video/zkeydetthread.h \
     forward/ztcp2uartforwardthread.h \
     audio/zaudiocapturethread.h \
     audio/zaudioplaythread.h \
@@ -153,7 +159,8 @@ LIBS += -L/home/zhangshaoyan/armbuild/libopus4arm/lib -lopus
 
 #RNNoise.
 INCLUDEPATH += /home/zhangshaoyan/armbuild/librnnoise4arm/include
-LIBS += -L/home/zhangshaoyan/armbuild/librnnoise4arm/lib -lrnnoise
+#LIBS += -L/home/zhangshaoyan/armbuild/librnnoise4arm/lib -lrnnoise
+
 
 
 #GStreamer.
@@ -179,6 +186,9 @@ INCLUDEPATH += /home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/a
 LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/audio/LogMMSE -llogmmse
 
 #libns.so
-LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/libns -lns
+#LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/libns -lns
 target.path=/home/pi/AVLizardDeploy
 INSTALLS += target
+
+#sunpeng new libs.
+LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/sunpengnewlibs -lrnnoise -lns -lwebrtc

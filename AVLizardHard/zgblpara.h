@@ -96,6 +96,10 @@
 #define BUFSIZE_8MB     (8*1024*1024)
 #define BUFSIZE_10MB    (10*1024*1024)
 
+
+#define FIFO_DEPTH   30
+#define FIFO_SIZE   (gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3) //RGB888.
+
 //audio related parameters.
 class ZAudioParam
 {
@@ -158,6 +162,10 @@ public:
     bool m_bDoNotCmpCamId;
     //主视场摄像头切换标志位.
     bool m_bMainViewSwFlag;
+
+
+    qint32 m_nCam1Fps;
+    qint32 m_nCam2Fps;
 public:
     //图像匹配后的结果值集合.
     QRect m_rectTemplate;
@@ -267,6 +275,7 @@ public:
     //video related parameters.
     ZVideoParam m_video;
 
+    QWidget *m_mainUI;
 public:
     //accumulated run seconds.
     qint64 m_nAccumulatedSec;

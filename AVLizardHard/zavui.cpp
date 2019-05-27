@@ -222,6 +222,28 @@ void ZAVUI::mousePressEvent(QMouseEvent *event)
     }
     QFrame::mousePressEvent(event);
 }
+void ZAVUI::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key()==Qt::Key_F1)
+    {
+        gGblPara.m_bJsonImgPro=!gGblPara.m_bJsonImgPro;
+        if(gGblPara.m_bJsonImgPro)
+        {
+            qDebug()<<"keyPress to on ImgPro";
+        }else{
+            qDebug()<<"keyPress to off ImgPro";
+        }
+    }
+    QWidget::keyPressEvent(event);
+}
+void ZAVUI::keyReleaseEvent(QKeyEvent *event)
+{
+    if(event->key()==Qt::Key_F1)
+    {
+        qDebug()<<"keyRelease";
+    }
+    QWidget::keyReleaseEvent(event);
+}
 qint32 ZAVUI::ZBindWaveFormQueueBefore(ZRingBuffer *rbWaveBefore)
 {
     this->m_rbWaveBefore=rbWaveBefore;

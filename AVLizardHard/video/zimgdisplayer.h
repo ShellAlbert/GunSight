@@ -22,7 +22,6 @@ public:
     void ZSetPaintParameters(QColor colorRect);
 protected:
     QSize sizeHint() const;
-    void resizeEvent(QResizeEvent *event);
 signals:
 
 public slots:
@@ -34,38 +33,22 @@ private:
     QImage m_img;
     qint32 m_nCenterX,m_nCenterY;
     QRect m_rectSensitive;
-    QRect m_rectSensitiveScaled;
-    qint32 m_nSensitiveCenterX,m_nSensitiveCenterY;
-
     QColor m_colorRect;
     //camera parameters.
     QString m_camID;
     qint32 m_nCamWidth,m_nCamHeight,m_nCAMFps;
 
-    //image counter.
-    qint64 m_nFrmCounter;
     //AM i the main camera?
     bool m_bMainCamera;
-
 private:
     //QRect m_rectSensitive;
-
     qint32 m_nRatio;
     bool m_bStretchFlag;
 private:
-    //motor move buttons.
-    QToolButton *m_tbMotorCtl[4];
-private:
-    float m_fRatioWidth;
-    float m_fRatioHeight;
-    QVector<QLineF> m_vecCrossLines;
-
-private:
     //calculate the fps.
-    qint64 m_nLastTs;
-private:
-    qint32 m_nShadowX;
-    qint32 m_nShadowY;
+    qint64 m_nTotalTime;
+    qint64 m_nTotalFrames;
+    qint64 m_nLastTsMsec;//in millsecond.
 };
 
 #endif // ZIMGDISPLAYER_H

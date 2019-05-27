@@ -2,6 +2,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QFile>
+#include <video/yuv2rgb.h>
 short redAdjust[] = {
     -161,-160,-159,-158,-157,-156,-155,-153,
     -152,-151,-150,-149,-148,-147,-145,-144,
@@ -288,7 +289,6 @@ int convert_yuv_to_rgb_buffer(unsigned char *yuv, unsigned char *rgb, unsigned i
     }
     return 0;
 }
-
 ZImgCapThread::ZImgCapThread(QString devUsbId,qint32 nPreWidth,qint32 nPreHeight,qint32 nPreFps,CAM_ID_TYPE_E camIdType)
 {
     this->m_devUsbId=devUsbId;
@@ -297,49 +297,41 @@ ZImgCapThread::ZImgCapThread(QString devUsbId,qint32 nPreWidth,qint32 nPreHeight
     this->m_nPreFps=nPreFps;
     this->m_nCamIdType=camIdType;
 
-    //capture image to process queue.
-    this->m_rbProcess=NULL;
-    //capture yuv to yuv queue.
-    this->m_rbYUV=NULL;
-
-    this->m_bExitFlag=false;
     this->m_bCleanup=true;
 }
 ZImgCapThread::~ZImgCapThread()
 {
 
 }
-qint32 ZImgCapThread::ZBindProcessQueue(ZRingBuffer *rbProcess)
+//capture -> processing.
+void ZImgCapThread::ZBindOut1FIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                                  QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull)
 {
-    this->m_rbProcess=rbProcess;
-    return 0;
+    this->m_freeQueueOut1=freeQueue;
+    this->m_usedQueueOut1=usedQueue;
+    this->m_mutexOut1=mutex;
+    this->m_condQueueEmptyOut1=condQueueEmpty;
+    this->m_condQueueFullOut1=condQueueFull;
 }
-qint32 ZImgCapThread::ZBindYUVQueue(ZRingBuffer *rbYUV)
+
+//capture -> h264 encoder.
+void ZImgCapThread::ZBindOut2FIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                                  QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull)
 {
-    this->m_rbYUV=rbYUV;
-    return 0;
+    this->m_freeQueueOut2=freeQueue;
+    this->m_usedQueueOut2=usedQueue;
+    this->m_mutexOut2=mutex;
+    this->m_condQueueEmptyOut2=condQueueEmpty;
+    this->m_condQueueFullOut2=condQueueFull;
 }
 qint32 ZImgCapThread::ZStartThread()
 {
-    if(this->m_rbProcess==NULL)
-    {
-        qDebug()<<"<Error>:"<<_CURRENT_DATETIME_<<"ImgCapThread,no bind process queue,cannot start thread.";
-        return -1;
-    }
-    //check yuv ringbuffer.
-    if(this->m_rbYUV==NULL)
-    {
-        qDebug()<<"<Error>:"<<_CURRENT_DATETIME_<<"ImgCapThread,no bind yuv queue,cannot start thread.";
-        return -1;
-    }
-    this->m_bExitFlag=false;
     this->start();
     return 0;
 }
 qint32 ZImgCapThread::ZStopThread()
 {
     this->quit();
-    this->m_bExitFlag=true;
     this->wait(1000);
     return 0;
 }
@@ -350,6 +342,27 @@ qint32 ZImgCapThread::ZGetCAMImgFps()
 QString ZImgCapThread::ZGetDevName()
 {
     return this->m_devUsbId;
+}
+void ZImgCapThread::ZDoCleanBeforeExit()
+{
+    switch(this->m_nCamIdType)
+    {
+    case CAM1_ID_Main:
+        qDebug()<<"MainCamera capture thread ends.";
+        break;
+    case CAM2_ID_Aux:
+        qDebug()<<"AuxCamera capture thread ends.";
+        break;
+    case CAM3_ID_MainEx:
+        qDebug()<<"MainExCamera capture thread ends.";
+        break;
+    default:
+        break;
+    }
+    //set global request to exit flag to notify other threads to exit.
+    gGblPara.m_bGblRst2Exit=true;
+    this->m_bCleanup=true;
+    emit this->ZSigFinished();
 }
 void ZImgCapThread::run()
 {
@@ -383,14 +396,12 @@ void ZImgCapThread::run()
     if(NULL==pRGBBuffer)
     {
         qDebug()<<"<Error>:"<<_CURRENT_DATETIME_<<"ImgCapThread,failed to allocate RGB buffer.";
-        gGblPara.m_bGblRst2Exit=true;
-        emit this->ZSigThreadFinished();
-        this->m_bCleanup=true;
+        this->ZDoCleanBeforeExit();
         return;
     }
 
     QString devName;
-    while(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+    while(!gGblPara.m_bGblRst2Exit)
     {
         devName=gGblPara.m_video.m_mapID2Fd.value(this->m_devUsbId);
         if(devName.isEmpty())
@@ -437,12 +448,12 @@ void ZImgCapThread::run()
         //        return;
         //    }
 
-        while(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+        while(!gGblPara.m_bGblRst2Exit)
         {
             qint32 nLen;
             unsigned char *pYUVData;
-
-            //只有当有客户端连接时才开始采集图像.
+#if 1
+            //start capturing only once connected.
             if(this->m_nCamIdType==CAM1_ID_Main || this->m_nCamIdType==CAM3_ID_MainEx)
             {
                 if(!(gGblPara.m_bVideoTcpConnected))
@@ -457,7 +468,7 @@ void ZImgCapThread::run()
                     continue;
                 }
             }
-
+#endif
 
             //get a yuv frame.
             //返回值:<0错误，0:超时，需要再次调用，>0：成功.
@@ -474,8 +485,9 @@ void ZImgCapThread::run()
                 continue;
             }else if(ret>0)
             {
-                //如果当前视场为小视场，则只采不扔进YUV队列.
-                if(this->m_nCamIdType==CAM1_ID_Main || this->m_nCamIdType==CAM3_ID_MainEx)
+                //ImgPro only process Main(CAM1) & Aux(CAM2) images.
+                //bypass MainEx(CAM3) images,only capture but donot push into FIFO.
+                if(this->m_nCamIdType==CAM1_ID_Main||this->m_nCamIdType==CAM3_ID_MainEx)
                 {
                     if(this->m_devUsbId!=gGblPara.m_video.m_Cam1IDNow)
                     {
@@ -484,51 +496,88 @@ void ZImgCapThread::run()
                         continue;
                     }
                 }
-                //qDebug()<<"yuyv len:"<<nLen;
-                if(this->m_rbYUV->ZPutElement((qint8*)pYUVData,nLen)<0)
-                {
-                    qDebug()<<"<Warning>:img cap,timeout to put yuv to yuv queue.";
-                }
 
-                if(gGblPara.m_bJsonImgPro || gGblPara.m_bJsonFlushUIImg)
+#if 1
+                //1.put yuv data to h264 encode fifo to enc&tx.
+                this->m_mutexOut2->lock();
+                while(this->m_freeQueueOut2->isEmpty())//timeout 5s to check exit flag.
                 {
-                    //这段代码将YUV420P转换为RGB888太耗CPU了。
-                    //使用top查看能达到80%以上的CPU占用率。
-                    //此处需要优化。
-                    //convert yuv to RGB.
-                    //YUYVToRGB_table(pYUVData,pRGBBuffer,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1);
-                    //YU YV YU YV .....
-                    convert_yuv_to_rgb_buffer(pYUVData,pRGBBuffer,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1);
-
-                    //convert_yuv_to_rgb_buffer(pYUVData,pRGBBuffer,camDev->ZGetImgWidth(),camDev->ZGetImgHeight());
-                    //build a RGB888 QImage object.
-                    //QImage newQImg((uchar*)pRGBBuffer,camDev->ZGetImgWidth(),camDev->ZGetImgHeight(),QImage::Format_RGB888);
-                }
-                //free a buffer for device.
-                camDev->ZUnGetFrame();
-
-                //只有当开启ImgPro标志位被置位时（通过Android Json协议).
-                //采集线程才将图像扔入process队列，从而唤醒图像处理线程工作.
-                if(gGblPara.m_bJsonImgPro)
-                {
-                    if(this->m_rbProcess->ZTryPutElement((qint8*)pRGBBuffer,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3)<0)
+                    if(!this->m_condQueueEmptyOut2->wait(this->m_mutexOut2,5000))
                     {
-                        if(this->m_nCamIdType==CAM1_ID_Main)
+                        this->m_mutexOut2->unlock();
+                        if(gGblPara.m_bGblRst2Exit)
                         {
-                            qDebug()<<"<Warning>:cam1_id_main,img cap,failed to put RGB to img matched queue:"<<this->m_rbProcess->ZGetValidNum();
-                        }else if(this->m_nCamIdType==CAM2_ID_Aux)
-                        {
-                            qDebug()<<"<Warning>:cam2_id_aux,img cap,failed to put RGB to img matched queue:"<<this->m_rbProcess->ZGetValidNum();
+                            break;
                         }
                     }
                 }
-
-                //只有开启本地UI刷新才将采集到的图像扔入disp队列.
-                if(gGblPara.m_bJsonFlushUIImg)
+                if(gGblPara.m_bGblRst2Exit)
                 {
-                    QImage newImg((uchar*)pRGBBuffer,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1,QImage::Format_RGB888);
-                    emit this->ZSigNewImgArrived(newImg);
+                    break;
                 }
+
+                QByteArray *pcmBuffer2=this->m_freeQueueOut2->dequeue();
+                memcpy(pcmBuffer2->data(),pYUVData,nLen);
+                this->m_usedQueueOut2->enqueue(pcmBuffer2);
+                this->m_condQueueFullOut2->wakeAll();
+                this->m_mutexOut2->unlock();
+#endif
+
+                //2.convert YUV to RGB and put into imgpro fifo.
+                if(gGblPara.m_bJsonImgPro || gGblPara.m_bJsonFlushUIImg)
+                {
+                    //software YUV2RGB cost 46ms.
+                    //            struct timeval tStart,tEnd;
+                    //            unsigned long nCostMs;
+                    //            gettimeofday(&tStart,NULL);
+
+                    //nv21_to_rgb(pRGBBuffer,pYUVData,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1);//only correct for MIPI CSIx2 cameras.
+
+                    convert_yuv_to_rgb_buffer(pYUVData,pRGBBuffer,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1);//only correct for USB EZCAP.
+
+                    //            gettimeofday(&tEnd,NULL);
+                    //            nCostMs=1000000*(tEnd.tv_sec-tStart.tv_sec)+(tEnd.tv_usec-tStart.tv_usec);
+                    //            nCostMs/=1000;
+                    //            qDebug()<<this->m_devFile<<"YU2RGB(ms):"<<nCostMs;
+                    //if flush local UI or not.
+                    if(gGblPara.m_bJsonFlushUIImg)
+                    {
+                        //bytesPerLine=1080*3.
+                        QImage imgNew((uchar*)pRGBBuffer,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1,gGblPara.m_widthCAM1*3,QImage::Format_RGB888);
+                        emit this->ZSigNewImgArrived(imgNew);
+                    }
+                    //if ImgPro enabled.
+                    if(gGblPara.m_bJsonImgPro)
+                    {
+                        //1.put yuv data to img process fifo.
+                        this->m_mutexOut1->lock();
+                        while(this->m_freeQueueOut1->isEmpty())//timeout 5s to check exit flag.
+                        {
+                            if(!this->m_condQueueEmptyOut1->wait(this->m_mutexOut1,5000))
+                            {
+                                this->m_mutexOut1->unlock();
+                                if(gGblPara.m_bGblRst2Exit)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        if(gGblPara.m_bGblRst2Exit)
+                        {
+                            break;
+                        }
+
+                        QByteArray *pcmBuffer1=this->m_freeQueueOut1->dequeue();
+                        memcpy(pcmBuffer1->data(),pRGBBuffer,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3*sizeof(char));
+                        this->m_usedQueueOut1->enqueue(pcmBuffer1);
+                        this->m_condQueueFullOut1->wakeAll();
+                        this->m_mutexOut1->unlock();
+                    }
+
+                }
+
+                //free a buffer for device.
+                camDev->ZUnGetFrame();
             }
             this->usleep(VIDEO_THREAD_SCHEDULE_US);
         }
@@ -540,26 +589,7 @@ void ZImgCapThread::run()
     //free memory.
     free(pRGBBuffer);
     pRGBBuffer=NULL;
-    //此处设置本线程退出标志.
-    //同时设置全局请求退出标志，请求其他线程退出.
-    switch(this->m_nCamIdType)
-    {
-    case CAM1_ID_Main:
-        qDebug()<<"<MainLoop>:"<<_CURRENT_DATETIME_<<"MainCamera capture ends "<<devName<<".";
-        //gGblPara.m_bMainCapThreadExitFlag=true;
-        break;
-    case CAM2_ID_Aux:
-        qDebug()<<"<MainLoop>:"<<_CURRENT_DATETIME_<<"AuxCamera capture ends "<<devName<<".";
-        //gGblPara.m_bAuxCapThreadExitFlag=true;
-        break;
-    case CAM3_ID_MainEx:
-        qDebug()<<"<MainLoop>:"<<_CURRENT_DATETIME_<<"MainExCamera capture ends "<<devName<<".";
-        //gGblPara.m_bMainExCapThreadExitFlag=true;
-        break;
-    }
-    gGblPara.m_bGblRst2Exit=true;
-    emit this->ZSigThreadFinished();
-    this->m_bCleanup=true;
+    this->ZDoCleanBeforeExit();
     return;
 }
 bool ZImgCapThread::ZIsExitCleanup()

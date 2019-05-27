@@ -69,45 +69,47 @@ typedef struct {
 } MpiEncTestData;
 //#define YUYV_CHUNK_SIZE  (640*480*2) //614400.
 
-ZVideoTxThreadHard264::ZVideoTxThreadHard264(qint32 nTcpPort,qint32 nTcpPort2)
+ZHardEncTxThread::ZHardEncTxThread(qint32 nTcpPort)
 {
-    this->m_rbYUVMain=NULL;
-    this->m_rbYUVAux=NULL;
-    this->m_bExitFlag=false;
     this->m_bCleanup=true;
     this->m_nTcpPort=nTcpPort;
-    this->m_nTcpPort2=nTcpPort2;
 }
-qint32 ZVideoTxThreadHard264::ZBindQueue(ZRingBuffer *rbYUVMain,ZRingBuffer *rbYUVAux)
+//main capture -> encTxThread.
+void ZHardEncTxThread::ZBindInFIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+               QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull)
 {
-    this->m_rbYUVMain=rbYUVMain;
-    this->m_rbYUVAux=rbYUVAux;
-    return 0;
+    //in fifo.(main capture -> encTxThread).
+    this->m_freeQueueIn=freeQueue;
+    this->m_usedQueueIn=usedQueue;
+    this->m_mutexIn=mutex;
+    this->m_condQueueEmptyIn=condQueueEmpty;
+    this->m_condQueueFullIn=condQueueFull;
 }
-qint32 ZVideoTxThreadHard264::ZStartThread()
+qint32 ZHardEncTxThread::ZStartThread()
 {
-    if(NULL==this->m_rbYUVMain || NULL==this->m_rbYUVAux)
-    {
-        qDebug()<<"<Error>:VideoTxThread,no bind yuv queue,can not start.";
-        return -1;
-    }
-    this->m_bExitFlag=false;
     this->start();
     return 0;
 }
-qint32 ZVideoTxThreadHard264::ZStopThread()
+qint32 ZHardEncTxThread::ZStopThread()
 {
-    this->m_bExitFlag=true;
+    this->quit();
+    this->wait(1000);
     return 0;
 }
-bool ZVideoTxThreadHard264::ZIsExitCleanup()
+bool ZHardEncTxThread::ZIsExitCleanup()
 {
     return this->m_bCleanup;
 }
-
-void ZVideoTxThreadHard264::run()
+void ZHardEncTxThread::ZDoCleanBeforeExit()
 {
-
+    //set global request exit flag to notify other threads to exit.
+    gGblPara.m_bGblRst2Exit=true;
+    this->m_bCleanup=true;
+    emit this->ZSigFinished();
+    qDebug()<<"<MainLoop>:MainVideoTxThread ends ["<<this->m_nTcpPort<<"].";
+}
+void ZHardEncTxThread::run()
+{
     cpu_set_t cpuSet;
     CPU_ZERO(&cpuSet);
     CPU_SET(5,&cpuSet);
@@ -374,7 +376,7 @@ void ZVideoTxThreadHard264::run()
 
 
     ////////////////////////////////////////////
-    char *pYUV422Buffer1=new char[BUFSIZE_1MB];
+    char *pYUV422Buffer=new char[FIFO_SIZE];
     qDebug()<<"<MainLoop>:MainVideoTxThread starts ["<<this->m_nTcpPort<<"].";
     this->m_bCleanup=false;
 
@@ -384,7 +386,7 @@ void ZVideoTxThreadHard264::run()
     fileH2641.open(QIODevice::WriteOnly);
 #endif
 
-    while(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+    while(!gGblPara.m_bGblRst2Exit)
     {
 
         //tcp video main camera.
@@ -404,7 +406,7 @@ void ZVideoTxThreadHard264::run()
         gGblPara.m_nTx6803Cnt=0;
 
         //wait until get a new connection.
-        while(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+        while(!gGblPara.m_bGblRst2Exit)
         {
             //qDebug()<<"wait for tcp connection";
             if(tcpServerMain->waitForNewConnection(100))
@@ -451,20 +453,33 @@ void ZVideoTxThreadHard264::run()
         fileH2641.write(pSpsPps,nSpsPspLen);
 #endif
 
-
-
         //fetch yuv from queue and do encode & tx.
-        while(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+        while(!gGblPara.m_bGblRst2Exit)
         {
-
-            //////////////////////encode main queue////////////////////////////////////////
             //1.fetch data from yuv queue and encode to h264 I/P frames.
-            if(this->m_rbYUVMain->ZGetElement((qint8*)pYUV422Buffer1,BUFSIZE_1MB)<=0)
+            this->m_mutexIn->lock();
+            while(this->m_usedQueueIn->isEmpty())//timeout 5s to check exit flag.
             {
-                qDebug()<<"<Error>:h264 enc thread get yuv data length is not right.";
+                if(!this->m_condQueueFullIn->wait(this->m_mutexIn,5000))
+                {
+                    this->m_mutexIn->unlock();
+                    if(gGblPara.m_bGblRst2Exit)
+                    {
+                        break;
+                    }
+                }
+            }
+            if(gGblPara.m_bGblRst2Exit)
+            {
                 break;
             }
+            QByteArray *bufferIn=this->m_usedQueueIn->dequeue();
+            memcpy(pYUV422Buffer,bufferIn->data(),bufferIn->size());
+            this->m_freeQueueIn->enqueue(bufferIn);
+            this->m_condQueueEmptyIn->wakeAll();
+            this->m_mutexIn->unlock();
 
+            //execute encode job.
             MppFrame frame = NULL;
             ret=mpp_frame_init(&frame);
             if(ret)
@@ -491,7 +506,7 @@ void ZVideoTxThreadHard264::run()
             //copy data to MppFrame.
             for(quint32 row=0,offset=0;row<p->height;row++)
             {
-                memcpy((char*)buf_y+row*p->hor_stride,pYUV422Buffer1+offset,p->width*2);
+                memcpy((char*)buf_y+row*p->hor_stride,pYUV422Buffer+offset,p->width*2);
                 offset+=p->width*2;
             }
             //send video frame to encoder only, async interface.
@@ -569,8 +584,7 @@ void ZVideoTxThreadHard264::run()
     }
 
     delete [] pSpsPps;
-    delete [] pYUV422Buffer1;
-    qDebug()<<"<MainLoop>:VideoTxThreadMain ends ["<<this->m_nTcpPort<<"].";
+    delete [] pYUV422Buffer;
     //clear memory after encode finishes.
     ret=p->mpi->reset(p->ctx);
     if(ret)
@@ -589,11 +603,6 @@ void ZVideoTxThreadHard264::run()
         p->frm_buf = NULL;
     }
     free(p);
-    //此处设置本线程退出标志.
-    //同时设置全局请求退出标志，请求其他线程退出.
-    //gGblPara.m_bVideoTxThreadExitFlag=true;
-    gGblPara.m_bGblRst2Exit=true;
-    emit this->ZSigThreadFinished();
-    this->m_bCleanup=true;
+    this->ZDoCleanBeforeExit();
     return;
 }

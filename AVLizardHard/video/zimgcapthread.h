@@ -23,8 +23,13 @@ public:
     explicit ZImgCapThread(QString devUsbId,qint32 nPreWidth,qint32 nPreHeight,qint32 nPreFps,CAM_ID_TYPE_E camIdType);
     ~ZImgCapThread();
 
-    qint32 ZBindProcessQueue(ZRingBuffer *rbProcess);
-    qint32 ZBindYUVQueue(ZRingBuffer *rbYUV);
+    //capture -> processing.
+    void ZBindOut1FIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                   QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull);
+
+    //capture -> h264 encoder.
+    void ZBindOut2FIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                   QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull);
 
     qint32 ZStartThread();
     qint32 ZStopThread();
@@ -34,10 +39,12 @@ public:
     QString ZGetDevName();
 
     bool ZIsExitCleanup();
+private:
+    void ZDoCleanBeforeExit();
 signals:
     void ZSigNewImgArrived(QImage img);
     void ZSigMsg(const QString &msg,const qint32 &type);
-    void ZSigThreadFinished();
+    void ZSigFinished();
     void ZSigCAMIDFind(QString camID);
 protected:
     void run();
@@ -47,12 +54,22 @@ private:
     ZCAMDevice *m_cam;
     CAM_ID_TYPE_E m_nCamIdType;
 private:
-    //capture image to process queue.
-    ZRingBuffer *m_rbProcess;
-    //capture yuv to yuv queue.
-    ZRingBuffer *m_rbYUV;
+    //out1 fifo.(capture -> processing).
+    QQueue<QByteArray*> *m_freeQueueOut1;
+    QQueue<QByteArray*> *m_usedQueueOut1;
+
+    QMutex *m_mutexOut1;
+    QWaitCondition *m_condQueueEmptyOut1;
+    QWaitCondition *m_condQueueFullOut1;
+
+    //out2 fifo.(capture -> h264 encoder).
+    QQueue<QByteArray*> *m_freeQueueOut2;
+    QQueue<QByteArray*> *m_usedQueueOut2;
+
+    QMutex *m_mutexOut2;
+    QWaitCondition *m_condQueueEmptyOut2;
+    QWaitCondition *m_condQueueFullOut2;
 private:
-    bool m_bExitFlag;
     bool m_bCleanup;
 };
 #endif // ZIMGCAPTHREAD_H

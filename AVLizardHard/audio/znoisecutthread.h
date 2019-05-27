@@ -5,10 +5,6 @@
 #include <QQueue>
 #include <QSemaphore>
 #include <QWaitCondition>
-extern "C"
-{
-#include <rnnoise.h>
-}
 #include <audio/webrtc/signal_processing_library.h>
 #include <audio/webrtc/noise_suppression_x.h>
 #include <audio/webrtc/noise_suppression.h>
@@ -41,7 +37,7 @@ private:
 
 private:
     //RNNoise.
-    DenoiseState *m_st;
+    //DenoiseState *m_st;
     qint32 ZCutNoiseByRNNoise(QByteArray *baPCM);
 
     //WebRTC.

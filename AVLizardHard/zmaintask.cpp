@@ -78,6 +78,10 @@ qint32 ZMainTask::ZStartTask()
 
     this->m_ui->showMaximized();
 
+    //start key detect thread.
+    gGblPara.m_mainUI=this->m_ui;
+    this->m_keyDet=new ZKeyDetThread;
+    this->m_keyDet->start();
     return 0;
 }
 void ZMainTask::ZSlotSubThreadsExited()

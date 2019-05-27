@@ -22,10 +22,17 @@ class ZImgProcessThread : public QThread
 public:
     ZImgProcessThread();
     ~ZImgProcessThread();
-    qint32 ZBindMainAuxImgQueue(ZRingBuffer *rbMain,ZRingBuffer *rbAux);
+    //main capture -> processing.
+    void ZBindIn1FIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                   QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull);
+    //aux capture -> processing.
+    void ZBindIn2FIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                   QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull);
     qint32 ZStartThread();
     qint32 ZStopThread();
     bool ZIsExitCleanup();
+private:
+    void ZDoCleanBeforeExit();
 protected:
     void run();
 signals:
@@ -33,7 +40,7 @@ signals:
     void ZSigSSIMImgSimilarity(qint32 nVal);
 
     ///////////////////////////////////////////////////
-    void ZSigThreadFinished();
+    void ZSigFinished();
     void ZSigMsg(const QString &msg,const qint32 &type);
     void ZSigImgGlobal(QImage img);
     void ZSigImgLocal(QImage img);
@@ -82,7 +89,6 @@ private:
 private:
     ZHistogram *m_histogram;
 private:
-    bool m_bExitFlag;
     QMutex m_mux1;
     QMutex m_mux2;
 private:
@@ -106,6 +112,20 @@ private:
 private:
     QTimer *m_timerCtl;
     QByteArray m_baUARTRecvBuf;
+private:
+    //in1 fifo.(main capture -> processing).
+    QQueue<QByteArray*> *m_freeQueueIn1;
+    QQueue<QByteArray*> *m_usedQueueIn1;
+    QMutex *m_mutexIn1;
+    QWaitCondition *m_condQueueEmptyIn1;
+    QWaitCondition *m_condQueueFullIn1;
+
+    //in2 fifo.(aux capture -> h264 encoder).
+    QQueue<QByteArray*> *m_freeQueueIn2;
+    QQueue<QByteArray*> *m_usedQueueIn2;
+    QMutex *m_mutexIn2;
+    QWaitCondition *m_condQueueEmptyIn2;
+    QWaitCondition *m_condQueueFullIn2;
 };
 
 #endif // ZIMGPROCESSTHREAD_H

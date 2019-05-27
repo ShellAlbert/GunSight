@@ -2,10 +2,7 @@
 #include "../zgblpara.h"
 #include <QDebug>
 #include <QFile>
-extern "C"
-{
-    #include "libns.h"
-}
+#include "audio/libns.h"
 #define FRAME_SIZE_SHIFT 2
 #define FRAME_SIZE (120<<FRAME_SIZE_SHIFT)
 
@@ -79,13 +76,13 @@ bool ZNoiseCutThread::ZIsExitCleanup()
 void ZNoiseCutThread::run()
 {
     //initial libns.
-    if(ns_init()<0)
-    {
-        qDebug()<<"<Error>:failed to init libns.";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
-        return;
-    }
+//    if(ns_init()<0)
+//    {
+//        qDebug()<<"<Error>:failed to init libns.";
+//        //set global request to exit flag to cause other threads to exit.
+//        gGblPara.m_bGblRst2Exit=true;
+//        return;
+//    }
 
     //LogMMSE.
     X_INT16 *pBuffer;
@@ -98,14 +95,14 @@ void ZNoiseCutThread::run()
     this->m_OutBuf=(X_FLOAT32 *)malloc(sizeof(X_FLOAT32)*FRAME_SHIFT);
 
     //RNNoise.
-    this->m_st=rnnoise_create();
-    if(this->m_st==NULL)
-    {
-        qDebug()<<"<Error>:NoiseCut,error at rnnoise_create().";
-        //set global request to exit flag to cause other threads to exit.
-        gGblPara.m_bGblRst2Exit=true;
-        return;
-    }
+//    this->m_st=rnnoise_create();
+//    if(this->m_st==NULL)
+//    {
+//        qDebug()<<"<Error>:NoiseCut,error at rnnoise_create().";
+//        //set global request to exit flag to cause other threads to exit.
+//        gGblPara.m_bGblRst2Exit=true;
+//        return;
+//    }
 
     //WebRTC.
     //use this variable to control webRtc noiseSuppression grade.
@@ -209,6 +206,9 @@ void ZNoiseCutThread::run()
         qDebug()<<"<Info>:success to bind AudioNoiseCut thread to cpu core 2.";
     }
 
+    //for libns.
+    qint32 nLibNsModeShadow=gGblPara.m_audio.m_nRNNoiseView;
+    ns_init(0);//0~5.
     while(!gGblPara.m_bGblRst2Exit)
     {
 #if 1
@@ -323,7 +323,7 @@ void ZNoiseCutThread::run()
         //qDebug()<<"noisecut,get one frame";
 
         //noise cut processing by different algorithm.
-        qDebug()<<"noisecut:size:"<<pcmIn->size();
+        //qDebug()<<"noisecut:size:"<<pcmIn->size();
         switch(gGblPara.m_audio.m_nDeNoiseMethod)
         {
         case 0:
@@ -331,6 +331,12 @@ void ZNoiseCutThread::run()
             break;
         case 1:
             //qDebug()<<"DeNoise:RNNoise Enabled";
+            if(nLibNsModeShadow!=gGblPara.m_audio.m_nRNNoiseView)
+            {
+                ns_uninit();
+                nLibNsModeShadow=gGblPara.m_audio.m_nRNNoiseView;
+                ns_init(nLibNsModeShadow);
+            }
             this->ZCutNoiseByRNNoise(pcmIn);
             break;
         case 2:
@@ -419,7 +425,7 @@ void ZNoiseCutThread::run()
 
     }
 
-    rnnoise_destroy(this->m_st);
+    //rnnoise_destroy(this->m_st);
     WebRtcNs_Free(this->m_pNS_inst);
     WebRtcAgc_Free(this->m_agcHandle);
     delete [] this->m_pcm16k;
@@ -440,75 +446,15 @@ void ZNoiseCutThread::run()
 qint32 ZNoiseCutThread::ZCutNoiseByRNNoise(QByteArray *baPCM)
 {
     //because original pcm data is 48000 bytes.
-    //so here we choose 480/960/xx.
-    //to make sure we have no remaing bytes.
-    //here FRAME_SIZE=480.
-    //const int frame_size=FRAME_SIZE;
-    const int frame_size=480;//48000.
-    short sTemp[frame_size];
-    float fTemp[frame_size];
-
-    qint32 nBlkSize=sizeof(short)*frame_size;
-    //nNoisePCMLen返回的是字节数，但此处我们要以int16_t作为基本单位，所以要除以sizeof(int16_t).
-    uint32_t nPcmDataInt16Len=baPCM->size()/sizeof(short);
-    //计算需要循环处理多少次，以及还余多少字节.
-    qint32 frames=baPCM->size()/nBlkSize;
-    qint32 remainBytes=baPCM->size()%nBlkSize;
-    if(remainBytes>0)
-    {
-        qDebug()<<"<Warning>:RNNoise has remaining bytes.";
-    }
-    //qDebug()<<"pcm size:"<<baPCM.size()<<",blk size="<<nBlkSize;
-    //qDebug()<<"size="<<frame_size<<",frame="<<frames<<",remaingBytes="<<remainBytes;
-    for(qint32 i=0;i<frames;i++)
-    {
-
-        //prepare data.
-        memcpy((char*)sTemp,baPCM->constData()+nBlkSize*i,nBlkSize);
-        //convert.
-        for(qint32 j=0;j<frame_size;j++)
-        {
-            fTemp[j]=sTemp[j];
-        }
-        //process with differenct noise view.
-        switch(gGblPara.m_audio.m_nRNNoiseView)
-        {
-        case 0://white noise.
-            rnnoise_process_frame(this->m_st,fTemp,fTemp,"white");
-            break;
-        case 1://pink noise.
-            rnnoise_process_frame(this->m_st,fTemp,fTemp,"pink");
-            break;
-        case 2://babble noise.
-            rnnoise_process_frame(this->m_st,fTemp,fTemp,"babble");
-            break;
-        case 3://vehicle noise.
-            rnnoise_process_frame(this->m_st,fTemp,fTemp,"vehicle");
-            break;
-        case 4://machine noise.
-            rnnoise_process_frame(this->m_st,fTemp,fTemp,"machine");
-            break;
-        case 5://current noise.
-            rnnoise_process_frame(this->m_st,fTemp,fTemp,"current");
-            break;
-        case 6://custom noise.
-            rnnoise_process_frame(this->m_st,fTemp,fTemp,"custom1");
-            break;
-        case 7://custom2 noise.chenjingdong supply codes.2018/12/13.
-            rnnoise_process_frame(this->m_st,fTemp,fTemp,"custom2");
-            break;
-        default:
-            break;
-        }
-
-        //convert.
-        for(qint32 j=0;j<frame_size;j++)
-        {
-            sTemp[j]=fTemp[j];
-        }
-        //move back.
-        memcpy(baPCM->data()+nBlkSize*i,(char*)sTemp,nBlkSize);
-    }
+    //libns only process 960 bytes each time.
+    //so 48000/960=50.
+//    qint32 nOffset=0;
+//    for(qint32 i=0;i<50;i++)
+//    {
+//        char *pPcmAudio=baPCM->data()+nOffset;
+//        ns_processing(pPcmAudio,960);
+//        nOffset+=960;
+//    }
     return 0;
 }
 

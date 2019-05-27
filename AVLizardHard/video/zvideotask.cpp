@@ -13,38 +13,58 @@
 #include <linux/videodev2.h>
 ZVideoTask::ZVideoTask(QObject *parent) : QObject(parent)
 {
-    for(qint32 i=0;i<2;i++)
+    for(qint32 i=0;i<3;i++)
     {
-        this->m_rbProcess[i]=NULL;
-        this->m_rbYUV[i]=NULL;
-        this->m_rbH264[i]=NULL;
-
         this->m_capThread[i]=NULL;
     }
-    this->m_process=NULL;//图像处理线程.
-    this->m_videoTxThreadSoft=NULL;
-    this->m_videoTxThreadHard=NULL;
+    this->m_process=NULL;
+    this->m_encTxThread=NULL;
+    this->m_encTx2Thread=NULL;
     this->m_timerExit=new QTimer;
     QObject::connect(this->m_timerExit,SIGNAL(timeout()),this,SLOT(ZSlotChkAllExitFlags()));
 }
 ZVideoTask::~ZVideoTask()
 {
     delete this->m_timerExit;
-    delete this->m_process;
 
-    for(qint32 i=0;i<2;i++)
+    for(qint32 i=0;i<3;i++)
     {
         delete this->m_capThread[i];
     }
-    delete this->m_videoTxThreadSoft;
-    delete this->m_videoTxThreadHard;
+    delete this->m_process;
+    delete this->m_encTxThread;
+    delete this->m_encTx2Thread;
 
-    for(qint32 i=0;i<2;i++)
+    //clean FIFOs.
+    //main capture to h264 encoder queue(fifo).
+    for(qint32 i=0;i<FIFO_DEPTH;i++)
     {
-        delete this->m_rbProcess[i];
-        delete this->m_rbYUV[i];
-        delete this->m_rbH264[i];
+        delete this->m_Cap2EncFIFOMain[i];
     }
+    this->m_Cap2EncFIFOFreeMain.clear();
+    this->m_Cap2EncFIFOUsedMain.clear();
+    //aux capture to h264 encoder queue(fifo).
+    for(qint32 i=0;i<FIFO_DEPTH;i++)
+    {
+        delete this->m_Cap2EncFIFOAux[i];
+    }
+    this->m_Cap2EncFIFOFreeAux.clear();
+    this->m_Cap2EncFIFOUsedAux.clear();
+
+    //main capture to ImgProcess queue(fifo).
+    for(qint32 i=0;i<FIFO_DEPTH;i++)
+    {
+        delete this->m_Cap2ProFIFOMain[i];
+    }
+    this->m_Cap2ProFIFOFreeMain.clear();
+    this->m_Cap2ProFIFOUsedMain.clear();
+    //aux capture to ImgProcess queue(fifo).
+    for(qint32 i=0;i<FIFO_DEPTH;i++)
+    {
+        delete this->m_Cap2ProFIFOAux[i];
+    }
+    this->m_Cap2ProFIFOFreeAux.clear();
+    this->m_Cap2ProFIFOUsedAux.clear();
 }
 qint32 ZVideoTask::ZDoInit()
 {
@@ -112,42 +132,77 @@ qint32 ZVideoTask::ZDoInit()
         qDebug()<<"<Error>:config file USB IDs do not match real USB IDs!";
         return -1;
     }
-    for(qint32 i=0;i<2;i++)
+
+    //create FIFOs.
+    //main capture to h264 encoder queue(fifo).
+    for(qint32 i=0;i<FIFO_DEPTH;i++)
     {
-        //main/aux capture thread to img process thread queue.
-        this->m_rbProcess[i]=new ZRingBuffer(MAX_VIDEO_RING_BUFFER,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3*2);
-        //main/aux cap thread to h264 enc thread.
-        this->m_rbYUV[i]=new ZRingBuffer(MAX_VIDEO_RING_BUFFER,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3*2);
+        this->m_Cap2EncFIFOMain[i]=new QByteArray;
+        this->m_Cap2EncFIFOMain[i]->resize(FIFO_SIZE);
+        this->m_Cap2EncFIFOFreeMain.enqueue(this->m_Cap2EncFIFOMain[i]);
     }
+    this->m_Cap2EncFIFOUsedMain.clear();
+    //aux capture to h264 encoder queue(fifo).
+    for(qint32 i=0;i<FIFO_DEPTH;i++)
+    {
+        this->m_Cap2EncFIFOAux[i]=new QByteArray;
+        this->m_Cap2EncFIFOAux[i]->resize(FIFO_SIZE);
+        this->m_Cap2EncFIFOFreeAux.enqueue(this->m_Cap2EncFIFOAux[i]);
+    }
+    this->m_Cap2EncFIFOUsedAux.clear();
+
+    //main capture to ImgProcess queue(fifo).
+    for(qint32 i=0;i<FIFO_DEPTH;i++)
+    {
+        this->m_Cap2ProFIFOMain[i]=new QByteArray;
+        this->m_Cap2ProFIFOMain[i]->resize(FIFO_SIZE);
+        this->m_Cap2ProFIFOFreeMain.enqueue(this->m_Cap2ProFIFOMain[i]);
+    }
+    this->m_Cap2ProFIFOUsedMain.clear();
+    //aux capture to ImgProcess queue(fifo).
+    for(qint32 i=0;i<FIFO_DEPTH;i++)
+    {
+        this->m_Cap2ProFIFOAux[i]=new QByteArray;
+        this->m_Cap2ProFIFOAux[i]->resize(FIFO_SIZE);
+        this->m_Cap2ProFIFOFreeAux.enqueue(this->m_Cap2ProFIFOAux[i]);
+    }
+    this->m_Cap2ProFIFOUsedAux.clear();
+
+
+
     //create capture thread.
     this->m_capThread[0]=new ZImgCapThread(gGblPara.m_video.m_Cam1ID,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1,gGblPara.m_fpsCAM1,CAM1_ID_Main);//Main Camera.
     this->m_capThread[1]=new ZImgCapThread(gGblPara.m_video.m_Cam2ID,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1,gGblPara.m_fpsCAM1,CAM2_ID_Aux);//Aux Camera.
     this->m_capThread[2]=new ZImgCapThread(gGblPara.m_video.m_Cam1IDEx,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1,gGblPara.m_fpsCAM1,CAM3_ID_MainEx);//MainEx Camera.
-    QObject::connect(this->m_capThread[0],SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
-    QObject::connect(this->m_capThread[1],SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
-    QObject::connect(this->m_capThread[2],SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
-    this->m_capThread[0]->ZBindProcessQueue(this->m_rbProcess[0]);
-    this->m_capThread[1]->ZBindProcessQueue(this->m_rbProcess[1]);
-    this->m_capThread[2]->ZBindProcessQueue(this->m_rbProcess[0]);
-    //MainEx camera does not bind process queue.
-    this->m_capThread[0]->ZBindYUVQueue(this->m_rbYUV[0]);//main camera.
-    this->m_capThread[1]->ZBindYUVQueue(this->m_rbYUV[1]);//aux camera.
-    this->m_capThread[2]->ZBindYUVQueue(this->m_rbYUV[0]);//mainEx camera.
+
+    this->m_capThread[0]->ZBindOut1FIFO(&this->m_Cap2ProFIFOFreeMain,&this->m_Cap2ProFIFOUsedMain,&this->m_Cap2ProFIFOMutexMain,&this->m_condCap2ProFIFOEmptyMain,&this->m_condCap2ProFIFOFullMain);
+    this->m_capThread[0]->ZBindOut2FIFO(&this->m_Cap2EncFIFOFreeMain,&this->m_Cap2EncFIFOUsedMain,&this->m_Cap2EncFIFOMutexMain,&this->m_condCap2EncFIFOEmptyMain,&this->m_condCap2EncFIFOFullMain);
+    QObject::connect(this->m_capThread[0],SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
+
+    this->m_capThread[1]->ZBindOut1FIFO(&this->m_Cap2ProFIFOFreeAux,&this->m_Cap2ProFIFOUsedAux,&this->m_Cap2ProFIFOMutexAux,&this->m_condCap2ProFIFOEmptyAux,&this->m_condCap2ProFIFOFullAux);
+    this->m_capThread[1]->ZBindOut2FIFO(&this->m_Cap2EncFIFOFreeAux,&this->m_Cap2EncFIFOUsedAux,&this->m_Cap2EncFIFOMutexAux,&this->m_condCap2EncFIFOEmptyAux,&this->m_condCap2EncFIFOFullAux);
+    QObject::connect(this->m_capThread[1],SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
+
+    this->m_capThread[2]->ZBindOut1FIFO(&this->m_Cap2ProFIFOFreeMain,&this->m_Cap2ProFIFOUsedMain,&this->m_Cap2ProFIFOMutexMain,&this->m_condCap2ProFIFOEmptyMain,&this->m_condCap2ProFIFOFullMain);
+    this->m_capThread[2]->ZBindOut2FIFO(&this->m_Cap2EncFIFOFreeMain,&this->m_Cap2EncFIFOUsedMain,&this->m_Cap2EncFIFOMutexMain,&this->m_condCap2EncFIFOEmptyMain,&this->m_condCap2EncFIFOFullMain);
+    QObject::connect(this->m_capThread[2],SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
 
 
-    this->m_videoTxThreadSoft=new ZVideoTxThreadHard264(TCP_PORT_VIDEO,TCP_PORT_VIDEO2);
-    this->m_videoTxThreadSoft->ZBindQueue(this->m_rbYUV[0],this->m_rbYUV[1]);
-    QObject::connect(this->m_videoTxThreadSoft,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
+    this->m_encTxThread=new ZHardEncTxThread(TCP_PORT_VIDEO);
+    this->m_encTxThread->ZBindInFIFO(&this->m_Cap2EncFIFOFreeMain,&this->m_Cap2EncFIFOUsedMain,&this->m_Cap2EncFIFOMutexMain,&this->m_condCap2EncFIFOEmptyMain,&this->m_condCap2EncFIFOFullMain);
+    QObject::connect(this->m_encTxThread,SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
 
     //create video tx thread.
-    this->m_videoTxThreadHard=new ZVideoTxThreadHard2642(TCP_PORT_VIDEO,TCP_PORT_VIDEO2);
-    this->m_videoTxThreadHard->ZBindQueue(this->m_rbYUV[0],this->m_rbYUV[1]);
-    QObject::connect(this->m_videoTxThreadHard,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
+    this->m_encTx2Thread=new ZHardEncTx2Thread(TCP_PORT_VIDEO2);
+    this->m_encTx2Thread->ZBindInFIFO(&this->m_Cap2EncFIFOFreeAux,&this->m_Cap2EncFIFOUsedAux,&this->m_Cap2EncFIFOMutexAux,&this->m_condCap2EncFIFOEmptyAux,&this->m_condCap2EncFIFOFullAux);
+    QObject::connect(this->m_encTx2Thread,SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
 
     //create image process thread.
     this->m_process=new ZImgProcessThread;
-    QObject::connect(this->m_process,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotSubThreadsExited()));
-    this->m_process->ZBindMainAuxImgQueue(this->m_rbProcess[0],this->m_rbProcess[1]);
+    this->m_process->ZBindIn1FIFO(&this->m_Cap2ProFIFOFreeMain,&this->m_Cap2ProFIFOUsedMain,&this->m_Cap2ProFIFOMutexMain,&this->m_condCap2ProFIFOEmptyMain,&this->m_condCap2ProFIFOFullMain);
+    this->m_process->ZBindIn2FIFO(&this->m_Cap2ProFIFOFreeAux,&this->m_Cap2ProFIFOUsedAux,&this->m_Cap2ProFIFOMutexAux,&this->m_condCap2ProFIFOEmptyAux,&this->m_condCap2ProFIFOFullAux);
+    QObject::connect(this->m_process,SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
+
     return 0;
 }
 ZImgCapThread* ZVideoTask::ZGetImgCapThread(qint32 index)
@@ -172,8 +227,8 @@ ZImgProcessThread* ZVideoTask::ZGetImgProcessThread()
 }
 qint32 ZVideoTask::ZStartTask()
 {
-    this->m_videoTxThreadSoft->ZStartThread();
-    this->m_videoTxThreadHard->ZStartThread();
+    this->m_encTxThread->ZStartThread();
+    this->m_encTx2Thread->ZStartThread();
     for(qint32 i=0;i<3;i++)
     {
         this->m_capThread[i]->ZStartThread();
@@ -181,17 +236,18 @@ qint32 ZVideoTask::ZStartTask()
     this->m_process->ZStartThread();
     return 0;
 }
-void ZVideoTask::ZSlotSubThreadsExited()
+void ZVideoTask::ZSlotSubThreadsFinished()
 {
     if(!this->m_timerExit->isActive())
     {
-        //tell all working threads to exit.
-        this->m_capThread[0]->exit(0);
-        this->m_capThread[1]->exit(0);
-        this->m_capThread[2]->exit(0);
-        this->m_process->exit(0);
-        //this->m_videoTxThread->exit(0);
-        this->m_videoTxThreadHard->exit(0);
+        //notify all working threads to exit.
+        for(qint32 i=0;i<3;i++)
+        {
+            this->m_capThread[i]->ZStopThread();
+        }
+        this->m_process->ZStopThread();
+        this->m_encTxThread->ZStopThread();
+        this->m_encTx2Thread->ZStopThread();
 
         //start timer to help unblocking the queue empty or full.
         this->m_timerExit->start(1000);
@@ -201,64 +257,136 @@ void ZVideoTask::ZSlotChkAllExitFlags()
 {
     if(gGblPara.m_bGblRst2Exit)
     {
-        //采集任务针对队列的操作使用的try。
+        //if CapThread[0] doesnot exit,maybe m_Cap2ProFIFOFreeMain is empty to cause thread blocks.
+        //or m_Cap2EncFIFOFreeMain is empty to cause thread blocks.
+        //here we move a element from m_Cap2ProFIFOUsedMain to m_Cap2ProFIFOFreeMain to unblock.
+        if(!this->m_capThread[0]->ZIsExitCleanup())
+        {
+            qDebug()<<"<Exiting>:waiting for MainVideoCaptureThread...";
+            this->m_Cap2ProFIFOMutexMain.lock();
+            if(!this->m_Cap2ProFIFOUsedMain.isEmpty())
+            {
+                QByteArray *elementHelp=this->m_Cap2ProFIFOUsedMain.dequeue();
+                this->m_Cap2ProFIFOFreeMain.enqueue(elementHelp);
+                this->m_condCap2ProFIFOEmptyMain.wakeAll();
+            }
+            this->m_Cap2ProFIFOMutexMain.unlock();
 
-        //如果图像处理线程没有退出，可能process queue队列空，则模拟ImgCapThread投入一个空的图像数据，解除阻塞。
+            this->m_Cap2EncFIFOMutexMain.lock();
+            if(!this->m_Cap2EncFIFOUsedMain.isEmpty())
+            {
+                QByteArray *elementHelp=this->m_Cap2EncFIFOUsedMain.dequeue();
+                this->m_Cap2EncFIFOFreeMain.enqueue(elementHelp);
+                this->m_condCap2EncFIFOEmptyMain.wakeAll();
+            }
+            this->m_Cap2EncFIFOMutexMain.unlock();
+        }
+        //if CapThread[1] doesnot exit,maybe m_Cap2ProFIFOFreeMain is empty to cause thread blocks.
+        //or m_Cap2EncFIFOFreeMain is empty to cause thread blocks.
+        //here we move a element from m_Cap2ProFIFOUsedMain to m_Cap2ProFIFOFreeMain to unblock.
+        if(!this->m_capThread[1]->ZIsExitCleanup())
+        {
+            qDebug()<<"<Exiting>:waiting for AuxVideoCaptureThread...";
+            this->m_Cap2ProFIFOMutexAux.lock();
+            if(!this->m_Cap2ProFIFOUsedAux.isEmpty())
+            {
+                QByteArray *elementHelp=this->m_Cap2ProFIFOUsedAux.dequeue();
+                this->m_Cap2ProFIFOFreeAux.enqueue(elementHelp);
+                this->m_condCap2ProFIFOEmptyAux.wakeAll();
+            }
+            this->m_Cap2ProFIFOMutexAux.unlock();
+
+            this->m_Cap2EncFIFOMutexAux.lock();
+            if(!this->m_Cap2EncFIFOUsedAux.isEmpty())
+            {
+                QByteArray *elementHelp=this->m_Cap2EncFIFOUsedAux.dequeue();
+                this->m_Cap2EncFIFOFreeAux.enqueue(elementHelp);
+                this->m_condCap2EncFIFOEmptyAux.wakeAll();
+            }
+            this->m_Cap2EncFIFOMutexAux.unlock();
+        }
+        //if CapThread[2] doesnot exit,maybe m_Cap2ProFIFOFreeMain is empty to cause thread blocks.
+        //or m_Cap2EncFIFOFreeMain is empty to cause thread blocks.
+        //here we move a element from m_Cap2ProFIFOUsedMain to m_Cap2ProFIFOFreeMain to unblock.
+        if(!this->m_capThread[2]->ZIsExitCleanup())
+        {
+            qDebug()<<"<Exiting>:waiting for MainVideoCaptureThread...";
+            this->m_Cap2ProFIFOMutexMain.lock();
+            if(!this->m_Cap2ProFIFOUsedMain.isEmpty())
+            {
+                QByteArray *elementHelp=this->m_Cap2ProFIFOUsedMain.dequeue();
+                this->m_Cap2ProFIFOFreeMain.enqueue(elementHelp);
+                this->m_condCap2ProFIFOEmptyMain.wakeAll();
+            }
+            this->m_Cap2ProFIFOMutexMain.unlock();
+
+            this->m_Cap2EncFIFOMutexMain.lock();
+            if(!this->m_Cap2EncFIFOUsedMain.isEmpty())
+            {
+                QByteArray *elementHelp=this->m_Cap2EncFIFOUsedMain.dequeue();
+                this->m_Cap2EncFIFOFreeMain.enqueue(elementHelp);
+                this->m_condCap2EncFIFOEmptyMain.wakeAll();
+            }
+            this->m_Cap2EncFIFOMutexMain.unlock();
+        }
+
+        //if m_encTxThread doesnot exit,maybe m_Cap2EncFIFOFreeMain is empty to cause thread blocks.
+        //here we move a element from m_Cap2EncFIFOUsedMain to m_Cap2EncFIFOFreeMain to unblock.
+        if(!this->m_encTxThread->ZIsExitCleanup())
+        {
+            qDebug()<<"<Exiting>:waiting for MainEncTxThread...";
+            this->m_Cap2EncFIFOMutexMain.lock();
+            if(!this->m_Cap2EncFIFOUsedMain.isEmpty())
+            {
+                QByteArray *elementHelp=this->m_Cap2EncFIFOUsedMain.dequeue();
+                this->m_Cap2EncFIFOFreeMain.enqueue(elementHelp);
+                this->m_condCap2EncFIFOEmptyMain.wakeAll();
+            }
+            this->m_Cap2EncFIFOMutexMain.unlock();
+        }
+
+        //if m_encTx2Thread doesnot exit,maybe m_Cap2EncFIFOFreeAux is empty to cause thread blocks.
+        //here we move a element from m_Cap2EncFIFOUsedAux to m_Cap2EncFIFOFreeAux to unblock.
+        if(!this->m_encTx2Thread->ZIsExitCleanup())
+        {
+            qDebug()<<"<Exiting>:waiting for MainEncTx2Thread...";
+            this->m_Cap2EncFIFOMutexAux.lock();
+            if(!this->m_Cap2EncFIFOUsedAux.isEmpty())
+            {
+                QByteArray *elementHelp=this->m_Cap2EncFIFOUsedAux.dequeue();
+                this->m_Cap2EncFIFOFreeAux.enqueue(elementHelp);
+                this->m_condCap2EncFIFOEmptyAux.wakeAll();
+            }
+            this->m_Cap2EncFIFOMutexAux.unlock();
+        }
+
+        //if m_process doesnot exit,maybe m_Cap2ProFIFOFreeMain is empty to cause thread blocks.
+        //or m_Cap2ProFIFOUsedAux is empty to cause thread blocks.
+        //here we move a element from m_Cap2ProFIFOUsedMain to m_Cap2ProFIFOFreeMain to unblock.
+        //here we move a element from m_Cap2ProFIFOUsedAux to m_Cap2ProFIFOFreeAux to unblock.
         if(!this->m_process->ZIsExitCleanup())
         {
-            if(this->m_rbProcess[0]->ZGetValidNum()==0)
+            qDebug()<<"<Exiting>:waiting for ProcessThread...";
+            this->m_Cap2ProFIFOMutexMain.lock();
+            if(!this->m_Cap2ProFIFOUsedMain.isEmpty())
             {
-                qint8 *pRGBEmpty=new qint8[gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3];
-                memset(pRGBEmpty,0,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3);
-                //因为图像是RGB888的，所以总字节数=width*height*3.
-                if(this->m_rbProcess[0]->ZPutElement((qint8*)pRGBEmpty,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3)<0)
-                {
-                    qDebug()<<"<Exiting>:timeout to put RGB to process queue 0.";
-                }
-                delete [] pRGBEmpty;
+                QByteArray *elementHelp=this->m_Cap2ProFIFOUsedMain.dequeue();
+                this->m_Cap2ProFIFOFreeMain.enqueue(elementHelp);
+                this->m_condCap2ProFIFOEmptyMain.wakeAll();
             }
-            if(this->m_rbProcess[1]->ZGetValidNum()==0)
+            this->m_Cap2ProFIFOMutexMain.unlock();
+
+            this->m_Cap2ProFIFOMutexAux.lock();
+            if(!this->m_Cap2ProFIFOUsedAux.isEmpty())
             {
-                qint8 *pRGBEmpty=new qint8[gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3];
-                memset(pRGBEmpty,0,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3);
-                //因为图像是RGB888的，所以总字节数=width*height*3.
-                if(this->m_rbProcess[1]->ZPutElement(pRGBEmpty,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3)<0)
-                {
-                    qDebug()<<"<Exiting>:timeout to put RGB to process queue 1.";
-                }
-                delete [] pRGBEmpty;
+                QByteArray *elementHelp=this->m_Cap2ProFIFOUsedAux.dequeue();
+                this->m_Cap2ProFIFOFreeAux.enqueue(elementHelp);
+                this->m_condCap2ProFIFOEmptyAux.wakeAll();
             }
+            this->m_Cap2ProFIFOMutexAux.unlock();
         }
 
-        //如果发送线程没有退出，可能yuv queue队列为空，模拟ImgCapThread投入一帧空数据，解除阻塞。
-        if(this->m_videoTxThreadHard->ZIsExitCleanup())
-        {
-            if(this->m_rbYUV[0]->ZGetValidNum()==0)
-            {
-                qint8 *pYUVEmpty=new qint8[gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3];
-                memset(pYUVEmpty,0,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3);
-                if(this->m_rbYUV[0]->ZPutElement(pYUVEmpty,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3)<0)
-                {
-                    qDebug()<<"<Exiting>:timeout to put yuv data to yuv queue 0.";
-                }
-                delete [] pYUVEmpty;
-            }
-        }
-        if(this->m_videoTxThreadSoft->ZIsExitCleanup())
-        {
-            if(this->m_rbYUV[1]->ZGetValidNum()==0)
-            {
-                qint8 *pYUVEmpty=new qint8[gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3];
-                memset(pYUVEmpty,0,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3);
-                if(this->m_rbYUV[1]->ZPutElement(pYUVEmpty,gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3)<0)
-                {
-                    qDebug()<<"<Exiting>:timeout to put yuv data to yuv queue 1.";
-                }
-                delete [] pYUVEmpty;
-            }
-        }
-
-        //当所有的子线程都退出时，则视频任务退出。
+        //video task exit after all sub threads exited.
         if(this->ZIsExitCleanup())
         {
             this->m_timerExit->stop();
@@ -277,7 +405,7 @@ bool ZVideoTask::ZIsExitCleanup()
     {
         bCleanup=false;
     }
-    if(!this->m_videoTxThreadHard->ZIsExitCleanup() || !this->m_videoTxThreadSoft->ZIsExitCleanup())
+    if(!this->m_encTxThread->ZIsExitCleanup() || !this->m_encTx2Thread->ZIsExitCleanup())
     {
         bCleanup=false;
     }

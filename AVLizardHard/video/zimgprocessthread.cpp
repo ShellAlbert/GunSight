@@ -6,54 +6,64 @@
 #include "zimgfeaturedetectmatch.h"
 #include <QDebug>
 #include <QApplication>
+#include <video/CSK_Tracker.h>
 ZImgProcessThread::ZImgProcessThread()
 {
     this->m_timerProcess=NULL;
-    this->m_bExitFlag=false;
     this->m_bCleanup=true;
-
-    this->m_rbMain=NULL;
-    this->m_rbAux=NULL;
 }
 ZImgProcessThread::~ZImgProcessThread()
 {
 
 }
-qint32 ZImgProcessThread::ZBindMainAuxImgQueue(ZRingBuffer *rbMain,ZRingBuffer *rbAux)
-{
-    this->m_rbMain=rbMain;
-    this->m_rbAux=rbAux;
-    return 0;
-}
+
 qint32 ZImgProcessThread::ZStartThread()
 {
-    //check main queue and aux queue.
-    if(this->m_rbMain==NULL || this->m_rbAux==NULL)
-    {
-        qDebug()<<"<error>:no bind main/aux queue,cannot start.";
-        return -1;
-    }
-    this->m_bExitFlag=false;
     this->start();
     return 0;
 }
 qint32 ZImgProcessThread::ZStopThread()
 {
-    this->m_bExitFlag=true;
+    this->quit();
+    this->wait(1000);
     return 0;
 }
 bool ZImgProcessThread::ZIsExitCleanup()
 {
     return this->m_bCleanup;
 }
+//main capture -> processing.
+void ZImgProcessThread::ZBindIn1FIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                                     QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull)
+{
+    //in1 fifo.(main capture -> processing).
+    this->m_freeQueueIn1=freeQueue;
+    this->m_usedQueueIn1=usedQueue;
+    this->m_mutexIn1=mutex;
+    this->m_condQueueEmptyIn1=condQueueEmpty;
+    this->m_condQueueFullIn1=condQueueFull;
+}
+//aux capture -> processing.
+void ZImgProcessThread::ZBindIn2FIFO(QQueue<QByteArray*> *freeQueue,QQueue<QByteArray*> *usedQueue,///<
+                                     QMutex *mutex,QWaitCondition *condQueueEmpty,QWaitCondition *condQueueFull)
+{
+    //in2 fifo.(aux capture -> h264 encoder).
+    this->m_freeQueueIn2=freeQueue;
+    this->m_usedQueueIn2=usedQueue;
+    this->m_mutexIn2=mutex;
+    this->m_condQueueEmptyIn2=condQueueEmpty;
+    this->m_condQueueFullIn2=condQueueFull;
+}
+void ZImgProcessThread::ZDoCleanBeforeExit()
+{
+    //set global request exit flag to notify other threads to exit.
+    gGblPara.m_bGblRst2Exit=true;
+    this->m_bCleanup=true;
+    emit this->ZSigFinished();
+    qDebug()<<"<MainLoop>:ImgProcessThread ends.";
+}
 void ZImgProcessThread::run()
 {
-    //RGB,so here is *3.
-    qint32 nBufSize=gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3*2;
-    char *pRGBBufMain=new char[nBufSize];
-    char *pRGBBufAux=new char[nBufSize];
-    qDebug()<<"<MainLoop>:ImgProcessThread starts.";
-    this->m_bCleanup=false;
     //bind thread to cpu cores.
     cpu_set_t cpuSet;
     CPU_ZERO(&cpuSet);
@@ -64,28 +74,170 @@ void ZImgProcessThread::run()
     }else{
         qDebug()<<"<Info>:success to bind ImgProc thread to cpu core 5.";
     }
-    while(!gGblPara.m_bGblRst2Exit && !this->m_bExitFlag)
+
+
+    //RGB,so here is *3.
+    qint32 nBufSize=gGblPara.m_widthCAM1*gGblPara.m_heightCAM1*3*2;
+    char *pRGBBufMain=new char[nBufSize];
+    char *pRGBBufAux=new char[nBufSize];
+    qDebug()<<"<MainLoop>:ImgProcessThread starts.";
+    this->m_bCleanup=false;
+
+    // Create a tracker
+    CSK_Tracker tracker;
+    // Define initial bounding box
+    cv::Rect2d box;
+    Point ptCenter;
+    cv::Size target_size;
+    //initial Box for CSK_Tracker.
+    bool bInitBox=false;
+    bool bJsonImgProShadow=false;
+
+    while(!gGblPara.m_bGblRst2Exit)
     {
-        //1.fetch QImage from main queue.
-        if(this->m_rbMain->ZGetElement((qint8*)pRGBBufMain,nBufSize)<0)
+        //1.fetch RGB data from main fifo.
+        this->m_mutexIn1->lock();
+        while(this->m_usedQueueIn1->isEmpty())//timeout 5s to check exit flag.
         {
-            qDebug()<<"<Warning>:img matched,failed to get RGB from main queue.";
-            continue;
+            if(!this->m_condQueueFullIn1->wait(this->m_mutexIn1,5000))
+            {
+                this->m_mutexIn1->unlock();
+                if(gGblPara.m_bGblRst2Exit)
+                {
+                    break;
+                }
+            }
         }
-        QImage imgMain((uchar*)pRGBBufMain,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1,QImage::Format_RGB888);
-
-        //2.fetch QImage from aux queue.
-        if(this->m_rbAux->ZGetElement((qint8*)pRGBBufAux,nBufSize)<0)
+        if(gGblPara.m_bGblRst2Exit)
         {
-            qDebug()<<"<Warning>:img matched,failed to get RGB from aux queue.";
-            continue;
+            break;
         }
-        QImage imgAux((uchar*)pRGBBufAux,gGblPara.m_widthCAM1,gGblPara.m_heightCAM1,QImage::Format_RGB888);
+        QByteArray *bufferIn1=this->m_usedQueueIn1->dequeue();
+        memcpy(pRGBBufMain,bufferIn1->data(),bufferIn1->size());
+        this->m_freeQueueIn1->enqueue(bufferIn1);
+        this->m_condQueueEmptyIn1->wakeAll();
+        this->m_mutexIn1->unlock();
 
-        //3.将QImage转换为cvMat以方便openCV处理.
-        cv::Mat mat1=QImage2cvMat(imgMain);
-        cv::Mat mat2=QImage2cvMat(imgAux);
+        //2.fetch RGB data from aux fifo.
+        this->m_mutexIn2->lock();
+        while(this->m_usedQueueIn2->isEmpty())//timeout 5s to check exit flag.
+        {
+            if(!this->m_condQueueFullIn2->wait(this->m_mutexIn2,5000))
+            {
+                this->m_mutexIn2->unlock();
+                if(gGblPara.m_bGblRst2Exit)
+                {
+                    break;
+                }
+            }
+        }
+        if(gGblPara.m_bGblRst2Exit)
+        {
+            break;
+        }
+        QByteArray *bufferIn2=this->m_usedQueueIn2->dequeue();
+        memcpy(pRGBBufAux,bufferIn2->data(),bufferIn2->size());
+        this->m_freeQueueIn2->enqueue(bufferIn2);
+        this->m_condQueueEmptyIn2->wakeAll();
+        this->m_mutexIn2->unlock();
 
+        //3.construct cvMat from plain buffer.
+        cv::Mat matMain=cv::Mat(gGblPara.m_heightCAM1,gGblPara.m_widthCAM1,CV_8UC3,(uchar*)pRGBBufMain);
+        cv::Mat matAux=cv::Mat(gGblPara.m_heightCAM1,gGblPara.m_widthCAM1,CV_8UC3,(uchar*)pRGBBufAux);
+
+        //qDebug()<<"logic:"<<gGblPara.m_bJsonImgPro<<bJsonImgProShadow;
+        if(gGblPara.m_bJsonImgPro && !bJsonImgProShadow)//start tracking.
+        {
+            bJsonImgProShadow=true;
+            //init tracker.
+            //cut a template by calibrate (x1,y1) center to size(200x200).
+            box.x=gGblPara.m_calibrateX1-100;
+            box.y=gGblPara.m_calibrateY1-100;
+            box.width=200;
+            box.height=200;
+            //define the center point.
+            ptCenter.x=box.x+box.width/2;
+            ptCenter.y=box.y+box.height/2;
+            target_size.width=box.width;
+            target_size.height=box.height;
+            tracker.tracker_init(matMain,ptCenter,target_size);
+            bInitBox=true;
+            qDebug()<<"Init Box Okay:"<<box.x<<box.y<<box.width<<box.height<<ptCenter.x<<ptCenter.y;
+        }else if(!gGblPara.m_bJsonImgPro && bJsonImgProShadow)//stop tracking.
+        {
+            bJsonImgProShadow=false;
+            if(bInitBox)
+            {
+                bInitBox=false;
+                qDebug()<<"Tracking Canclled.";
+            }
+        }
+        if(gGblPara.m_bJsonImgPro)
+        {
+            if(bInitBox)
+            {
+                //qDebug()<<"start to tracking.";
+                //qint64 tStart=QDateTime::currentDateTime().toMSecsSinceEpoch();
+
+                // Update the tracking result.
+                bool result = tracker.tracker_update(matAux,ptCenter,target_size);
+                if(result)
+                {
+                    box.x = ptCenter.x - target_size.width/2;
+                    box.y = ptCenter.y - target_size.height/2;
+                    box.width = target_size.width;
+                    box.height = target_size.height;
+
+                    //to avoid reaching the boundary to cause openCV fault.
+                    if((box.x+box.width)>matAux.cols)
+                    {
+                        box.width=matAux.cols-box.x-2;
+                    }
+                    if((box.y+box.height)>matAux.rows)
+                    {
+                        box.height=matAux.rows-box.y-2;
+                    }
+                    //display the tracked section img.
+                    //cv::Mat matBox=cv::Mat(matFrm,box);
+                    //QImage imgBox=cvMat2QImage(matBox);
+                    //emit this->ZSigNewInitBox(imgBox);
+
+                    //g_GblHelp.m_rectTracked.setX(g_GblHelp.ZMapImgX2ScreenX(box.x));
+                    //g_GblHelp.m_rectTracked.setY(g_GblHelp.ZMapImgY2ScreenY(box.y));
+                    //g_GblHelp.m_rectTracked.setWidth(g_GblHelp.ZMapImgWidth2ScreenWidth(box.width));
+                    //g_GblHelp.m_rectTracked.setHeight(g_GblHelp.ZMapImgHeight2ScreenHeight(box.height));
+
+                    //qDebug()<<"tracking okay:"<<box.x<<box.y<<box.width<<box.height;
+                    //emit matched result to UI.
+                    ZImgMatchedSet imgProSet;
+                    imgProSet.rectTemplate=QRect(gGblPara.m_calibrateX1-100,gGblPara.m_calibrateY1-100,200,200);
+                    imgProSet.rectMatched=QRect(abs(box.x),abs(box.y),box.width,box.height);
+                    imgProSet.nDiffX=0;
+                    imgProSet.nDiffY=0;
+                    imgProSet.nCostMs=0;
+                    emit this->ZSigNewMatchedSetArrived(imgProSet);
+
+                    qint32 nDiffX=gGblPara.m_calibrateX2-(box.x+box.width/2);
+                    qint32 nDiffY=gGblPara.m_calibrateY2-(box.y+box.height/2);
+                    //update to global variables for JsonCtlThread.
+                    gGblPara.m_video.m_rectTemplate=imgProSet.rectTemplate;
+                    gGblPara.m_video.m_rectMatched=imgProSet.rectMatched;
+                    gGblPara.m_video.m_nDiffX=nDiffX;
+                    gGblPara.m_video.m_nDiffY=nDiffY;
+                    gGblPara.m_video.m_nCostMs=0;
+                    qDebug()<<gGblPara.m_video.m_rectTemplate;
+                    qDebug()<<gGblPara.m_video.m_rectMatched;
+                    qDebug()<<"DiffXY:"<<nDiffX<<nDiffY;
+                    qDebug()<<"calibrateX2Y2:"<<gGblPara.m_calibrateX2<<gGblPara.m_calibrateY2<<",boxXY:"<<box.x+box.width/2<<box.y+box.height/2;
+                }else{
+                    // Tracking failure detected.
+                    qDebug()<<"Tracking failure detected.";
+                }
+                //qint64 tEnd=QDateTime::currentDateTime().toMSecsSinceEpoch();
+                //qDebug()<<"cost (ms):"<<(tEnd-tStart);
+            }
+        }
+#if 0
         //这里优先启动fMode
         if(gGblPara.m_bFMode)
         {
@@ -140,17 +292,13 @@ void ZImgProcessThread::run()
             //这里做PSNR/SSIM算法来评估图像相似度
             this->ZDoPSNRAndSSIM(mat1,mat2);
         }
+#endif
+
         this->usleep(VIDEO_THREAD_SCHEDULE_US);
     }
     delete [] pRGBBufMain;
     delete [] pRGBBufAux;
-    qDebug()<<"<MainLoop>:ImgProcessThread ends.";
-    //此处设置本线程退出标志.
-    //同时设置全局请求退出标志，请求其他线程退出.
-    //gGblPara.m_bImgCmpThreadExitFlag=true;
-    gGblPara.m_bGblRst2Exit=true;
-    emit this->ZSigThreadFinished();
-    this->m_bCleanup=true;
+    this->ZDoCleanBeforeExit();
     return;
 #if 0
     do{

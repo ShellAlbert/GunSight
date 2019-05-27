@@ -10,6 +10,7 @@
 #include <zavui.h>
 #include <zringbuffer.h>
 #include <QVector>
+#include <video/zkeydetthread.h>
 class ZMainTask:public QObject
 {
     Q_OBJECT
@@ -29,6 +30,7 @@ private:
     ZAVUI *m_ui;
 private:
     QTimer *m_timerExit;
+    ZKeyDetThread *m_keyDet;
 private:
 //    QVector<ZImgMatchedSet> m_vecImgMatched;
 };
