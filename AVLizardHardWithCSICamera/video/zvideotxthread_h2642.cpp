@@ -124,7 +124,8 @@ void ZHardEncTx2Thread::run()
     cmd->debug=0;//0:disable dbg output,1:enable dbg output.
     cmd->width=gGblPara.m_widthCAM1;
     cmd->height=gGblPara.m_heightCAM1;
-    cmd->format=MPP_FMT_YUV422_YUYV;
+    cmd->format=MPP_FMT_YUV420SP;//color is not right.
+    //cmd->format=MPP_FMT_YUV420SP_VU;//h264 format is not right,error in h264visa.
     cmd->type=MPP_VIDEO_CodingAVC;
     cmd->num_frames=1;
     ////////////////////////////////////////////////////////
@@ -135,7 +136,7 @@ void ZHardEncTx2Thread::run()
     mpp_log("type       : %d\n", cmd->type);
     mpp_log("debug flag : %x\n", cmd->debug);
     ///////////////////////////////////////////////
-    mpp_env_set_u32("mpi_debug", cmd->debug);
+    //mpp_env_set_u32("mpi_debug", cmd->debug);
     ////////////////////////////////////////////////
     MpiEncTestData2 *p=NULL;
     p=mpp_calloc(MpiEncTestData2, 1);
@@ -219,10 +220,10 @@ void ZHardEncTx2Thread::run()
 
     /* setup default parameter */
     //p->fps = gGblPara.m_fpsCAM1*2;
-    p->fps = 5;//gGblPara.m_fpsCAM1;
+    p->fps = 30;//5;//gGblPara.m_fpsCAM1;
     p->gop = 1;
     //p->bps = p->width * p->height / 8 * p->fps;
-    p->bps = p->width * p->height / 8 * p->fps*10;
+    p->bps = p->width * p->height / 8 * p->fps;
 
     prep_cfg->change = MPP_ENC_PREP_CFG_CHANGE_INPUT |MPP_ENC_PREP_CFG_CHANGE_ROTATION |MPP_ENC_PREP_CFG_CHANGE_FORMAT;
     prep_cfg->width         = p->width;
@@ -373,7 +374,7 @@ void ZHardEncTx2Thread::run()
     this->m_bCleanup=false;
 
     //write encode h264 frames to local file for debugging.
-#if 0
+#if 1
     QFile fileH2642("zsy2.h264");
     fileH2642.open(QIODevice::WriteOnly);
 #endif
@@ -441,7 +442,7 @@ void ZHardEncTx2Thread::run()
 #endif
 
         //write encode h264 frames to local file for debugging.
-#if 0
+#if 1
         fileH2642.write(pSpsPps,nSpsPspLen);
 #endif
 
@@ -533,7 +534,7 @@ void ZHardEncTx2Thread::run()
                 p->frame_count++;
                 //qDebug("aux h264 encoded frame %d size %d                     ***\n",p->frame_count,nH264DataLen2);
 
-#if 0
+#if 1
                 //write encode h264 frames to local file for debugging.
                 fileH2642.write((const char*)pH264Data2,nH264DataLen2);
                 fileH2642.flush();

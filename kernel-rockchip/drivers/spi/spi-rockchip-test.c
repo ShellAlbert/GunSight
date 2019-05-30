@@ -342,7 +342,7 @@ static int rockchip_spi_test_probe(struct spi_device *spi)
 	int ret;
 	int id = 0;
 	struct spi_test_data *spi_test_data = NULL;
-
+        printk("zsy spi_test probe\n");
 	if (!spi)
 		return -ENOMEM;
 
@@ -417,6 +417,7 @@ static int __init spi_rockchip_test_init(void)
 
 	misc_register(&spi_test_misc);
 	ret = spi_register_driver(&spi_rockchip_test_driver);
+	printk("zsy:rk3399 spi test misc load okay!\n");
 	return ret;
 }
 module_init(spi_rockchip_test_init);
@@ -424,7 +425,9 @@ module_init(spi_rockchip_test_init);
 static void __exit spi_rockchip_test_exit(void)
 {
 	misc_deregister(&spi_test_misc);
-	return spi_unregister_driver(&spi_rockchip_test_driver);
+	spi_unregister_driver(&spi_rockchip_test_driver);
+	printk("zsy:rk3399 spi test misc unload okay!\n");
+	return;	
 }
 module_exit(spi_rockchip_test_exit);
 

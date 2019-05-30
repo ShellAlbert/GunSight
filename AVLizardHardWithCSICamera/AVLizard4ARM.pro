@@ -157,7 +157,7 @@ LIBS += -L/home/zhangshaoyan/armbuild/libopus4arm/lib -lopus
 
 #RNNoise.
 INCLUDEPATH += /home/zhangshaoyan/armbuild/librnnoise4arm/include
-LIBS += -L/home/zhangshaoyan/armbuild/librnnoise4arm/lib -lrnnoise
+#LIBS += -L/home/zhangshaoyan/armbuild/librnnoise4arm/lib -lrnnoise
 
 
 #GStreamer.
@@ -183,6 +183,6 @@ INCLUDEPATH += /home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/a
 LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/audio/LogMMSE -llogmmse
 
 #libns.so
-LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/libns -lns
+LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/sunpengnewlibs -lns -lrnnoise -lwebrtc
 target.path=/home/wh/AVLizardDeploy
 INSTALLS += target

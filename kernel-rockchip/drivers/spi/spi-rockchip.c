@@ -791,6 +791,7 @@ static int rockchip_spi_probe(struct platform_device *pdev)
 		goto err_register_master;
 	}
 
+       printk("zsy:rk3399 spi controller driver load okay!\n");
 	return 0;
 
 err_register_master:
@@ -826,6 +827,7 @@ static int rockchip_spi_remove(struct platform_device *pdev)
 
 	spi_master_put(master);
 
+       printk("zsy:rk3399 spi controller driver unload okay!\n");
 	return 0;
 }
 

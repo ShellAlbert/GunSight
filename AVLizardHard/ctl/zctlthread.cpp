@@ -257,7 +257,7 @@ QByteArray ZJsonThread::ZParseJson(const QJsonDocument &jsonDoc)
                 if(deNoise=="off")
                 {
                     gGblPara.m_audio.m_nDeNoiseMethod=0;
-                }else if(deNoise=="RNNoise")
+                }else if(deNoise=="Strong")
                 {
                     gGblPara.m_audio.m_nDeNoiseMethod=1;
                 }else if(deNoise=="WebRTC")
@@ -279,7 +279,7 @@ QByteArray ZJsonThread::ZParseJson(const QJsonDocument &jsonDoc)
                     jsonObjFeedBack.insert("DeNoise","off");
                     break;
                 case 1:
-                    jsonObjFeedBack.insert("DeNoise","RNNoise");
+                    jsonObjFeedBack.insert("DeNoise","Strong");
                     break;
                 case 2:
                     jsonObjFeedBack.insert("DeNoise","WebRTC");
@@ -506,57 +506,52 @@ QByteArray ZJsonThread::ZParseJson(const QJsonDocument &jsonDoc)
                 }
             }
         }
-        if(jsonObj.contains("NoiseView"))
+        if(jsonObj.contains("StrongMode"))
         {
-            QJsonValue val=jsonObj.take("NoiseView");
+            QJsonValue val=jsonObj.take("StrongMode");
             if(val.isString())
             {
                 QString noiseView=val.toVariant().toString();
-                if(noiseView=="white")
+                if(noiseView=="mode1")
                 {
                     gGblPara.m_audio.m_nRNNoiseView=0;
-                }else if(noiseView=="pink")
+                    jsonObjFeedBack.insert("StrongMode","mode1");
+                }else if(noiseView=="mode2")
                 {
                     gGblPara.m_audio.m_nRNNoiseView=1;
-                }else if(noiseView=="babble")
+                    jsonObjFeedBack.insert("StrongMode","mode2");
+                }else if(noiseView=="mode3")
                 {
                     gGblPara.m_audio.m_nRNNoiseView=2;
-                }else if(noiseView=="vehicle")
+                    jsonObjFeedBack.insert("StrongMode","mode3");
+                }else if(noiseView=="mode4")
                 {
                     gGblPara.m_audio.m_nRNNoiseView=3;
-                }else if(noiseView=="machine")
+                    jsonObjFeedBack.insert("StrongMode","mode4");
+                }else if(noiseView=="mode5")
                 {
                     gGblPara.m_audio.m_nRNNoiseView=4;
-                }else if(noiseView=="current")
+                    jsonObjFeedBack.insert("StrongMode","mode5");
+                }else if(noiseView=="mode6")
                 {
                     gGblPara.m_audio.m_nRNNoiseView=5;
-                }else if(noiseView=="custom1")
+                    jsonObjFeedBack.insert("StrongMode","mode6");
+                }else if(noiseView=="mode7")
                 {
                     gGblPara.m_audio.m_nRNNoiseView=6;
-                }else if(noiseView=="custom2")
+                    jsonObjFeedBack.insert("StrongMode","mode7");
+                }else if(noiseView=="mode8")
                 {
                     gGblPara.m_audio.m_nRNNoiseView=7;
-                }
-
-                switch(gGblPara.m_audio.m_nDeNoiseMethod)
+                    jsonObjFeedBack.insert("StrongMode","mode8");
+                }else if(noiseView=="mode9")
                 {
-                case 0:
-                    jsonObjFeedBack.insert("DeNoise","off");
-                    break;
-                case 1:
-                    jsonObjFeedBack.insert("DeNoise","RNNoise");
-                    break;
-                case 2:
-                    jsonObjFeedBack.insert("DeNoise","WebRTC");
-                    break;
-                case 3:
-                    jsonObjFeedBack.insert("DeNoise","Bevis");
-                    break;
-                case 4:
-                    jsonObjFeedBack.insert("DeNoise","mmse");
-                    break;
-                default:
-                    break;
+                    gGblPara.m_audio.m_nRNNoiseView=8;
+                    jsonObjFeedBack.insert("StrongMode","mode9");
+                }else if(noiseView=="mode10")
+                {
+                    gGblPara.m_audio.m_nRNNoiseView=9;
+                    jsonObjFeedBack.insert("StrongMode","mode10");
                 }
             }
         }

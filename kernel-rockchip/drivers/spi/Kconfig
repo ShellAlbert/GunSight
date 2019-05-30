@@ -442,7 +442,11 @@ config SPI_ROCKCHIP
 	  Rockchip SPI controller support DMA transport and PIO mode.
 	  The main usecase of this controller is to use spi flash as boot
 	  device.
-
+config SPI_ROCKCHIP_ZSY
+	tristate "Rockchip SPI driver for FPGA Audio Transfer"
+	depends on SPI_ROCKCHIP
+	help 
+		rockchip spi driver for FPGA demodulation communicating between dabin&shaoyan.
 config SPI_RB4XX
 	tristate "Mikrotik RB4XX SPI master"
 	depends on SPI_MASTER && ATH79

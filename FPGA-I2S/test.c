@@ -32,8 +32,8 @@ int main(void)
 	{
 		ret=read(fd,pcmBuffer,sizeof(pcmBuffer));	
 		printf("read %d bytes:\n",ret);
-		fwrite(pcmBuffer,ret,1,fp);
-	#if 0
+//		fwrite(pcmBuffer,ret,1,fp);
+	#if 1 
 		for(i=0;i<ret;i++)
 		{
 			printf("%02x ",pcmBuffer[i]);

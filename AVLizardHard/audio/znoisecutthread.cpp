@@ -448,13 +448,13 @@ qint32 ZNoiseCutThread::ZCutNoiseByRNNoise(QByteArray *baPCM)
     //because original pcm data is 48000 bytes.
     //libns only process 960 bytes each time.
     //so 48000/960=50.
-//    qint32 nOffset=0;
-//    for(qint32 i=0;i<50;i++)
-//    {
-//        char *pPcmAudio=baPCM->data()+nOffset;
-//        ns_processing(pPcmAudio,960);
-//        nOffset+=960;
-//    }
+    qint32 nOffset=0;
+    for(qint32 i=0;i<50;i++)
+    {
+        char *pPcmAudio=baPCM->data()+nOffset;
+        ns_processing(pPcmAudio,960);
+        nOffset+=960;
+    }
     return 0;
 }
 

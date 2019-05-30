@@ -67,7 +67,6 @@ typedef struct {
     RK_S32 fps;
     RK_S32 bps;
 } MpiEncTestData;
-//#define YUYV_CHUNK_SIZE  (640*480*2) //614400.
 
 ZHardEncTxThread::ZHardEncTxThread(qint32 nTcpPort)
 {
@@ -161,6 +160,7 @@ void ZHardEncTxThread::run()
     p->fmt=cmd->format;
     p->type=cmd->type;
     p->num_frames=cmd->num_frames;
+
 
     // update resource parameter
     if(p->fmt<=MPP_FMT_YUV420SP_VU)

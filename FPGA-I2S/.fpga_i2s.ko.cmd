@@ -1,0 +1,1 @@
+cmd_/home/zhangshaoyan/MyWork/github/GunSight/GunSight/FPGA-I2S/fpga_i2s.ko := aarch64-linux-gnu-ld -EL -r  -T ./scripts/module-common.lds --build-id  -o /home/zhangshaoyan/MyWork/github/GunSight/GunSight/FPGA-I2S/fpga_i2s.ko /home/zhangshaoyan/MyWork/github/GunSight/GunSight/FPGA-I2S/fpga_i2s.o /home/zhangshaoyan/MyWork/github/GunSight/GunSight/FPGA-I2S/fpga_i2s.mod.o
