@@ -223,7 +223,7 @@ void ZHardEncTx2Thread::run()
     p->fps = 30;//5;//gGblPara.m_fpsCAM1;
     p->gop = 1;
     //p->bps = p->width * p->height / 8 * p->fps;
-    p->bps = p->width * p->height / 8 * p->fps;
+    p->bps = p->width * p->height / 8 * p->fps*10;
 
     prep_cfg->change = MPP_ENC_PREP_CFG_CHANGE_INPUT |MPP_ENC_PREP_CFG_CHANGE_ROTATION |MPP_ENC_PREP_CFG_CHANGE_FORMAT;
     prep_cfg->width         = p->width;
@@ -374,7 +374,7 @@ void ZHardEncTx2Thread::run()
     this->m_bCleanup=false;
 
     //write encode h264 frames to local file for debugging.
-#if 1
+#if 0
     QFile fileH2642("zsy2.h264");
     fileH2642.open(QIODevice::WriteOnly);
 #endif
@@ -442,7 +442,7 @@ void ZHardEncTx2Thread::run()
 #endif
 
         //write encode h264 frames to local file for debugging.
-#if 1
+#if 0
         fileH2642.write(pSpsPps,nSpsPspLen);
 #endif
 
@@ -498,11 +498,17 @@ void ZHardEncTx2Thread::run()
             void *buf_v = buf_u + p->hor_stride * p->ver_stride / 4; // NOTE: diff from gen_yuv_image
             //qDebug("w:%d,h:%d,hor_stride:%d,ver_stride:%d\n",p->width,p->height,p->hor_stride,p->ver_stride);
 
-            //read yuv to mpp buffer.
+            //copy data to MppFrame.
             for(quint32 row=0,offset=0;row<p->height;row++)
             {
-                memcpy((char*)buf_y+row*p->hor_stride,pYUV422Buffer+offset,p->width*2);
-                offset+=p->width*2;
+                memcpy((char*)buf_y+row*p->hor_stride,pYUV422Buffer+offset,p->width);
+                offset+=p->width;
+            }
+
+            for(quint32 row=0,offset=p->width*p->height;row<p->height/2;row++)
+            {
+                memcpy((char*)buf_u+row*p->hor_stride,pYUV422Buffer+offset,p->width);
+                offset+=p->width;
             }
 
             //this function works in block-mode.
@@ -532,9 +538,9 @@ void ZHardEncTx2Thread::run()
                 p->pkt_eos=mpp_packet_get_eos(packet);
                 p->stream_size+=nH264DataLen2;
                 p->frame_count++;
-                //qDebug("aux h264 encoded frame %d size %d                     ***\n",p->frame_count,nH264DataLen2);
+                qDebug("aux h264 encoded frame %d size %d                     ***\n",p->frame_count,nH264DataLen2);
 
-#if 1
+#if 0
                 //write encode h264 frames to local file for debugging.
                 fileH2642.write((const char*)pH264Data2,nH264DataLen2);
                 fileH2642.flush();

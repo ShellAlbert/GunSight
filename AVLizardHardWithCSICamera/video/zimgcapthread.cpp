@@ -399,6 +399,8 @@ timeout_retry:
             }
         }
 #endif
+
+#if 1
         //2.put yuv data to h264 encode fifo.
         //get a free buffer from fifo.
         this->m_mutexOut2->lock();
@@ -423,7 +425,7 @@ timeout_retry:
         this->m_usedQueueOut2->enqueue(pcmBuffer2);
         this->m_condQueueFullOut2->wakeAll();
         this->m_mutexOut2->unlock();
-
+#endif
         //free a buffer for device.
         struct v4l2_buffer putBuf;
         memset(&putBuf,0,sizeof(putBuf));
