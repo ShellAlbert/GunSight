@@ -20,7 +20,7 @@
 #include <video/zvideotxthread_h2642.h>
 #include "zgblpara.h"
 
-#define FIFO_SIZE   30
+#define FIFO_SIZE   15
 class ZVideoTask : public QObject
 {
     Q_OBJECT

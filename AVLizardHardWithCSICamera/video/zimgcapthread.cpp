@@ -71,17 +71,6 @@ void ZImgCapThread::doCleanBeforeExit()
 }
 void ZImgCapThread::run()
 {
-    bool bTimeOutRetryFlag;
-timeout_retry:
-    bTimeOutRetryFlag=false;
-    if(this->m_nCamIdType==CAM3_ID_MainEx)
-    {
-        while(!gGblPara.m_bGblRst2Exit)
-        {
-            this->sleep(1);
-        }
-        return;
-    }
     //bind main/main ex img cap thread to cpu core 2.
     //bind aux img cap thread to cpu core 3.
     if(this->m_nCamIdType==CAM1_ID_Main || this->m_nCamIdType==CAM3_ID_MainEx)
@@ -106,6 +95,17 @@ timeout_retry:
             qDebug()<<"<Info>:success to bind AuxImgCap thread to cpu core 3.";
         }
     }
+
+timeout_retry:
+    if(this->m_nCamIdType==CAM3_ID_MainEx)
+    {
+        while(!gGblPara.m_bGblRst2Exit)
+        {
+            this->sleep(1);
+        }
+        return;
+    }
+
 
     //create file to save camera infomation.
     QFile fileInfo;
@@ -270,10 +270,62 @@ timeout_retry:
 
     fileInfo.close();
 
+    //test if we can fetch images from V4L2.
+    //if not reinit before entering working loop.
+    if(1)
+    {
+        bool bResetCamera=false;
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(fd,&fds);
+        struct timeval tv;
+        tv.tv_sec=1;
+        tv.tv_usec=0;//1000*10;//10ms.
+        int ret=select(fd+1,&fds,NULL,NULL,&tv);
+        if(ret<0)
+        {
+            qDebug()<<"<Error>:select() cam device error,"<<this->m_devFile;
+            this->doCleanBeforeExit();
+        }else if(0==ret){
+            qDebug()<<"<Warning>:select() timeout for cam "<<this->m_devFile<<",reset!";
+            bResetCamera=true;
+        }else{
+            struct v4l2_buffer getBuf;
+            memset(&getBuf,0,sizeof(getBuf));
+            getBuf.type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            getBuf.memory=V4L2_MEMORY_MMAP;
+            if(ioctl(fd,VIDIOC_DQBUF,&getBuf)<0)
+            {
+                qDebug()<<"<Error>:failed to DQBUF,"<<this->m_devFile;
+            }
+        }
+        if(bResetCamera)
+        {
+            //stop capture.
+            type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            if(ioctl(fd,VIDIOC_STREAMOFF,&type)<0)
+            {
+                qDebug()<<"<Error>:failed to stream off,"<<this->m_devFile;
+            }
+
+            for(quint32 i=0;i<reqBuf.count;i++)
+            {
+                munmap(pIMGBuffer[i].pStart,pIMGBuffer[i].nLength);
+            }
+            free(pIMGBuffer);
+            pIMGBuffer=NULL;
+            free(pRGBBuffer);
+            pRGBBuffer=NULL;
+            close(fd);
+            this->sleep(2);
+            goto timeout_retry;
+        }
+    }
+
     //working loop.
     while(!gGblPara.m_bGblRst2Exit)
     {
-#if 0
+#if 1
         //只有当有客户端连接时才开始采集图像.
         switch(this->m_nCamIdType)
         {
@@ -313,8 +365,7 @@ timeout_retry:
             break;
         }else if(0==ret){
             qDebug()<<"<Warning>:select() timeout for cam "<<this->m_devFile;
-            //continue;
-            bTimeOutRetryFlag=true;
+            continue;
             break;
         }else{
             struct v4l2_buffer getBuf;
@@ -491,13 +542,10 @@ timeout_retry:
         munmap(pIMGBuffer[i].pStart,pIMGBuffer[i].nLength);
     }
     free(pIMGBuffer);
+    pIMGBuffer=NULL;
     free(pRGBBuffer);
+    pRGBBuffer=NULL;
     close(fd);
-    if(bTimeOutRetryFlag)
-    {
-        qDebug()<<this->m_devFile<<",timeout reset!";
-        goto timeout_retry;
-    }
     switch(this->m_nCamIdType)
     {
     case CAM1_ID_Main:

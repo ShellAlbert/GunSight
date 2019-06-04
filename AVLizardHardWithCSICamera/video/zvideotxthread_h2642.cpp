@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <iostream>
 #include <QFile>
-
+#include <QDateTime>
 //for rk3399 hard encoder.
 #define MODULE_TAG "AVLizard_h264_2"
 extern "C"
@@ -219,11 +219,14 @@ void ZHardEncTx2Thread::run()
     rc_cfg = &p->rc_cfg;
 
     /* setup default parameter */
-    //p->fps = gGblPara.m_fpsCAM1*2;
-    p->fps = 30;//5;//gGblPara.m_fpsCAM1;
+    p->fps = 30;
     p->gop = 1;
-    //p->bps = p->width * p->height / 8 * p->fps;
-    p->bps = p->width * p->height / 8 * p->fps*10;
+    //1920x1080,recommend bps 6~9Mbps.
+    //1280x720,recommend bps 4~6Mbps.
+    //720*576,recommend bps 2~3Mbps.
+    //here is 1920*1080/8*30=7776000=7.78Mbps.
+    p->bps = p->width * p->height / 8 * p->fps;
+
 
     prep_cfg->change = MPP_ENC_PREP_CFG_CHANGE_INPUT |MPP_ENC_PREP_CFG_CHANGE_ROTATION |MPP_ENC_PREP_CFG_CHANGE_FORMAT;
     prep_cfg->width         = p->width;
@@ -376,12 +379,12 @@ void ZHardEncTx2Thread::run()
     //write encode h264 frames to local file for debugging.
 #if 0
     QFile fileH2642("zsy2.h264");
-    fileH2642.open(QIODevice::WriteOnly);
+    fileH2642.open(QIODevice::ReadOnly);
 #endif
 
     while(!gGblPara.m_bGblRst2Exit)
     {
-#if 0
+#if 1
         //tcp video aux camera.
         QTcpServer *tcpServerAux=new QTcpServer;
         int on2=1;
@@ -422,7 +425,7 @@ void ZHardEncTx2Thread::run()
         gGblPara.m_bVideoTcpConnected2=true;
         qDebug()<<"aux video connect okay.";
 
-
+#if 1
         //向客户端发送sps/pps.send sps/pps to main.
         QByteArray baSpsPpsLen=qint32ToQByteArray(nSpsPspLen);
         if(tcpSocketAux->write(baSpsPpsLen)<0)
@@ -440,16 +443,37 @@ void ZHardEncTx2Thread::run()
 
         tcpSocketAux->waitForBytesWritten(1000);
 #endif
+#endif
 
         //write encode h264 frames to local file for debugging.
 #if 0
+        QByteArray baSpsPspLen=qint32ToQByteArray(nSpsPspLen);
+        fileH2642.write(baSpsPspLen);
         fileH2642.write(pSpsPps,nSpsPspLen);
 #endif
+#if 0
+        //read sps/psp & tx out.
+        QByteArray baSpsPsp=fileH2642.read(4);
+        qint32 nPktHeaderLen=QByteArrayToqint32(baSpsPsp);
+        fileH2642.read(pSpsPps,nPktHeaderLen);
+        qint32 nOffsetH264Data=4+nPktHeaderLen;
+        qDebug()<<"2,h264 offset=:"<<nOffsetH264Data;
+
+        tcpSocketAux->write(baSpsPsp);
+        tcpSocketAux->write(pSpsPps,nPktHeaderLen);
+        tcpSocketAux->waitForBytesWritten(1000);
+#endif
+
+        //calculate the fps.
+        qint64 nTotalTime=0;
+        qint64 nTotalFrames=0;
+        qint64 nLastTsMsec=QDateTime::currentMSecsSinceEpoch();
+        qint32 nCAMFps=0;
 
         //fetch yuv from queue and do encode & tx.
         while(!gGblPara.m_bGblRst2Exit)
         {
-
+#if 1
             ////////////////////////////////encode aux camera///////////////////////
             //1.fetch data from yuv queue and encode to h264 I/P frames.
             this->m_mutexIn->lock();
@@ -538,14 +562,16 @@ void ZHardEncTx2Thread::run()
                 p->pkt_eos=mpp_packet_get_eos(packet);
                 p->stream_size+=nH264DataLen2;
                 p->frame_count++;
-                qDebug("aux h264 encoded frame %d size %d                     ***\n",p->frame_count,nH264DataLen2);
+                qDebug("aux h264 encoded frame %d size %d                     ***,fps=%d\n",p->frame_count,nH264DataLen2,nCAMFps);
 
 #if 0
                 //write encode h264 frames to local file for debugging.
+                QByteArray baH264Len=qint32ToQByteArray(nH264DataLen2);
+                fileH2642.write(baH264Len);
                 fileH2642.write((const char*)pH264Data2,nH264DataLen2);
                 fileH2642.flush();
 #endif
-#if 0
+#if 1
                 //tx out.
                 QByteArray baH264PktLen2=qint32ToQByteArray(nH264DataLen2);
                 if(tcpSocketAux->write(baH264PktLen2)!=baH264PktLen2.size())
@@ -567,16 +593,58 @@ void ZHardEncTx2Thread::run()
                     break;
                 }
                 gGblPara.m_nTx6805Cnt++;
+
+                //calculate the fps.
+                nTotalFrames++;
+                qint64 nNowTsMsec=QDateTime::currentMSecsSinceEpoch();
+                nTotalTime+=(nNowTsMsec-nLastTsMsec);
+                nLastTsMsec=nNowTsMsec;
+                //qDebug()<<"totalfrm:"<<this->m_nTotalFrames<<",time:"<<this->m_nTotalTime;
+                qint64 nTotalMsec=nTotalTime/1000;
+                if(nTotalMsec>0)
+                {
+                    nCAMFps=nTotalFrames/nTotalMsec;
+                }
 #endif
                 mpp_packet_deinit(&packet);
             }
+#endif
             this->usleep(VIDEO_THREAD_SCHEDULE_US);
+
+#if 0
+            //read sps/psp & tx out.
+            QByteArray baH264Len=fileH2642.read(4);
+            qint32 nPktDataLen=QByteArrayToqint32(baH264Len);
+            qDebug("2,sps/pps:%d,h264 data:%d\n",nPktHeaderLen,nPktDataLen);
+            fileH2642.read(pYUV422Buffer,nPktDataLen);
+            if(fileH2642.atEnd())
+            {
+                fileH2642.seek(nOffsetH264Data);
+                qDebug()<<"set file to begin.";
+            }
+            if(tcpSocketAux->write(baH264Len)!=baH264Len.size())
+            {
+                qDebug()<<"<Error>:failed to tx h264 pkt len,break socket.";
+                break;
+            }
+            if(tcpSocketAux->write((const char*)pYUV422Buffer,nPktDataLen)!=nPktDataLen)
+            {
+                qDebug()<<"<Error>:failed to tx h264 data,break socket.";
+                break;
+            }
+            if(!tcpSocketAux->waitForBytesWritten(SOCKET_TX_TIMEOUT))
+            {
+                qDebug()<<"tx aux failed:"<<tcpSocketAux->errorString();
+                break;
+            }
+            //this->sleep(1);
+#endif
         }
-        //tcpSocketAux->close();
+        tcpSocketAux->close();
         //clean here.
         //设置连接标志，这样编码器线程就会停止工作.
         gGblPara.m_bVideoTcpConnected2=false;
-#if 0
+#if 1
         delete tcpServerAux;
         tcpServerAux=NULL;
 #endif

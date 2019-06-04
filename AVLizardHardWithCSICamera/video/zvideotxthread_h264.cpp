@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <iostream>
 #include <QFile>
-
+#include <QDateTime>
 //for rk3399 hard encoder.
 #define MODULE_TAG "AVLizard_h264_1"
 
@@ -220,11 +220,14 @@ void ZHardEncTxThread::run()
     rc_cfg = &p->rc_cfg;
 
     /* setup default parameter */
-    //p->fps = gGblPara.m_fpsCAM1*2;
-    p->fps = 30;//5;//gGblPara.m_fpsCAM1;
+    p->fps = 30;
     p->gop = 1;
-    //p->bps = p->width * p->height / 8 * p->fps;
-    p->bps = p->width * p->height / 8 * p->fps*10;
+    //1920x1080,recommend bps 6~9Mbps.
+    //1280x720,recommend bps 4~6Mbps.
+    //720*576,recommend bps 2~3Mbps.
+    //here is 1920*1080/8*30=7776000=7.78Mbps.
+    p->bps = p->width * p->height / 8 * p->fps;
+
 
     prep_cfg->change = MPP_ENC_PREP_CFG_CHANGE_INPUT |MPP_ENC_PREP_CFG_CHANGE_ROTATION |MPP_ENC_PREP_CFG_CHANGE_FORMAT;
     prep_cfg->width         = p->width;
@@ -377,14 +380,14 @@ void ZHardEncTxThread::run()
     //write encode h264 frames to local file for debugging.
 #if 0
     QFile fileH2641("zsy1.h264");
-    fileH2641.open(QIODevice::WriteOnly);
+    fileH2641.open(QIODevice::ReadOnly);
 #endif
 
     while(!gGblPara.m_bGblRst2Exit)
     {
 
         //tcp video main camera.
-#if 0
+#if 1
         QTcpServer *tcpServerMain=new QTcpServer;
         int on=1;
         int sockFd=tcpServerMain->socketDescriptor();
@@ -425,6 +428,7 @@ void ZHardEncTxThread::run()
         qDebug()<<"main video connect okay.";
 
         ///////////////////////////////////////////////////////
+#if 1
         //向客户端发送sps/pps.send sps/pps to main.
         QByteArray baSpsPpsLen=qint32ToQByteArray(nSpsPspLen);
         if(tcpSocketMain->write(baSpsPpsLen)<0)
@@ -441,18 +445,38 @@ void ZHardEncTxThread::run()
         }
         tcpSocketMain->waitForBytesWritten(1000);
 #endif
+#endif
 
         //write encode h264 frames to local file for debugging.
 #if 0
+        QByteArray baSpsPsp=qint32ToQByteArray(nSpsPspLen);
+        fileH2641.write(baSpsPsp);
         fileH2641.write(pSpsPps,nSpsPspLen);
 #endif
+#if 0
+        //read sps/psp & tx out.
+        QByteArray baSpsPsp=fileH2641.read(4);
+        qint32 nPktHeaderLen=QByteArrayToqint32(baSpsPsp);
+        qDebug()<<"read sps/psp:"<<nPktHeaderLen;
+        fileH2641.read(pSpsPps,nPktHeaderLen);
+        qint32 nOffsetH264Data=4+nPktHeaderLen;
+        qDebug()<<"h264 offset=:"<<nOffsetH264Data;
 
+        tcpSocketMain->write(baSpsPsp);
+        tcpSocketMain->write(pSpsPps,nPktHeaderLen);
+        tcpSocketMain->waitForBytesWritten(1000);
+#endif
 
+        //calculate the fps.
+        qint64 nTotalTime=0;
+        qint64 nTotalFrames=0;
+        qint64 nLastTsMsec=QDateTime::currentMSecsSinceEpoch();
+        qint32 nCAMFps=0;
 
         //fetch yuv from queue and do encode & tx.
         while(!gGblPara.m_bGblRst2Exit)
         {
-
+#if 1
             //////////////////////encode main queue////////////////////////////////////////
             //1.fetch data from yuv queue and encode to h264 I/P frames.
             this->m_mutexIn->lock();
@@ -542,15 +566,16 @@ void ZHardEncTxThread::run()
                 p->pkt_eos=mpp_packet_get_eos(packet);
                 p->stream_size+=nH264DataLen;
                 p->frame_count++;
-                qDebug("main h264 encoded frame %d size %d ==============================\n",p->frame_count,nH264DataLen);
-
+                qDebug("main h264 encoded frame %d size %d ==============================,fps=%d\n",p->frame_count,nH264DataLen,nCAMFps);
 
 #if 0
                 //write encode h264 frames to local file for debugging.
+                QByteArray baH264Len=qint32ToQByteArray(nH264DataLen);
+                fileH2641.write(baH264Len);
                 fileH2641.write((const char*)pH264Data,nH264DataLen);
                 fileH2641.flush();
 #endif
-#if 0
+#if 1
                 //tx out.
                 QByteArray baH264PktLen=qint32ToQByteArray(nH264DataLen);
                 if(tcpSocketMain->write(baH264PktLen)!=baH264PktLen.size())
@@ -572,17 +597,59 @@ void ZHardEncTxThread::run()
                     break;
                 }
                 gGblPara.m_nTx6803Cnt++;
+
+                //calculate the fps.
+                nTotalFrames++;
+                qint64 nNowTsMsec=QDateTime::currentMSecsSinceEpoch();
+                nTotalTime+=(nNowTsMsec-nLastTsMsec);
+                nLastTsMsec=nNowTsMsec;
+                //qDebug()<<"totalfrm:"<<this->m_nTotalFrames<<",time:"<<this->m_nTotalTime;
+                qint64 nTotalMsec=nTotalTime/1000;
+                if(nTotalMsec>0)
+                {
+                    nCAMFps=nTotalFrames/nTotalMsec;
+                }
 #endif
                 mpp_packet_deinit(&packet);
             }
+#endif
             this->usleep(VIDEO_THREAD_SCHEDULE_US);
+
+#if 0
+            //read sps/psp & tx out.
+            QByteArray baH264Len=fileH2641.read(4);
+            qint32 nPktLen=QByteArrayToqint32(baH264Len);
+            qDebug("sps/pps:%d,h264 len:%d\n",nPktHeaderLen,nPktLen);
+            fileH2641.read(pYUV422Buffer,nPktLen);
+            if(fileH2641.atEnd())
+            {
+                fileH2641.seek(nOffsetH264Data);
+                qDebug()<<"set file to begin.";
+            }
+            if(tcpSocketMain->write(baH264Len)!=baH264Len.size())
+            {
+                qDebug()<<"<Error>:failed to tx h264 pkt len,break socket.";
+                break;
+            }
+            if(tcpSocketMain->write((const char*)pYUV422Buffer,nPktLen)!=nPktLen)
+            {
+                qDebug()<<"<Error>:failed to tx h264 data,break socket.";
+                break;
+            }
+            if(!tcpSocketMain->waitForBytesWritten(SOCKET_TX_TIMEOUT))//1s.
+            {
+                qDebug()<<"tx main failed:"<<tcpServerMain->errorString();
+                break;
+            }
+            //this->sleep(1);
+#endif
         }
-        //tcpSocketMain->close();
+        tcpSocketMain->close();
 
         //clean here.
         //设置连接标志，这样编码器线程就会停止工作.
         gGblPara.m_bVideoTcpConnected=false;
-#if 0
+#if 1
         delete tcpServerMain;
         tcpServerMain=NULL;
 #endif
