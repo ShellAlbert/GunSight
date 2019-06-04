@@ -219,14 +219,18 @@ void ZHardEncTx2Thread::run()
     rc_cfg = &p->rc_cfg;
 
     /* setup default parameter */
-    p->fps = 30;
+    p->fps = 60;
     p->gop = 1;
+    //CAUTION: if bps set to lower,h264 image quality will be worse.
     //1920x1080,recommend bps 6~9Mbps.
     //1280x720,recommend bps 4~6Mbps.
     //720*576,recommend bps 2~3Mbps.
     //here is 1920*1080/8*30=7776000=7.78Mbps.
-    p->bps = p->width * p->height / 8 * p->fps;
-
+    //p->bps = p->width * p->height / 8 * p->fps;
+    p->bps = p->width * p->height / 8 * p->fps * 2 ;
+    //p->bps = p->width * p->height / 8 * p->fps * 3 ;
+    //p->bps = p->width * p->height / 8 * p->fps * 4 ;
+    //p->bps = p->width * p->height / 8 * p->fps * 5 ;//slower.
 
     prep_cfg->change = MPP_ENC_PREP_CFG_CHANGE_INPUT |MPP_ENC_PREP_CFG_CHANGE_ROTATION |MPP_ENC_PREP_CFG_CHANGE_FORMAT;
     prep_cfg->width         = p->width;
@@ -379,7 +383,8 @@ void ZHardEncTx2Thread::run()
     //write encode h264 frames to local file for debugging.
 #if 0
     QFile fileH2642("zsy2.h264");
-    fileH2642.open(QIODevice::ReadOnly);
+    //fileH2642.open(QIODevice::ReadOnly);
+    fileH2642.open(QIODevice::WriteOnly);
 #endif
 
     while(!gGblPara.m_bGblRst2Exit)
@@ -452,7 +457,7 @@ void ZHardEncTx2Thread::run()
         fileH2642.write(pSpsPps,nSpsPspLen);
 #endif
 #if 0
-        //read sps/psp & tx out.
+        //read sps/psp from local h264 file & tx out.
         QByteArray baSpsPsp=fileH2642.read(4);
         qint32 nPktHeaderLen=QByteArrayToqint32(baSpsPsp);
         fileH2642.read(pSpsPps,nPktHeaderLen);
@@ -612,7 +617,7 @@ void ZHardEncTx2Thread::run()
             this->usleep(VIDEO_THREAD_SCHEDULE_US);
 
 #if 0
-            //read sps/psp & tx out.
+            //read sps/psp from local h264 file & tx out.
             QByteArray baH264Len=fileH2642.read(4);
             qint32 nPktDataLen=QByteArrayToqint32(baH264Len);
             qDebug("2,sps/pps:%d,h264 data:%d\n",nPktHeaderLen,nPktDataLen);

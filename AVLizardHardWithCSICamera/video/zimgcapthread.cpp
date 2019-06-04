@@ -246,7 +246,7 @@ timeout_retry:
     //start capturing.
     for(quint32 i=0;i<reqBuf.count;i++)
     {
-        //queue buffer.
+        //post empty buffer to queue.
         struct v4l2_buffer buf;
         memset(&buf,0,sizeof(buf));
         buf.type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -271,7 +271,8 @@ timeout_retry:
     fileInfo.close();
 
     //test if we can fetch images from V4L2.
-    //if not reinit before entering working loop.
+    //if failed then reinit before entering working loop.
+    //bugfixed for MIPI-CSI2 veye-290 cameras.
     if(1)
     {
         bool bResetCamera=false;
@@ -290,11 +291,22 @@ timeout_retry:
             qDebug()<<"<Warning>:select() timeout for cam "<<this->m_devFile<<",reset!";
             bResetCamera=true;
         }else{
+            //get a buffer from device.
             struct v4l2_buffer getBuf;
             memset(&getBuf,0,sizeof(getBuf));
             getBuf.type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
             getBuf.memory=V4L2_MEMORY_MMAP;
             if(ioctl(fd,VIDIOC_DQBUF,&getBuf)<0)
+            {
+                qDebug()<<"<Error>:failed to DQBUF,"<<this->m_devFile;
+            }
+            //free a buffer for device.
+            struct v4l2_buffer putBuf;
+            memset(&putBuf,0,sizeof(putBuf));
+            putBuf.type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            putBuf.memory=V4L2_MEMORY_MMAP;
+            putBuf.index=getBuf.index;
+            if(ioctl(fd,VIDIOC_QBUF,&putBuf)<0)
             {
                 qDebug()<<"<Error>:failed to DQBUF,"<<this->m_devFile;
             }
