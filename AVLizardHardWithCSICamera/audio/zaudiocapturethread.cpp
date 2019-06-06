@@ -49,6 +49,7 @@ void ZAudioCaptureThread::ZDoCleanBeforeExit()
 }
 void ZAudioCaptureThread::run()
 {
+#if 0
     /*
         The most important ALSA interfaces to the PCM devices are the "plughw" and the "hw" interface.
         If you use the "plughw" interface, you need not care much about the sound hardware.
@@ -292,7 +293,103 @@ void ZAudioCaptureThread::run()
     /* Stop PCM device after pending frames have been played */
     //snd_pcm_drain(pcmHandle);
     snd_pcm_close(pcmHandle);
+#else
+    //这里我们使用32KHz的采样率，双声道，采样位数24bit
+    //则有bps=2*24bit*32000=1536000bits/s=192000Bytes
+    //这里我们设置period为4，即1秒发生4次中断，则中断间隔为1s/4=250ms.
+    //则每次中断发生时，我们至少需要填充192000Bytes/(1s/250ms)=48000Bytes
+    //#define     BLOCK_SIZE        48000	// Number of bytes
 
+    //这里我们设置period为10，即1秒发生10次中断，则中断间隔为1s/10=100ms.
+    //则每次中断发生时，我们至少需要填充192000Bytes/(1s/100ms)=19200Bytes
+#define     I2S_BLOCK_SIZE      48000
+#define     I2S_ALSA_PERIOD     4
+#define     I2S_PERIOD_SIZE     I2S_BLOCK_SIZE//(I2S_BLOCK_SIZE>>2)
+    //* The sample rate of the audio codec **
+#define     I2S_SAMPLE_RATE      32000
+
+    //frame帧是播放样本的一个计量单位，由通道数和比特数决定。
+    //立体声32KHz 24-bit的PCM，那么一帧的大小就是6字节(2 Channels*24-bit=48bit/8bit=6 bytes)
+#define I2S_CHANNELS_NUM    2
+#define I2S_BYTES_PER_FRAME 6
+
+    //how to play in rk3399-linux board.
+    //aplay -D plughw:CARD=realtekrt5651co,DEV=0 -c 2 -r 32000 -f S24_3LE -t raw cap.pcm
+    char pcmBuffer[I2S_BLOCK_SIZE*2];
+    int fd=open("/dev/fpga-i2s",O_RDONLY);
+    if(fd<0)
+    {
+        qDebug()<<"failed to open fpga-i2s.";
+        this->ZDoCleanBeforeExit();
+        return;
+    }
+
+    QFile pcmFile("32khz.24be.pcm");
+    pcmFile.open(QIODevice::WriteOnly);
+
+
+    int nPcmLen=0;
+    while(!gGblPara.m_bGblRst2Exit)
+    {
+        //capture.
+        int ret=read(fd,pcmBuffer+nPcmLen,sizeof(pcmBuffer)-nPcmLen);
+        //printf("read %d bytes:\n",ret);
+        if(ret>0)
+        {
+            //add new data to pcm buffer.
+            nPcmLen+=ret;
+            if(nPcmLen>=I2S_PERIOD_SIZE)
+            {
+                int nRemainingBytes=nPcmLen-I2S_PERIOD_SIZE;
+                //move data to fifo.
+                //get a free buffer from fifo.
+                this->m_mutex->lock();
+                while(this->m_freeQueue->isEmpty())
+                {//timeout 5s to check exit flag.
+                    if(!this->m_condQueueEmpty->wait(this->m_mutex,5000))
+                    {
+                        this->m_mutex->unlock();
+                        if(gGblPara.m_bGblRst2Exit)
+                        {
+                            break;
+                        }
+                    }
+                }
+                if(gGblPara.m_bGblRst2Exit)
+                {
+                    break;
+                }
+
+                QByteArray *pcmFIFO=this->m_freeQueue->dequeue();
+                memcpy(pcmFIFO->data(),pcmBuffer,I2S_PERIOD_SIZE);
+#if 1
+        //dump pcm to file
+        pcmFile.write(pcmFIFO->data(),pcmFIFO->size());
+#endif
+                this->m_usedQueue->enqueue(pcmFIFO);
+                this->m_condQueueFull->wakeAll();
+                this->m_mutex->unlock();
+
+                //reset length.
+                nPcmLen=nRemainingBytes;
+                if(nRemainingBytes>0)
+                {
+                    memmove(pcmBuffer,pcmBuffer+I2S_PERIOD_SIZE,nRemainingBytes);
+                }
+            }
+        }else if(0==ret)
+        {
+            qDebug()<<"<warning>:timeout to read pcm data!";
+        }else if(ret<0)
+        {
+            qDebug()<<"<error>:failed to read pcm data!";
+            break;
+        }
+        this->usleep(1000);
+    }
+    close(fd);
+    pcmFile.close();
+#endif
     this->ZDoCleanBeforeExit();
     return;
 }

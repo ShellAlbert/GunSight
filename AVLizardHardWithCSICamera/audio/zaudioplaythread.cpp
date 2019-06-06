@@ -3,6 +3,7 @@
 #include <sys/time.h>
 #include <QDebug>
 #include <QDateTime>
+#include <QFile>
 ZAudioPlayThread::ZAudioPlayThread(QString playCardName)
 {
     this->m_playCardName=playCardName;
@@ -50,7 +51,7 @@ void ZAudioPlayThread::run()
     /* PCM device will return immediately. If SND_PCM_ASYNC is    */
     /* specified, SIGIO will be emitted whenever a period has     */
     /* been completely processed by the soundcard.                */
-    if(snd_pcm_open(&this->m_pcmHandle,(char*)this->m_playCardName.toStdString().c_str(),SND_PCM_STREAM_PLAYBACK,0)<0)
+    if(snd_pcm_open(&this->m_pcmHandle,/*(char*)this->m_playCardName.toStdString().c_str()*/"plughw:CARD=realtekrt5651co,DEV=0",SND_PCM_STREAM_PLAYBACK,0)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_open():"<<this->m_playCardName;
         this->ZDoCleanBeforeExit();
@@ -115,7 +116,9 @@ void ZAudioPlayThread::run()
     }
 
     /* Set sample format */
-    if(snd_pcm_hw_params_set_format(this->m_pcmHandle,hwparams,SND_PCM_FORMAT_S16_LE)<0)
+    //SND_PCM_FORMAT_S24_LE:指的是4字节数据，但只有3字节有效，最高位全为无效的0
+    //SND_PCM_FORMAT_S24_3LE:指的是3字节数据，都有效
+    if(snd_pcm_hw_params_set_format(this->m_pcmHandle,hwparams,/*SND_PCM_FORMAT_S16_LE*/SND_PCM_FORMAT_S24_3BE)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_format().";
         this->ZDoCleanBeforeExit();
@@ -124,14 +127,14 @@ void ZAudioPlayThread::run()
 
     /* Set sample rate. If the exact rate is not supported */
     /* by the hardware, use nearest possible rate.         */
-    unsigned int nRealSampleRate=SAMPLE_RATE;
+    unsigned int nRealSampleRate=32000;//SAMPLE_RATE;
     if(snd_pcm_hw_params_set_rate_near(this->m_pcmHandle,hwparams,&nRealSampleRate,0u)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_rate_near().";
         this->ZDoCleanBeforeExit();
         return;
     }
-    if(nRealSampleRate!=SAMPLE_RATE)
+    if(nRealSampleRate!=/*SAMPLE_RATE*/32000)
     {
         qDebug()<<"<Warning>:Audio PlayThread,the rate "<<SAMPLE_RATE<<" Hz is not supported by hardware.";
         qDebug()<<"<Warning>:Using "<<nRealSampleRate<<" instead.";
@@ -247,6 +250,7 @@ void ZAudioPlayThread::run()
                 break;
             }
         }
+
         this->m_mutex->lock();
         this->m_freeQueue->enqueue(bufferIn);
         this->m_condQueueEmpty->wakeAll();

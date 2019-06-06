@@ -61,7 +61,7 @@ qint32 ZMainTask::ZStartTask()
         return -1;
     }
 
-
+#if 0
     //video task.
     this->m_video=new ZVideoTask;
     QObject::connect(this->m_video,SIGNAL(ZSigVideoTaskExited()),this,SLOT(ZSlotSubThreadsFinished()));
@@ -75,10 +75,11 @@ qint32 ZMainTask::ZStartTask()
         qDebug()<<"<Error>:failed to start video task!";
         return -1;
     }
-
+#endif
     //AV UI.
     this->m_ui=new ZAVUI;
 
+#if 0
     //use signal-slot event to notify local UI flush.
     QObject::connect(this->m_video->ZGetImgCapThread(0),SIGNAL(ZSigNewImgArrived(QImage)),this->m_ui->ZGetImgDisp(0),SLOT(ZSlotFlushImg(QImage)),Qt::AutoConnection);
     QObject::connect(this->m_video->ZGetImgCapThread(1),SIGNAL(ZSigNewImgArrived(QImage)),this->m_ui->ZGetImgDisp(1),SLOT(ZSlotFlushImg(QImage)),Qt::AutoConnection);
@@ -86,7 +87,7 @@ qint32 ZMainTask::ZStartTask()
     //use signal-slot event to notify UI to flush new image process set.
     QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigNewMatchedSetArrived(ZImgMatchedSet)),this->m_ui,SLOT(ZSlotFlushMatchedSet(ZImgMatchedSet)),Qt::AutoConnection);
     //QObject::connect(this->m_video->ZGetImgProcessThread(),SIGNAL(ZSigSSIMImgSimilarity(qint32)),this->m_ui,SLOT(ZSlotSSIMImgSimilarity(qint32)),Qt::AutoConnection);
-
+#endif
     this->m_ui->showMaximized();
 
     //start key detect thread.
@@ -124,11 +125,11 @@ void ZMainTask::ZSlotChkAllExitFlags()
         return;
     }
 
-    if(!this->m_video->ZIsExitCleanup())
-    {
-        qDebug()<<"<Exit>:waiting for video task...";
-        return;
-    }
+//    if(!this->m_video->ZIsExitCleanup())
+//    {
+//        qDebug()<<"<Exit>:waiting for video task...";
+//        return;
+//    }
 
     this->m_timerExit->stop();
     qApp->exit(0);

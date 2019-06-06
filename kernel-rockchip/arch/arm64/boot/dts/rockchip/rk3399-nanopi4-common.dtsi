@@ -472,7 +472,6 @@
 	status = "okay";
 };
 
-/*
 &spi1 {
 	status = "disabled";
 	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
@@ -484,7 +483,8 @@
 		status = "okay";
 	};
 };
-*/
+
+/*
 &spi1 {
         status = "disabled";
         max-freq = <48000000>;   //spi internal clk, don't modify
@@ -499,7 +499,6 @@
                 //spi-cpha;      not support
                 //spi-cpol;     //if the property is here it is 1:clk is high, else 0:clk is low  when idle
         };
-/*
         spi_test@11 {
                 compatible = "rockchip,spi_test_bus0_cs1";
                 reg = <1>;
@@ -508,9 +507,8 @@
                 spi-cpha;
                 spi-cpol;
         };
-*/
 };
-
+*/
 
 &uart0 {
 	pinctrl-names = "default";
@@ -932,6 +930,7 @@
 };
 
 &i2s1 {
+	status = "okay";/*add by zsy*/
 	assigned-clocks = <&cru SCLK_I2S_8CH>;
 	assigned-clock-parents = <&cru SCLK_I2S1_8CH>;
 };

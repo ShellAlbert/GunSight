@@ -337,7 +337,7 @@ timeout_retry:
     //working loop.
     while(!gGblPara.m_bGblRst2Exit)
     {
-#if 1
+#if 0
         //只有当有客户端连接时才开始采集图像.
         switch(this->m_nCamIdType)
         {
