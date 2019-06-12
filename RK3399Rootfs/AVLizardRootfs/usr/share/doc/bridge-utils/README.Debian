@@ -1,0 +1,31 @@
+bridge-utils for Debian
+-----------------------
+
+From ifupdown 0.6.0 we have a really configurable /etc/network/interfaces so
+from now on one can configure almost anything he wants of the bridge using
+the Debian standard way of configuring an interface, that is, if you have
+ifupdown installed. To be able to do that we are providing a couple of links
+to /usr/share/bridge-utils/ifupdown.sh, one from /etc/network/if-pre-up.d
+and another from /etc/network/if-post-down.d.
+
+Configuration for bridges is much easier this way. Check the manpage for
+bridge-utils-interfaces(5) to learn how to configure a bridge the easy way
+using these scripts for ifupdown.
+
+If you are configuring the bridges this way you mustn't include the
+interfaces you use as bridge ports on your /etc/network/interfaces
+configuration, bridge-utils will take care of configuring the ports for you
+if needed, bridge-utils won't touch the ports config at all if not needed,
+if you need to set something up do it using a pre-up option on the bridge
+interface definition.
+
+Check also the examples if you are planning to hibernate or suspend your
+machine as this usually breaks the bridge if the power management utilities
+aren't ready to cope with us. I have added examples for hibernate and
+pm-utils, if you have other examples or suggestions or need any, contact me.
+
+Using a bridge over bonding interfaces can be difficult, the tested bonding
+setups are over active-backup, balance-tlb and 802.3ad bonds. Using other
+modes of bonding and a bridge over them will probably not work.
+
+ -- Santiago Garcia Mantinan <manty@debian.org>, Sun, 13 Jan 2008 17:47:16 +0100

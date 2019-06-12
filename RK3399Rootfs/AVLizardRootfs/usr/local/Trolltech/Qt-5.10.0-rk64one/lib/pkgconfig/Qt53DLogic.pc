@@ -1,0 +1,13 @@
+prefix=/opt/rootfs-rk64one/usr/local/Trolltech/Qt-5.10.0-rk64one
+exec_prefix=${prefix}
+libdir=/usr/local/Trolltech/Qt-5.10.0-rk64one/lib
+includedir=/usr/local/Trolltech/Qt-5.10.0-rk64one/include
+
+
+Name: Qt5 3DLogic
+Description: Qt 3DLogic module
+Version: 5.10.0
+Libs: -L${libdir} -lQt53DLogic 
+Cflags: -I${includedir}/Qt3DLogic -I${includedir}
+Requires: Qt5Core Qt5Gui Qt53DCore
+

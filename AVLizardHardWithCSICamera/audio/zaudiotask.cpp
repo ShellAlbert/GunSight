@@ -36,7 +36,7 @@ ZAudioTask::~ZAudioTask()
     }
 
     //clean FIFOs.
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_DEPTH_AUDIO;i++)
     {
         delete this->m_Cap2NsFIFO[i];
     }
@@ -44,7 +44,7 @@ ZAudioTask::~ZAudioTask()
     this->m_Cap2NsFIFOUsed.clear();
 
     //noise to playback fifo.
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_DEPTH_AUDIO;i++)
     {
         delete this->m_Ns2PbFIFO[i];
     }
@@ -52,7 +52,7 @@ ZAudioTask::~ZAudioTask()
     this->m_Ns2PbFIFOUsed.clear();
 
     //noise to tx fifo.
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_DEPTH_AUDIO;i++)
     {
         delete this->m_Ns2TxFIFO[i];
     }
@@ -66,24 +66,24 @@ qint32 ZAudioTask::ZStartTask()
 
     //create FIFOs.
     //capture to noise queue(fifo).
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_DEPTH_AUDIO;i++)
     {
         this->m_Cap2NsFIFO[i]=new QByteArray;
-        this->m_Cap2NsFIFO[i]->resize(PERIOD_SIZE);
+        this->m_Cap2NsFIFO[i]->resize(BLOCK_SIZE);
         this->m_Cap2NsFIFOFree.enqueue(this->m_Cap2NsFIFO[i]);
     }
     //noise to playback fifo.
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_DEPTH_AUDIO;i++)
     {
         this->m_Ns2PbFIFO[i]=new QByteArray;
-        this->m_Ns2PbFIFO[i]->resize(PERIOD_SIZE);
+        this->m_Ns2PbFIFO[i]->resize(BLOCK_SIZE);
         this->m_Ns2PbFIFOFree.enqueue(this->m_Ns2PbFIFO[i]);
     }
     //noise to tx fifo.
-    for(qint32 i=0;i<5;i++)
+    for(qint32 i=0;i<FIFO_DEPTH_AUDIO;i++)
     {
         this->m_Ns2TxFIFO[i]=new QByteArray;
-        this->m_Ns2TxFIFO[i]->resize(PERIOD_SIZE);
+        this->m_Ns2TxFIFO[i]->resize(BLOCK_SIZE);
         this->m_Ns2TxFIFOFree.enqueue(this->m_Ns2TxFIFO[i]);
     }
 
@@ -101,7 +101,7 @@ qint32 ZAudioTask::ZStartTask()
     QObject::connect(this->m_cutThread,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotHelpThreads2Exit()));
 
     //create playback thread.
-    this->m_playThread=new ZAudioPlayThread(/*gGblPara.m_audio.m_playCardName*//*"plughw:CARD=realtekrt5651co,DEV=0"*/"plughw:CARD=rockchiphdmi,DEV=0");
+    this->m_playThread=new ZAudioPlayThread(/*gGblPara.m_audio.m_playCardName*/ /*"plughw:CARD=realtekrt5651co,DEV=0"*/"plughw:CARD=rockchiphdmi,DEV=0");
     this->m_playThread->ZBindFIFO(&this->m_Ns2PbFIFOFree,&this->m_Ns2PbFIFOUsed,&this->m_Ns2PbFIFOMutex,&this->m_condNs2PbFIFOEmpty,&this->m_condNs2PbFIFOFull);
     QObject::connect(this->m_playThread,SIGNAL(ZSigThreadFinished()),this,SLOT(ZSlotHelpThreads2Exit()));
 

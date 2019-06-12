@@ -1,0 +1,20 @@
+# Lines beginning with a number sign are comments, they are removed when
+# sending mails.  If a line is composed of a # followed by a 'Name: Value'
+# pair, it is interpreted as a mail header field and is passed to your mail
+# transport agent.  You can edit/add/remove those header fields.
+# 
+# From: <from>
+# Subject: debconf PO translations for the package <package> are outdated
+
+Package: <package>
+Version: N/A
+Severity: wishlist
+Tags: l10n
+
+The following debconf translations are outdated:
+  <filelist>
+
+Translators, please send your translations to this bugreport.
+<deadline>
+
+Thanks in advance,

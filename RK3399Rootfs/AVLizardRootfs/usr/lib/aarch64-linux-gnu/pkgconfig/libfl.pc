@@ -1,0 +1,8 @@
+prefix=
+exec_prefix=${prefix}
+libdir=${prefix}/lib/aarch64-linux-gnu
+
+Name: libfl
+Description: Flex (the fast lexical analyzer) support library
+Version: 2.6.4
+Libs: -L${libdir} -lfl

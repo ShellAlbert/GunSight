@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib/arm-linux-gnueabihf
+includedir=${prefix}/include
+
+Name: PAPI
+Description: Performance API to access performance metrics on system
+Version: 5.6.0.0
+Libs: -L${libdir} -lpapi
+Libs.private: -L/usr/lib/arm-linux-gnueabihf -lpfm
+Cflags: -I${includedir}

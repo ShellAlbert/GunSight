@@ -576,7 +576,7 @@ void ZHardEncTx2Thread::run()
                 fileH2642.write((const char*)pH264Data2,nH264DataLen2);
                 fileH2642.flush();
 #endif
-#if 1
+#if 0
                 //tx out.
                 QByteArray baH264PktLen2=qint32ToQByteArray(nH264DataLen2);
                 if(tcpSocketAux->write(baH264PktLen2)!=baH264PktLen2.size())

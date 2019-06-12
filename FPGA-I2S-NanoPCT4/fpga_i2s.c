@@ -30,6 +30,9 @@
 #include <linux/kthread.h>
 #include <linux/sched.h>
 #include <linux/err.h>
+#include <linux/mutex.h>
+#include <sound/pcm_params.h>
+#include <sound/dmaengine_pcm.h>
 
 #define DRV_NAME "rockchip,fpga-i2s"
 //1s data size=(32000*3*2)=192000B //32khz,24bit,2channel.
@@ -317,7 +320,8 @@ struct fpga_i2s_dev {
     //irq.
     int irq;
     struct kfifo fifo;
-    spinlock_t lock;
+    //spinlock_t lock;
+    struct mutex mutex;
     void *pcm_buffer;
 
     //wait queue.
@@ -326,6 +330,10 @@ struct fpga_i2s_dev {
 
     //kernel thread.
     struct task_struct *gRdPcmTask;
+
+    //dma.
+    struct snd_dmaengine_dai_dma_data capture_dma_data;
+    struct snd_dmaengine_dai_dma_data playback_dma_data;
 };
 static int devno_major;
 static struct fpga_i2s_dev *g_i2s;
@@ -369,7 +377,8 @@ static int gRdPcmThread(void *arg)
                 //bytes[1]=(unsigned char)((pcm&0xFF0000)>>16);//34
                 //bytes[0]=(unsigned char)((pcm&0xFF00)>>8);//56
 
-                spin_lock(&i2s->lock);
+                //spin_lock(&i2s->lock);
+                mutex_lock(&i2s->mutex);
                 //overwrite last 3 bytes.
                 //printk(KERN_INFO "fifo size:%d\n",kfifo_size(&i2s->fifo));
                 //printk(KERN_INFO "fifo free:%d\n",kfifo_avail(&i2s->fifo));
@@ -378,10 +387,12 @@ static int gRdPcmThread(void *arg)
                     int nCopied;
                     unsigned char nonvalid[3];
                     nCopied=kfifo_out(&i2s->fifo,nonvalid,sizeof(nonvalid));
+                    printk(KERN_INFO "overwrite first 3 bytes!\n");
                 }
                 kfifo_in(&i2s->fifo,bytes,sizeof(bytes));
                 //printk(KERN_INFO "fifo data:%d\n",kfifo_len(&i2s->fifo));
-                spin_unlock(&i2s->lock);
+                //spin_unlock(&i2s->lock);
+                mutex_unlock(&i2s->mutex);
             }
         }
     }
@@ -394,7 +405,7 @@ static irqreturn_t fpga_i2s_rx_irq(int irq, void *data)
     struct fpga_i2s_dev *i2s=(struct fpga_i2s_dev*)data;
     //disalbe irq & wake up wait queue.
     disable_irq_nosync(i2s->irq);
-    printk(KERN_INFO "irq happened fpga-i2s\n");
+    //printk(KERN_INFO "irq happened fpga-i2s\n");
 
     //1.I2S_INTSR to detect which IRQ happened.
     val=ioread32(i2s->paddr_i2s_intsr);
@@ -489,20 +500,24 @@ static ssize_t fpga_i2s_read(struct file *filp,char __user *buf,size_t count,lof
         return -1;
     }
 
-    spin_lock(&i2s->lock);
+    //spin_lock(&i2s->lock);
+    mutex_lock(&i2s->mutex);
     if(kfifo_to_user(&i2s->fifo,(void*)buf,count,&nCopied))
     {
         printk(KERN_INFO DRV_NAME ":kfifo_to_user failed!\n");
-        spin_unlock(&i2s->lock);
+        //spin_unlock(&i2s->lock);
+        mutex_unlock(&i2s->mutex);
         return -1;
     }
     if(nCopied!=count)
     {
-        printk(KERN_INFO DRV_NAME ":kfifo_to_user less/more data! (%d/%d)\n",count,nCopied);
-        spin_unlock(&i2s->lock);
+        //printk(KERN_INFO DRV_NAME ":kfifo_to_user less/more data! (%d/%d)\n",count,nCopied);
+        //spin_unlock(&i2s->lock);
+        mutex_unlock(&i2s->mutex);
         return nCopied;
     }
-    spin_unlock(&i2s->lock);
+    //spin_unlock(&i2s->lock);
+    mutex_unlock(&i2s->mutex);
     return PCM_BPS;
 }
 static struct file_operations fpga_i2s_fops=
@@ -695,12 +710,13 @@ static int fpga_i2s_probe(struct platform_device *pdev)
         printk(KERN_ERR DRV_NAME ":failed to allocate fifo.\n");
         return -1;
     }
-//    if(kfifo_alloc(&i2s->fifo,FIFO_SIZE,GFP_KERNEL))
-//    {
-//        printk(KERN_ERR DRV_NAME ":failed to allocate fifo.\n");
-//        return -1;
-//    }
-    spin_lock_init(&i2s->lock);
+    //    if(kfifo_alloc(&i2s->fifo,FIFO_SIZE,GFP_KERNEL))
+    //    {
+    //        printk(KERN_ERR DRV_NAME ":failed to allocate fifo.\n");
+    //        return -1;
+    //    }
+    //spin_lock_init(&i2s->lock);
+    mutex_init(&i2s->mutex);
 
     //use global pointer to tract it.
     g_i2s=i2s;

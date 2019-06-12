@@ -1,0 +1,18 @@
+#!/bin/bash
+killall rtmapp
+. setqt4env
+
+HOST='192.168.2.62'
+USER='plg'
+PASSWD='plg'
+FILE='rtmapp'
+
+ftp -n $HOST <<END_SCRIPT
+quote USER $USER
+quote PASS $PASSWD
+bin
+get $FILE
+quit
+END_SCRIPT
+./rtmapp -qws
+exit 0

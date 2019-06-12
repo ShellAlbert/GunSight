@@ -1,0 +1,771 @@
+#!/usr/bin/perl -w
+
+#
+# apt-file - APT package searching utility -- command-line interface
+#
+# (c) 2001 Sebastien J. Gross <seb@debian.org>
+#
+# This package is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 dated June, 1991.
+#
+# This package is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this package; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA 02110-1301 USA.
+
+use strict;
+use warnings;
+
+use constant {
+    RETURN_CODE_NO_RESULTS => 1,
+    RETURN_CODE_GENERIC_ERROR => 2,
+    RETURN_CODE_CACHE_IS_EMPTY => 3,
+    RETURN_CODE_CACHE_NO_MATCHING_INDICES => 4,
+
+    CONFIG_SEARCH_INDEX_NAMES => 'apt-file::Index-Names',
+    CONFIG_SEARCH_FILTER_ORIGINS => 'apt-file::Search-Filter::Origin',
+    CONFIG_SEARCH_FILTER_SUITES => 'apt-file::Search-Filter::Suite',
+};
+
+use POSIX qw(_exit);
+use Getopt::Long qw/:config gnu_getopt no_ignore_case/;
+use File::Basename;
+use File::Path;
+use File::Temp;
+use AptPkg::Config '$_config';
+use List::MoreUtils qw/any none uniq/;
+
+my ($Conf, @apt_options);
+
+sub warning {
+    my ($msg) = @_;
+    print STDERR "W: $msg\n";
+    return;
+}
+
+sub error($) {
+    my ($msg) = @_;
+    print STDERR "E: $msg\n";
+    exit RETURN_CODE_GENERIC_ERROR;
+}
+
+sub stop_with_msg {
+    my ($msg, $return_code) = @_;
+    print STDERR "E: $msg\n";
+    if (not defined($return_code)) {
+        print STDERR "INTERNAL ERROR: Missing correct return code\n";
+        $return_code //= 255;
+    }
+    exit $return_code;
+}
+
+sub debug {
+    my ($level, $msg) = @_;
+    return if not defined $Conf->{verbose} or $level > $Conf->{verbose};
+    print STDERR "D: ${msg}\n";
+}
+
+sub debug_line($) {
+    return if !defined $Conf->{verbose};
+    print STDERR shift;
+}
+
+sub reverse_hash($) {
+    my $hash = shift;
+    my $ret;
+    foreach my $key ( keys %$hash ) {
+        foreach ( @{ $hash->{$key} } ) {
+            push @{ $ret->{$_} }, $key;
+        }
+    }
+    return $ret;
+}
+
+sub fetch_files ($) {
+    my @cmd = ('apt', @apt_options, 'update');
+    $cmd[0] = 'apt-get' if not -t STDOUT;
+    debug(1, "Running @cmd");
+    exec(@cmd);
+}
+
+sub print_winners ($$) {
+    my ( $db, $matchfname ) = @_;
+    my $filtered_db;
+
+    if ($matchfname) {
+        # Everything is a match
+        $filtered_db = $db;
+    } else {
+        # $db is a hash from package name to array of file names.  It
+        # is a superset of the matching cases, so first we filter this
+        # by the real pattern.
+        $filtered_db = {};
+        foreach my $key ( keys %$db ) {
+            if ( $key =~ /$Conf->{pattern}/ ) {
+                $filtered_db->{$key} = $db->{$key};
+            }
+        }
+    }
+
+    if (not $filtered_db or not %{$filtered_db}) {
+        debug(1, 'No matches');
+        exit RETURN_CODE_NO_RESULTS;
+    }
+
+    # Now print the winners
+    if ( !defined $Conf->{package_only} ) {
+        foreach my $key ( sort keys %$filtered_db ) {
+            foreach ( uniq sort @{ $filtered_db->{$key} } ) {
+                print "$key: $_\n";
+            }
+        }
+    }
+    else {
+        print map {"$_\n"} ( sort keys %$filtered_db );
+    }
+    exit 0;
+}
+
+sub start_pipe_to_cmd {
+    my ($sub_proc_write_end, @cmd) = @_;
+    my ($read_end, $our_write_end, $pid);
+    pipe($read_end, $our_write_end)
+        or error("pipe failed: $!");
+    $pid = fork()
+        // error("fork failed: $!");
+    if (not $pid) {
+        open(STDIN, '>&', $read_end);
+        open(STDOUT, '>&', $sub_proc_write_end)
+            or error("fdup stdout failed: $!");
+        close($our_write_end)
+            or error("close write end of pipe: $!");
+        debug(1, 'starting ' . join(' ', @cmd));
+        exec {$cmd[0]} @cmd
+            or error('exec ' . join(' ', @cmd) . " failed: $!");
+    }
+    close($read_end)
+        or error("close write end of pipe: $!");
+    close($sub_proc_write_end)
+        or error("close unneeded write end of pipe: $!");
+    return ($our_write_end, $pid);
+}
+
+sub open_data_pipeline {
+    my ($file_list) = @_;
+    my ($read_end, $write_end, $pid);
+    pipe($read_end, $write_end)
+        or error("pipe failed: $!");
+    $pid = fork()
+        // error("fork failed: $!");
+    if (not $pid) {
+        my ($to_cat, $dead_pid, $failed_cmd, $cat_pid, $sed_pid, %pid_table);
+        my $sub_proc_error = 0;
+        my $grep_pattern = $Conf->{grep_pattern} // '.';
+        my @cat_cmd = (
+            'xargs',
+            '-0r',
+            '/usr/lib/apt/apt-helper',
+            @apt_options,
+            'cat-file'
+        );
+        my @sed_cmd = (
+            'sed',
+            '/^This file maps each file available/,/^FILE *LOCATION$/d'
+        );
+        close($read_end)
+            or error("Close read end of pipeline: $!");
+        if ($grep_pattern ne '.' and not $Conf->{is_regexp}) {
+            my ($grep_pid);
+            my @grep_cmd = ('fgrep');
+            push(@grep_cmd, '-i') if $Conf->{ignore_case};
+            if ($Conf->{from_file}) {
+                 push(@grep_cmd, '-f', $Conf->{zgrep_tmpfile});
+            } else {
+                my $gp = $grep_pattern;
+                $gp =~ s{^/}{};
+                push(@grep_cmd, '--', $gp);
+            }
+
+            delete $ENV{$_} foreach qw{GREP_OPTIONS GREP_COLOR
+                                       POSIXLY_CORRECT GREP_COLORS};
+            ($write_end, $grep_pid) = start_pipe_to_cmd($write_end, @grep_cmd);
+            $pid_table{$grep_pid} = {
+                'ignore-exit' => 1,
+                'cmd' => \@grep_cmd,
+            };
+        }
+        ($write_end, $sed_pid) = start_pipe_to_cmd($write_end, @sed_cmd);
+        $pid_table{$sed_pid} = {
+            'cmd' => \@sed_cmd,
+        };
+        ($to_cat, $cat_pid) = start_pipe_to_cmd($write_end, @cat_cmd);
+        $pid_table{$cat_pid} = {
+            'cmd' => \@cat_cmd,
+        };
+        debug(1, "Starting to pass files");
+        for my $file (uniq(@{$file_list})) {
+            debug(1, "Passing $file");
+            printf {$to_cat} "%s\0", $file;
+        }
+        debug(1, "Closing input to cat");
+        close($to_cat)
+            or error("close write end of xargs pipe: $!");
+        do {
+            $dead_pid = waitpid(-1, 0);
+            if ($dead_pid > 0) {
+                my $pid_info = $pid_table{$dead_pid};
+                my $is_issue = $?;
+                if ($pid_info->{'ignore-exit'}) {
+                    # Only "killed by signal" counts in this case
+                    $is_issue = $? & 0x7F;
+                }
+                if ($is_issue and not $sub_proc_error) {
+                    $sub_proc_error = $?;
+                    $failed_cmd = join(' ', @{$pid_info->{'cmd'}});
+                }
+            }
+        } while ($dead_pid > 0);
+        if (my $sig = ($sub_proc_error & 0x7f)) {
+            warn("Command ${failed_cmd} was killed by signal ${sig}");
+            POSIX::_exit($sig);
+        }
+        if ($sub_proc_error) {
+            my $retval = ($sub_proc_error >> 8) & 0xff;
+            warn("Command ${failed_cmd} exited with code ${retval}");
+            POSIX::_exit($retval);
+        }
+        POSIX::_exit(0);
+    }
+    close($write_end)
+        or error("close write end of pipe: $!");
+    return $read_end;
+}
+
+sub do_grep($$) {
+    my ( $data, $pattern ) = @_;
+    my ( $pkgs, $fname, @cmd, $ret);
+    debug(1, "regexp: ${pattern}");
+    $| = 1;
+    my $regexp = eval { $Conf->{ignore_case} ? qr/${pattern}/i : qr/${pattern}/ };
+    error($@) if $@;
+    my $quick_regexp = escape_parens($regexp);
+    my $fd = open_data_pipeline($data);
+    while (<$fd>) {
+
+        # faster, non-capturing search first
+        next if !/$quick_regexp/o;
+
+        next if !( ( $fname, $pkgs ) = /$regexp/o );
+
+        debug_line ".";
+        foreach ( split /,/, $pkgs ) {
+
+            # Put leading slash on file name
+            push @{ $ret->{"/$fname"} }, basename $_;
+        }
+    }
+    close($fd);
+    debug_line "\n";
+    waitpid(-1, 0);
+    if ($?) {
+        error("A subprocess exited uncleanly (raw: $?)");
+    }
+    return reverse_hash($ret);
+}
+
+sub escape_parens {
+    my $pattern = shift;
+
+    # turn any capturing ( ... ) into non capturing (?: ... )
+    $pattern =~ s{ (?<! \\ )    # not preceded by a \ 
+                        \(      # (
+                   (?!  \? )    # not followed by a ?
+                 }{(?:}gx;
+    return $pattern;
+}
+
+sub fix_regexp {
+    my $pattern = shift;
+    
+    # If pattern starts with /, we need to match both ^pattern-without-slash
+    # (which is put in $pattern) and ^.*pattern (put in $pattern2).
+    # Later, they will be or'ed together.
+    my $pattern2;
+    if ( $pattern !~ s{(\$|\\[zZ])$}{} ) {
+        # Not anchored at the end:
+        $pattern = $pattern . '\S*';
+    }
+
+    if ( $pattern =~ s{^(\^|\\A)/?}{} ) {
+        # If pattern is anchored at the start, we're just not prefixing it
+        # with .* after having removed ^ and /
+    }
+    else {
+        if ( $pattern =~ m{^/} ) {
+
+            # same logic as below, but the "/" is not escaped here
+            $pattern2 = '.*?' . $pattern;
+            $pattern  = substr( $pattern, 1 );
+        }
+        else {
+            $pattern = '.*?' . $pattern;
+        }
+    }
+
+    $pattern  = escape_parens($pattern);
+    $pattern2 = escape_parens($pattern2) if defined $pattern2;
+
+    return ($pattern, $pattern2);
+}
+
+sub grep_file($) {
+    my $data    = shift;
+    my $pattern = $Conf->{pattern};
+
+    # If pattern starts with /, we need to match both ^pattern-without-slash
+    # (which is put in $pattern) and ^.*pattern (put in $pattern2).
+    # Later, they will be or'ed together.
+    my $pattern2;
+
+    if ( $Conf->{is_regexp} ) {
+        if (!$Conf->{from_file}) {
+            ($pattern, $pattern2) = fix_regexp($pattern);
+        }
+    }
+    elsif ( substr( $pattern, 0, 2 ) eq '\/' ) {
+        if ( $Conf->{fixed_strings} ) {
+
+            # remove leading /
+            $pattern = substr( $pattern, 2 );
+        }
+        else {
+
+            # If pattern starts with /, match both ^pattern-without-slash
+            # and ^.*pattern.
+            $pattern2 = '.*?' . $pattern;
+            $pattern  = substr( $pattern, 2 );
+        }
+    }
+    else {
+        $pattern = '.*?' . $pattern unless $Conf->{fixed_strings};
+    }
+
+    if ( ! defined $Conf->{fixed_strings} && ! defined $Conf->{is_regexp} ) {
+        $pattern  .= '(?:.*[^\s])?';
+        $pattern2 .= '(?:.*[^\s])?' if defined $pattern2;
+    }
+
+    $pattern = "$pattern|$pattern2" if defined $pattern2;
+    $pattern = '^(' . $pattern . ')\s+(\S+)\s*$';
+
+    my $ret = do_grep $data, $pattern;
+    print_winners $ret, 1;
+}
+
+sub grep_package($) {
+    my $data = shift;
+
+    my $pkgpat = $Conf->{pattern};
+    if ( $Conf->{is_regexp} ) {
+        if ( $pkgpat !~ s{^(\^|\\A)}{} ) {
+            $pkgpat = '\S*' . $pkgpat;
+        }
+
+        if ( $pkgpat !~ s{(\$|\\[zZ])$}{} ) {
+            $pkgpat = $pkgpat . '\S*';
+        }
+        $pkgpat = escape_parens($pkgpat);
+    }
+    elsif ($Conf->{fixed_strings}) {
+        $pkgpat = $Conf->{pattern};
+    }
+    else {
+        $pkgpat = '\S*' . $Conf->{pattern};
+    }
+
+    # File name may contain spaces, so match template is
+    # ($fname, $pkgs) = (line =~ '^\s*(.*?)\s+(\S+)\s*$')
+    my $pattern = join "",
+        (
+        '^\s*(.*?)\s+', '((?:\S*[,/])?', $pkgpat,
+        defined $Conf->{fixed_strings} || defined $Conf->{regexp} ?
+            '(?:,\S*|)' : '\S*', ')\s*$',
+        );
+    my $ret = do_grep $data, $pattern;
+    print_winners $ret, 0;
+}
+
+sub print_help {
+    my $err_code = shift || 0;
+
+    print <<"EOF";
+
+apt-file [options] action [pattern]
+apt-file [options] -f action <file>
+apt-file [options] -D action <debfile>
+
+Pattern options:
+================
+
+    --fixed-string     -F               Do not expand pattern
+    --from-deb         -D               Use file list of .deb package(s) as
+                                        patterns; implies -F
+    --from-file        -f               Read patterns from file(s), one per line
+                                        (use '-' for stdin)
+    --ignore-case      -i               Ignore case distinctions
+    --substring-match                   pattern is a substring (no glob/regex)
+    --regexp           -x               pattern is a regular expression
+
+
+Search filter options:
+======================
+
+    --architecture     -a  <arch>       Use specific architecture [L]
+    --index-names      -I  <names>      Only search indices listed in <names> [L]
+    --filter-suites        <suites>     Only search indices for the listed <suites> [L]
+                                        (E.g. "unstable")
+    --filter-origins       <origins>    Only search indices from <origins> [L]
+                                        (E.g. "Debian")
+
+Other options:
+==============
+
+    --package-only     -l               Only display packages name
+    --verbose          -v               run in verbose mode [R]
+    --config           -c <file>        Parse the given APT config file [R]
+    --option           -o <A::B>=<V>    Set the APT config option A::B to "V" [R]
+    --help             -h               Show this help.
+                       --               End of options (necessary if pattern
+                                        starts with a '-')
+
+[L]: Takes a comma-separated list of values.
+[R]: The option can be used repeatedly
+
+Action:
+    update                              Fetch Contents files from apt-sources.
+    search|find        <pattern>        Search files in packages
+    list|show          <pattern>        List files in packages
+EOF
+    exit $err_code;
+}
+
+sub get_options() {
+    my %options = (
+        "architecture|a=s"  => \$Conf->{arch},
+        "index-names|I=s"   => sub { $_config->set(CONFIG_SEARCH_INDEX_NAMES, $_[1]) },
+        "verbose|v+"        => \$Conf->{verbose},
+        "ignore-case|i"     => \$Conf->{ignore_case},
+        "regexp|x"          => \$Conf->{is_regexp},
+        "substring-match"   => \$Conf->{substring_match},
+        "package-only|l"    => \$Conf->{package_only},
+        "fixed-string|F"    => \$Conf->{fixed_strings},
+        "from-file|f"       => \$Conf->{from_file},
+        "from-deb|D"        => \$Conf->{from_deb},
+        'filter-suites=s'   => sub { _set_option('in-suites', CONFIG_SEARCH_FILTER_SUITES, $_[1]); },
+        'filter-origins=s'  => sub { _set_option('from-origin', CONFIG_SEARCH_FILTER_ORIGINS, $_[1]); },
+        'config-file|c=s@'  => \&_parse_apt_config_file,
+        'option|o=s@'       => \&_parse_apt_option,
+        "help|h"            => \$Conf->{help},
+    );
+    Getopt::Long::Configure("bundling");
+    GetOptions(%options) || print_help(RETURN_CODE_GENERIC_ERROR);
+}
+
+sub _set_option {
+    my ($option_name, $apt_option_name, $value) = @_;
+    $_config->set($apt_option_name, $value);
+    debug(1, "Set ${apt_option_name} to ${value} (due to --${option_name})");
+}
+
+sub _parse_apt_config_file {
+    my (undef, $conf_file) = @_;
+    if ( -d $conf_file) {
+        print STDERR <<EOF;
+You passed a directory to -c but apt-file (now) expects a file.
+
+The "-c" option is now short for "--config-file" and parses an APT
+config file.  It /used/ to be the option for specifying a custom
+"cache-dir", but support for these were retired in apt-file 3.
+
+If you need the cache-dir feature, please create an APT config file
+that makes APT use the desired cache dir directory.  (The man page has
+an example to get you started.)
+
+EOF
+        error("Please pass an APT config file after -c/--config-file");
+    }
+    debug(1, "Parsed $conf_file (due to --config-file)");
+
+    $_config->read_file($conf_file)
+        or error("Cannot parse ${conf_file}");
+    push(@apt_options, '-c', $conf_file);
+    return;
+}
+
+sub _parse_apt_option {
+    my (undef, $option_str) = @_;
+    my ($opt_name, $opt_value) = split(m/=/, $option_str, 2);
+    if (not defined($opt_value)) {
+        if ($opt_name =~ m/ /) {
+            my ($n, $v) = split(m/ /, $opt_name);
+            warning("Did you perhaps intend to use -o \"${n}=${v}\"?");
+        }
+        error("Missing value for ${opt_name}: Expected -o \"Foo::Bar=value\"");
+    }
+    $_config->set($opt_name, $opt_value);
+    debug(1, "Parsed set ${opt_name} to ${opt_value} (due to --option)");
+    push(@apt_options, '-o', $option_str);
+    return;
+}
+
+sub main {
+    my ($action, $is_search, @arch_res, @index_names, @origins, @suites);
+    $_config->init;
+    if (@ARGV and ($ARGV[0] eq '-v' or $ARGV[0] eq '--verbose')) {
+        # To enable debug for the apt-file.conf
+        shift(@ARGV);
+        $Conf->{verbose} = 1;
+    }
+    if (my $apt_file_conf = $_config->get_file('Dir::Etc::apt-file-main')) {
+        debug(1, "Dir::Etc::apt-file-main is set to $apt_file_conf");
+        if ( -l $apt_file_conf or -e $apt_file_conf) {
+            debug(1, "Reading ${apt_file_conf}");
+            $_config->read_file($apt_file_conf)
+                or error("Cannot parse ${apt_file_conf}");
+            push(@apt_options, '-c', $apt_file_conf);
+        } else {
+            debug(1, "The file ${apt_file_conf} does not exist");
+        }
+    } else {
+        debug(1, "Dir::Etc::apt-file-main was not set");
+    }
+    get_options();
+    @arch_res = split(m/\s*,\s*/,
+                      $Conf->{arch} || $_config->{'APT::Architecture'});
+    @suites = split(m/\s*,\s*/, $_config->get(CONFIG_SEARCH_FILTER_SUITES) // '');
+    @origins = split(m/\s*,\s*/, $_config->get(CONFIG_SEARCH_FILTER_ORIGINS) // '');
+    if (none { $_ eq 'all' } @arch_res) {
+        # Automatically support that arch:all contents move to a
+        # separate file"
+        push(@arch_res, 'all');
+    }
+    @suites = () if (any { $_ eq '*' } @suites);
+    @origins = () if (any { $_ eq '*' } @origins);
+    @index_names = split(m/\s*,\s*/,
+                         $_config->get(CONFIG_SEARCH_INDEX_NAMES, 'deb'));
+    if (@index_names > 1 and any { $_ eq 'ALL' } @index_names) {
+        @index_names = ('ALL');
+    }
+
+    $action = shift(@ARGV) // 'none';
+
+    if ($Conf->{fixed_strings} and $Conf->{is_regexp}) {
+        error('Cannot use -F together with -x');
+    }
+    if ($Conf->{fixed_strings} and $Conf->{substring_match}) {
+        error('Cannot use -F together with --substring-match');
+    }
+    if ($Conf->{is_regexp} and $Conf->{substring_match}) {
+        error('Cannot use -x together with --substring-match');
+    }
+
+    if ($action =~ m/^(?:search|find|list|show)$/) {
+        $is_search = 1;
+        if (not defined($Conf->{substring_match}) and
+            not $Conf->{fixed_strings} and not $Conf->{is_regexp}) {
+            debug(1, 'substring match (default)');
+            $Conf->{fixed_strings} = 1
+              if $action eq 'list' or $action eq 'show';
+        }
+    }
+
+    if ($Conf->{from_file} || $Conf->{from_deb}) {
+        require Regexp::Assemble;
+        my $ra = Regexp::Assemble->new;
+        my @list;
+        if ($Conf->{from_deb}) {
+            $Conf->{from_file} = 1;
+            $Conf->{fixed_strings} = 1;
+            $Conf->{is_regexp} = 0;
+
+            debug(1, "this is a .deb file, calling dpkg-deb to get contents");
+            my @content;
+            foreach my $deb (@ARGV) {
+                push @content, qx{dpkg-deb -c \Q$deb};
+                if ($? != 0) {
+                    error("Couldn't get contents from $deb");
+                }
+            }
+            foreach my $line (@content) {
+                next if $line =~ m{/$};  # skip dirs
+                my @fields = split(/\s+/, $line);
+                my $filename = $fields[5];
+                $filename =~ s{^\.}{};
+                push @list, "$filename\n";
+            }
+        }
+        else {
+            # normal text files
+            # - assume "STDIN" if no arguments are given.
+            push @ARGV, '-' unless @ARGV;
+            foreach my $file (@ARGV) {
+                if ($file eq '-') {
+                    push @list, <STDIN>;
+                    next;
+                }
+                open(my $fh, '<', $file)
+                    or error("Cannot open $file: $!");
+                push @list, <$fh>;
+                close($fh);
+            }
+        }
+        if ($Conf->{is_regexp}) {
+            foreach my $line (@list) {
+                chomp $line;
+                my ($p1, $p2) = fix_regexp($line);
+                $ra->add($p1);
+                $ra->add($p2) if defined $p2;
+            }
+        }
+        else {
+            # create tmpfile for zgrep with patterns that have leading slash removed
+            my @zgrep_list = @list;
+            map { s{^/}{} } @zgrep_list;
+            my $tmpfile = File::Temp->new();
+            print $tmpfile @zgrep_list;
+            $tmpfile->flush();
+            $Conf->{zgrep_tmpfile} = $tmpfile;
+
+            # create actual search pattern
+            @list = map {quotemeta} @list;
+            $ra->add(@list);
+        }
+        $Conf->{pattern} = $ra->as_string(indent => 0);
+    }
+    else {
+        $Conf->{pattern} = shift @ARGV;
+        if (defined($Conf->{pattern}) and not $Conf->{is_regexp}) {
+            my $pattern = $Conf->{pattern};
+            $Conf->{grep_pattern} = $pattern;
+            $pattern = quotemeta($pattern);
+            $Conf->{pattern} = $pattern;
+        }
+    }
+    undef $!;
+
+    my $actions = {
+        update => \&fetch_files,
+        search => \&grep_file,
+        find   => \&grep_file,
+        list   => \&grep_package,
+        show   => \&grep_package,
+    };
+
+    if ($Conf->{help}) {
+        print_help();
+    }
+    if ($is_search && not defined($Conf->{pattern})) {
+        print_help(RETURN_CODE_GENERIC_ERROR);
+    }
+    my $action_handler = $actions->{$action};
+    if (not defined($action_handler)) {
+        print_help(RETURN_CODE_GENERIC_ERROR);
+    }
+
+    if ($is_search) {
+        my @contents = contents_file_paths(\@index_names,
+                                           \@arch_res,
+                                           \@suites,
+                                           \@origins,
+        );
+        $action_handler->(\@contents);
+    } else {
+        $action_handler->();
+    }
+
+}
+
+sub contents_file_paths {
+    my ($index_names, $arch_res, $suite_ref, $origin_ref) = @_;
+    my (@paths, $any_entries);
+    my $any_index = 0;
+    my $format = join("\x1F",
+                      '$(IDENTIFIER)',
+                      '$(ARCHITECTURE)',
+                      '$(ORIGIN)',
+                      '$(SUITE),$(CODENAME)',
+                      '$(FILENAME)');
+    my @cmd = ('apt-get', @apt_options, 'indextargets',
+               '--format', $format);
+    my $cmd_debug = join(' ', map {
+        my $c = $_;
+        $c =~ s/\x1F/\\x1F/g;
+        "\"$c\""
+    } @cmd);
+    my $debug_level = $Conf->{verbose} // 0;
+    $any_index = 1 if @{$index_names} and $index_names->[0] eq 'ALL';
+    debug(1, 'Index restriction [name]: ' . join(' ', @{$index_names}));
+    debug(1, 'Index restriction [arch]: ' .  join(' ', @{$arch_res}));
+    debug(1, 'Index restriction [suite]: ' . join(' ', @{$suite_ref}));
+    debug(1, 'Index restriction [origin]: ' . join(' ', @{$origin_ref}));
+    debug(1, "Running $cmd_debug");
+    open(my $fd, '-|', @cmd)
+      or error('Cannot execute apt-get indextargets');
+    while (my $line = <$fd>) {
+        my ($index_name, $arch, $origin, $suite_names, $filename);
+        chomp($line);
+        next if $line !~ s/^Contents-//;
+        $any_entries = 1;
+        ($index_name, $arch, $origin, $suite_names, $filename) = split("\x1F", $line, 5);
+        if ($debug_level > 1) {
+            my $c = $line;
+            $c =~ s/\x1F/\\x1F/g;
+            debug(2, "Contents index [line]: $c");
+            debug(2, " - index identifier: $index_name");
+            debug(2, " - architecture: $arch");
+            debug(2, " - origin: $origin");
+            debug(2, " - suite/codenames: $suite_names");
+            debug(2, " - filename: $filename");
+        }
+        if ($arch ne '$(ARCHITECTURE)') {
+            next if none { $_ eq $arch } @{$arch_res};
+        }
+        next if not $any_index and none { $_ eq $index_name } @{$index_names};
+        if (@{$suite_ref}) {
+            my ($codename, $suite) = split(m/,/, $suite_names);
+            next if none { $_ eq $codename or $_ eq $suite } @{$suite_ref};
+        }
+        next if @{$origin_ref} and none { $_ eq $origin } @{$origin_ref};
+        push(@paths, $filename);
+    }
+    if (not @paths) {
+        if (not $any_entries) {
+            stop_with_msg('The cache is empty. You need to run "apt update" first.',
+                          RETURN_CODE_CACHE_IS_EMPTY);
+        }
+        stop_with_msg('No Contents in the cache with the given restrictions',
+                      RETURN_CODE_CACHE_NO_MATCHING_INDICES);
+    }
+
+    close($fd);
+    return @paths;
+}
+
+eval {
+    main();
+    exit(0);
+};
+if (my $err = $@) {
+    stop_with_message($err, 255);
+}
+
+__END__
+
+# our style is roughly "perltidy -pbp"
+# vim:sts=4:sw=4:expandtab

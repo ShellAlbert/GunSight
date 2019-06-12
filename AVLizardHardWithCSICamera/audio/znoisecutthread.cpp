@@ -97,14 +97,14 @@ void ZNoiseCutThread::run()
     }
 
     //LogMMSE.
-    X_INT16 *pBuffer;
-    X_FLOAT32 *OutBuf;
-    NoiseSupStructX *NSX;
-    this->m_logMMSE=(LOGMMSE_VAR *)malloc(sizeof(LOGMMSE_VAR));
-    logMMSE_Init(this->m_logMMSE);
-    this->m_SigIn=(X_INT16*)malloc(sizeof(X_INT16)*FRAME_LEN);
-    this->m_SigOut=(X_INT16*)malloc(sizeof(X_INT16)*FRAME_LEN);
-    this->m_OutBuf=(X_FLOAT32 *)malloc(sizeof(X_FLOAT32)*FRAME_SHIFT);
+    //X_INT16 *pBuffer;
+    //X_FLOAT32 *OutBuf;
+    //NoiseSupStructX *NSX;
+    //this->m_logMMSE=(LOGMMSE_VAR *)malloc(sizeof(LOGMMSE_VAR));
+    //logMMSE_Init(this->m_logMMSE);
+    //this->m_SigIn=(X_INT16*)malloc(sizeof(X_INT16)*FRAME_LEN);
+    //this->m_SigOut=(X_INT16*)malloc(sizeof(X_INT16)*FRAME_LEN);
+    //this->m_OutBuf=(X_FLOAT32 *)malloc(sizeof(X_FLOAT32)*FRAME_SHIFT);
 
     //RNNoise.
     this->m_st=rnnoise_create();
@@ -194,7 +194,8 @@ void ZNoiseCutThread::run()
     //    QByteArray *baPCMData=new QByteArray(BLOCK_SIZE,0);
     //    qint32 nPCMDataLen=0;
 
-    this->m_pcm16k=new char[PERIOD_SIZE];
+    //this->m_pcm16k=new char[PERIOD_SIZE];
+    this->m_pcm16k=new char[BLOCK_SIZE];
     if(NULL==this->m_pcm16k)
     {
         qDebug()<<"<Error>:failed to allocate buffer form pcm16k!";
@@ -358,6 +359,7 @@ void ZNoiseCutThread::run()
             this->ZDGainByWebRTC(pcmIn);
         }
 
+
         //move data from IN fifo to OUT1 fifo.
         this->m_mutexOut1->lock();
         while(this->m_freeQueueOut1->isEmpty())
@@ -378,7 +380,7 @@ void ZNoiseCutThread::run()
         QByteArray *bufferOut1=this->m_freeQueueOut1->dequeue();
         this->m_mutexOut1->unlock();
         //move data from one fifo to another fifo.
-        memcpy(bufferOut1->data(),pcmIn->data(),PERIOD_SIZE);
+        memcpy(bufferOut1->data(),pcmIn->data(),BLOCK_SIZE);
 
         this->m_mutexOut1->lock();
         this->m_usedQueueOut1->enqueue(bufferOut1);
@@ -411,14 +413,13 @@ void ZNoiseCutThread::run()
                 }
                 QByteArray *bufferOut2=this->m_freeQueueOut2->dequeue();
                 //move data from one fifo to another fifo.
-                memcpy(bufferOut2->data(),pcmIn->data(),PERIOD_SIZE);
+                memcpy(bufferOut2->data(),pcmIn->data(),BLOCK_SIZE);
                 this->m_usedQueueOut2->enqueue(bufferOut2);
                 this->m_condQueueFullOut2->wakeAll();
                 this->m_mutexOut2->unlock();
             }
         }
-
-
+        this->usleep(1000);
     }
 
     rnnoise_destroy(this->m_st);
@@ -645,6 +646,7 @@ qint32 ZNoiseCutThread::ZCutNoiseByBevis(QByteArray *baPCM)
 }
 qint32 ZNoiseCutThread::ZCutNoiseByLogMMSE(QByteArray *baPCM)
 {
+#if 0
     //48khz downsample to 16khz,so data is decrease 3.
     QByteArray baPCM16k;
     baPCM16k.resize(baPCM->size()/3);
@@ -711,6 +713,7 @@ qint32 ZNoiseCutThread::ZCutNoiseByLogMMSE(QByteArray *baPCM)
         memcpy(baPCM->data()+xTmpOffset,xTmpOut,sizeof(xTmpOut));
         xTmpOffset+=sizeof(xTmpOut);
     }
+#endif
     return 0;
 }
 //auto gain control.

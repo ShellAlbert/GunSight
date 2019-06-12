@@ -1,0 +1,17 @@
+Accessing some CPU performance counters may require root permissions
+or a reduced paranoia level in /proc/sys/kernel/perf_event_paranoid.
+On hardened kernels any access by unprivileged users is forbidden by
+default.
+
+The paranoia level can be set by root with e.g.
+
+    # echo 2 > /proc/sys/kernel/perf_event_paranoid
+
+
+perf event paranoia level (from kernel/events/core.c in src:linux):
+
+  -1 - not paranoid at all
+   0 - disallow raw tracepoint access for unpriv
+   1 - disallow cpu events for unpriv (Linux default)
+   2 - disallow kernel profiling for unpriv
+   3 - disallow all unpriv perf event use (Debian default)

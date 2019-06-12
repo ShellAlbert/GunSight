@@ -1,0 +1,63 @@
+
+  FAQ
+
+    1. Q: I want to use ifplugd with my PCMCIA device, but ifplugd quits
+       when it doesn't find eth0, when I have not inserted the card. What
+       can I do?
+       A: Use the -f switch. This is not very clean however, since
+       modprobe is called on each cable detection query of ifplugd to
+       load a module for the network device. This is suboptimal. You
+       should probably run ifplugd only when the card is really inserted.
+    2. Q: I am using the -f switch, but the kernel logs are getting
+       filled with messages like "modprobe: modprobe: Can't locate module
+       eth0". What can I do?
+       A: Make sure you have a line like alias eth0 off in your
+       /etc/modules.conf
+    3. Q: When the cable is unplugged and the interface shut down it is
+       still available with ifconfig and markes as UP. Why this?
+       A: ifplugd cannot detect the link beat with a shut down interface
+       on certain (most as of kernel 2.4.19) network drivers. Thus
+       ifplugd enables the interface before querying the link status.
+       This may be switched off with -a flag. You might want to use it if
+       you have a sane network driver (e.g. eepro100). The subdirectory
+       patches/ in the ifplugd distribution includes a patch for the
+       8139too 0.9.26 driver, which makes the driver compatible with -a.
+       Don't ask me how to apply this patch. If you don't know, you won't
+       need it.
+    4. Q: Does it work with anything else than plain ethernet or wireless
+       LAN?
+       A: Certainly not, since the MII and ETHTOOL ioctl()s and the
+       wireless extension don't exist on other network device types.
+    5. Q: I have a Realtek 8139 based network card. Everytime ifplugd
+       starts on bootup my machine freezes. What can I do?
+       A: This is a bug in the 8139too driver 0.9.25 (at least) shipped
+       with Linux 2.4.19, please upgrade to 8139too 0.9.26 (Linux 2.4.20
+       or seperately at
+       [33]http://www.sourceforge.net/projects/gkernel/).
+    6. Q: There are already laptop-net's ifd and miid, why did you write
+       your own daemon?
+       A: laptop-net was too integrated with its profile system and
+       didn't work on my hardware when I had a look on it. It seemed
+       easier to me to write a simple but feature complete replacement
+       than using laptop-net without most of the special features
+       disabled. I didn't know about miid when I wrote ifplugd, but in
+       any case ifplugd is much better than miid. For a comparison of
+       miid and ifplugd, have a look on
+       [34]http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=162763&repeat
+       merged=yes
+    7. Q: I have two interfaces (e.g. WLAN and copper ethernet), both
+       controlled by ifplugd, and want to force the network traffic to go
+       over the faster one of them, in case both are available at the
+       same time. How can I do this?
+       A: A tool I wrote called [35]ifmetric might be exactly what you're
+       looking for.
+
+    Lennart Poettering <mzvscyhtq (at) 0pointer (dot) de>, June 2005
+
+   $Id: README.html.in 124 2005-06-04 19:22:59Z lennart $
+
+References
+
+  33. http://www.sourceforge.net/projects/gkernel/
+  34. http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=162763&repeatmerged=yes
+  35. http://0pointer.de/lennart/projects/ifmetric/

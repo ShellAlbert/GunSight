@@ -1,0 +1,90 @@
+#!/usr/bin/perl -w
+
+=head1 NAME
+
+dh_autoreconf_clean - Clean all changes made by dh_autoreconf
+
+=cut
+
+use strict;
+use Debian::Debhelper::Dh_Lib;
+
+=head1 SYNOPSIS
+
+B<dh_autoreconf_clean> [S<I<debhelper options>>]
+
+=head1 DESCRIPTION
+
+dh_autoreconf_clean removes all files which have been created or changed
+during the autoreconf call executed by L<dh_autoreconf(1)>. It also reverts
+any ltmain.sh patch applied by dh_autoreconf.
+
+=cut
+
+init();
+
+# PROMISE: DH NOOP WITHOUT autoreconf.before autoreconf.after
+
+# autoreconf failed, just remove the 'before' file.
+if (-r 'debian/autoreconf.before' && ! -r 'debian/autoreconf.after') {
+    doit("rm", "debian/autoreconf.before");
+    exit 0;
+}
+
+if (! -r 'debian/autoreconf.before' || ! -r 'debian/autoreconf.after') {
+    exit 0;
+}
+
+# Mapping of filename => md5sum.
+my %file = ();
+# An array of the names of the files which should be removed.
+my @delete = ();
+
+# Read the old files in
+open(FILE, 'debian/autoreconf.before') or die($!);
+
+while(<FILE>) {
+    chomp($_);
+    my ($checksum, $filename) = split(' ', $_, 2);
+
+    $file{$filename} = $checksum;
+}
+close(FILE);
+
+# Read the new files
+open(FILE, 'debian/autoreconf.after') or die($!);
+
+my $ltcheck = "";
+while(<FILE>) {
+    chomp($_);
+    my ($checksum, $filename) = split(' ', $_, 2);
+
+    if ($filename eq "/usr/share/libtool/build-aux/ltmain.sh") {
+        $ltcheck = $checksum;
+    } elsif ($filename eq "/usr/share/libtool/config/ltmain.sh") {
+        $ltcheck = $checksum;
+    } elsif (!defined($file{$filename}) || $file{$filename} ne $checksum) {
+        # Remove non-excluded, changed files
+        push @delete, $filename;
+    } elsif ($checksum eq $ltcheck) {
+        # A valid ltmain.sh, reverse patch
+        doit("patch", "-R", "-f", "--no-backup-if-mismatch", "-i",
+             "/usr/share/dh-autoreconf/ltmain-as-needed.diff",
+             $filename);
+    }
+}
+close(FILE);
+
+# Cleanup
+doit("rm", "-f", "--", @delete) if @delete;
+doit("rm", "-f", "debian/autoreconf.before", "debian/autoreconf.after");
+
+=head1 SEE ALSO
+
+L<debhelper(7)>, L<dh_autoreconf(1)>, L<dh-autoreconf(7)>
+
+=head1 AUTHOR
+
+Julian Andres Klode <jak@debian.org>
+
+=cut

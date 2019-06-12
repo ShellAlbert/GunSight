@@ -1,0 +1,23 @@
+The version of minitest provided by this package breaks the test/unit version bundled with the Ruby interpreter.
+Requiring "test/unit" with the ruby-minitest installed causes error messages like:
+
+    Warning: you should require 'minitest/autorun' instead.
+    Warning: or add 'gem "minitest"' before 'require "minitest/autorun"'
+      /usr/lib/ruby/2.1.0/test/unit.rb:1:in `<top (required)>'
+    MiniTest::Unit::TestCase is now Minitest::Test. From /usr/lib/ruby/2.1.0/test/unit/testcase.rb:8:in `<module:Unit>'
+    /usr/lib/ruby/2.1.0/test/unit.rb:676:in `<class:Runner>': undefined method `_run_suite' for class `Test::Unit::Runner' (NameError)
+    	from /usr/lib/ruby/2.1.0/test/unit.rb:261:in `<module:Unit>'
+    	from /usr/lib/ruby/2.1.0/test/unit.rb:15:in `<module:Test>'
+    	from /usr/lib/ruby/2.1.0/test/unit.rb:7:in `<top (required)>'
+    	from /usr/lib/ruby/2.1.0/rubygems/core_ext/kernel_require.rb:55:in `require'
+    	from /usr/lib/ruby/2.1.0/rubygems/core_ext/kernel_require.rb:55:in `require'
+
+The problem is due to the fact that the interpreter's version of test/unit is a
+compatibility layer with the version of minitest bundled with the interpreter,
+which is hidden once the ruby-minitest package is installed. The version of
+this package is not compatible with this compatibility layer.
+To remedy this problem, install the ruby-test-unit package, providing a more
+complete version of test/unit. This will hide the interpreter's version of
+test/unit, and avoid to rely on minitest.
+
+ -- Cédric Boutillier <boutil@debian.org>  Wed, 29 Apr 2015 10:06:57 +0200

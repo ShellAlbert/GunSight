@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib/arm-linux-gnueabihf
+includedir=${prefix}/include
+                                                                       
+Name: libcupsfilters
+Description: Library for reading and writing cups filters
+Version: 1.20.2
+
+Libs: -L${libdir} -lcupsfilters
+Libs.private: -lcupsimage -lcups -ltiff -lpng16 -lz 
+Cflags: -I${includedir}/cupsfilters

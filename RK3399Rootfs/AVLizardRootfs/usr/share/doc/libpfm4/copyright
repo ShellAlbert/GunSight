@@ -1,0 +1,61 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: perfmon2/libpfm4
+Source: https://sourceforge.net/projects/perfmon2/files/libpfm4/
+
+Files: *
+Copyright: 2002-2006 Hewlett-Packard Development Company, L.P.
+	   2013      Andreas Hollmann <andreas.hollmann@gmail.com>
+	   2009-2012 Arun Sharma <aruns@google.com>
+	   2016      Asim YarKhan <yarkhan@icl.utk.edu>
+	   2012-2014 Carl E. Love <cel@linux.vnet.ibm.com>
+	   2009-2011 Corey Ashford <cjashfor@linux.vnet.ibm.com>
+	   2010      Dan Terpstra <terpstra@eecs.utk.edu>
+	   2015      Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
+	   2015      Elif Aslan <elas@linux.vnet.ibm.com>
+	   2014-2015 Gary Mohr <Gary.Mohr@bull.com>
+	   2012-2017 Hendrik Brueckner <brueckner@linux.vnet.ibm.com>
+	   2013      Jacob Shin <jacob.shin@amd.com>
+	   2014      James Ralph <ralph@icl.utk.edu>
+	   2012      Joerg Henrichs <joerg@luding.org>
+	   2015      Josh Zimmerman <joshz@google.com>
+	   2013      Lukas Berk <lberk@redhat.com>
+	   2012      Maynard Johnson <maynardj@us.ibm.com>
+	   2013      Michael Werner <xaseron@users.sf.net>
+	   2015      Noor <noor_ahsan@mentor.com>
+	   2016      Peinan Zhang <peinan.zhang@intel.com>
+	   2011-2016 Phil Mucci <mucci@icl.utk.edu>
+	   2010      Robert Richter <robert.richter@amd.com>
+	   2009-2018 Stephane Eranian <eranian@gmail.com>
+	   2010-2017 Steve Kaufmann <sbk@cray.com>
+	   2017      Thomas Richter <tmricht@linux.vnet.ibm.com>
+	   2015      Tony Jones <tonyj@suse.de>
+	   2009-2017 Vince Weaver <vincent.weaver@maine.edu>
+	   2016-2017 Will Schmidt <will_schmidt@vnet.ibm.com>
+	   2011-2017 William Cohen <wcohen@redhat.com>
+License: BSD-like
+
+Files: debian/*
+Copyright: 2002-2006 Hewlett-Packard Development Company, L.P.
+	   2010-2011 Arun Sharma <aruns@google.com>
+	   2011-2012 Stephane Eranian <eranian@gmail.com>
+	   2013      Vincent Danjean <vdanjean@debian.org>
+	   2013-2018 Andreas Beckmann <anbe@debian.org>
+License: BSD-like
+
+License: BSD-like
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+ of the Software, and to permit persons to whom the Software is furnished to do so,
+ subject to the following conditions:
+ .
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

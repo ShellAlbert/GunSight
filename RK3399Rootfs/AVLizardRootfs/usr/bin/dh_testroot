@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+
+=encoding UTF-8
+
+=head1 NAME
+
+dh_testroot - ensure that a package is built with necessary level of root permissions
+
+=head1 SYNOPSIS
+
+B<dh_testroot> [S<I<debhelper options>>]
+
+=head1 DESCRIPTION
+
+B<dh_testroot> is used to determine if the package has access to at
+least the level of root access that it declared it needed via the
+Rules-Requires-Root (R³) field.
+
+The following is how B<dh_testroot> behaves based on the effective
+value of the R³ field:
+
+=over 4
+
+=item "binary-targets"
+
+B<dh_testroot> asserts that it is run as root or under L<fakeroot(1)>.
+
+=item "no"
+
+B<dh_testroot> returns successfully.
+
+=item Any other value than the above
+
+B<dh_testroot> asserts that it is either run as root (or under
+L<fakeroot(1)>) or the builder has provided the B<DEB_GAIN_ROOT_CMD>
+environment variable (e.g. via dpkg-buildpackage -r).
+
+=back
+
+For backwards compatibility, B<dh_testroot> will consider the absence
+of the R³ field as if the R³ field was set to "binary-targets".
+
+=cut
+
+use strict;
+use warnings;
+use Debian::Debhelper::Dh_Lib;
+
+our $VERSION = DH_BUILTIN_VERSION;
+
+inhibit_log();
+
+my $requirements = Debian::Debhelper::Dh_Lib::root_requirements();
+
+if (! -f 'debian/control') {
+	warning('dh_testroot must be called from the source root');
+}
+
+# By declaration; nothing requires root and this command must be a no-op in that case.
+exit 0 if $requirements eq 'none';
+# The builder /can/ choose to ignore the requirements and just call us as root.
+# If so, we do not bother checking the requirements any further.
+exit 0 if $< == 0;
+if ($requirements eq 'legacy-root') {
+	error("You must run this as root (or use fakeroot).");
+} else {
+	my $env = $ENV{DEB_GAIN_ROOT_CMD};
+	error("Package needs targeted root but builder has not provided a gain-root command via \${DEB_GAIN_ROOT_CMD}")
+		if not $env;
+}
+
+=head1 SEE ALSO
+
+L<debhelper(7)>
+
+This program is a part of debhelper.
+
+=head1 AUTHOR
+
+Joey Hess <joeyh@debian.org>
+
+=cut

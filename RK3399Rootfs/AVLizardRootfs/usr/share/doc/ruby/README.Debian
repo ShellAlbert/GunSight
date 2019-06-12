@@ -1,0 +1,26 @@
+ruby-defaults: Ruby for Debian
+------------------------------
+
+The purpose of the ruby-defaults package is to provide binary packages (mostly
+metapackages) that will install the currently supported Ruby interpreter.
+Specifically:
+
+- ruby          Depends on the default Ruby interpreter.
+
+- ruby-dev      Depends on the development files for the default Ruby interpreter
+
+- ruby-all-dev  Depends on the development files for all supported Ruby
+                interpreters. This will usually be a single version (the
+                default one), but during transitions in unstable multiple
+                versions might be supported.
+
+                If you are not building Ruby packages for Debian, you probably
+                do not need it.
+
+                When building Debian packages, it is OK to only build for the
+                default version, and using just `ruby` (instead of hardcoding
+                the current default) will do that in a future-proof way.
+
+To programmatically list all the supported versions, install the `gem2deb`
+package and run `dh_ruby --print-supported`. To determine which is the default
+version, just dereference the /usr/bin/ruby symbolic link.

@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib/aarch64-linux-gnu
+includedir=${prefix}/include
+
+Name: libmicrohttpd
+Description: A library for creating an embedded HTTP server
+Version: 0.9.59
+Requires:
+Requires.private: gnutls
+Conflicts:
+Libs: -L${libdir} -lmicrohttpd
+Libs.private:  
+Cflags: -I${includedir}

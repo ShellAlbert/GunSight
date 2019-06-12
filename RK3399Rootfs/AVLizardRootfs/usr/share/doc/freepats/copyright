@@ -1,0 +1,33 @@
+$Id: copyright,v 1.1 2004-07-19 14:54:03 hmh Exp $
+
+This package was debianized by Henrique de Moraes Holschuh <hmh@debian.org> on
+Sun, 11 Jul 2004 17:58:20 -0300.
+
+The Debian packaging of freepats is:
+  Copyright (c) 2004 by Henrique de Moraes Holschuh <hmh@debian.org>
+  and distributed in the same license as the upstream source it applies to.
+
+Upstream sources are at http://freepats.opensrc.org
+
+Upstream Authors: The folks at freepats.opensrc.org
+
+Copyright:
+  Copyright (C) 2004 Free Software Foundation
+
+  This patch set is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+
+  As a special exception, if you create a composition which uses
+  these patches, and mix these patches or unaltered portions of
+  these patches into the composition, these patches do not by
+  themselves cause the resulting composition to be covered by the
+  GNU General Public License. This exception does not however
+  invalidate any other reasons why the document might be covered
+  by the GNU General Public License. If you modify these patches,
+  you may extend this exception to your version of the patches,
+  but you are not obligated to do so. If you do not wish to do so,
+  delete this exception statement from your version.
+
+The GPL may be found in /usr/share/common-licenses/GPL on a Debian system.

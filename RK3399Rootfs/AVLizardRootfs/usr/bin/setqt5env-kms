@@ -1,0 +1,32 @@
+#/bin/bash
+
+if [ -f /usr/bin/switch-malilib-to.sh ]; then   
+        switch-malilib-to.sh libmali-midgard-t86x-r14p0-gbm.so
+fi
+
+QTVER=5.10.0
+export QTDIR=/usr/local/Trolltech/Qt-${QTVER}-rk64one
+if [ ! -d $QTDIR ]; then
+    echo "Not found Qt5"
+fi
+
+export QT_QPA_PLATFORM=eglfs    
+export QT_QPA_EGLFS_HIDECURSOR=1         
+export QT_QPA_EGLFS_INTEGRATION=eglfs_kms
+
+## Rotate screen orientation                                      
+# export QT_QPA_EGLFS_ROTATION=90                                       
+# export QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS=/dev/input/event0:rotate=90
+
+export LD_LIBRARY_PATH=/usr/rk3399-libs/lib64:$LD_LIBRARY_PATH
+
+# export QTWEBENGINE_DISABLE_SANDBOX=1
+export XDG_RUNTIME_DIR="/tmp"
+
+export QT_QPA_FONTDIR=/usr/share/fonts/truetype/ubuntu-font-family
+export QT_QPA_PLATFORM_PLUGIN_PATH=$QTDIR/plugins/
+export LD_LIBRARY_PATH=$QTDIR/lib:$LD_LIBRARY_PATH
+
+export QT_QPA_EGLFS_TSLIB=0
+export QT_QPA_GENERIC_PLUGINS=evdevmouse,evdevkeyboard
+

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+. /etc/os-release
+KERNELID=$(uname -r)
+TERM=linux toilet -f standard -F metal $BOARD_VENDOR
+printf '\nWelcome to \e[0;91m%s\e[m %s\n' "$PRETTY_NAME" "$KERNELID"
+grep "Default Login" /etc/issue > /dev/null
+if [ $? -eq 0 ]; then
+    LSBV=`/usr/bin/lsb_release -d -s`
+    /usr/bin/printf "%s\n\n" "$LSBV \n \l" > /etc/issue
+    /usr/bin/printf "%s\n\n" "$LSBV" > /etc/issue.net
+    /bin/sed /etc/ssh/sshd_config -i -e "s/^\s*Banner/#Banner/g"
+fi

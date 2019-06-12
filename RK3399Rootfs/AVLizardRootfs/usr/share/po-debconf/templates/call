@@ -1,0 +1,26 @@
+# Lines beginning with a number sign are comments, they are removed when
+# sending mails.  If a line is composed of a # followed by a 'Name: Value'
+# pair, it is interpreted as a mail header field and is passed to your mail
+# transport agent.  You can edit/add/remove those header fields.
+# 
+# From: <from>
+# Subject: <package_and_version>: Please translate debconf PO for the package <package>
+# Reply-To: <reply-to>
+
+Dear Debian I18N people,
+
+I would like to know if some of you would be interested in translating
+<package>.
+
+<package> already includes <filelist>.
+So do not translate it to these languages (the translators will be
+contacted separately).
+
+<statistics>
+
+<reply>
+<deadline>
+
+If you have read so far, please find the POT file in attachment.
+
+Thanks in advance,

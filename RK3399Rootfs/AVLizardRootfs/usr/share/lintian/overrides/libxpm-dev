@@ -1,0 +1,2 @@
+# we don't touch it, so it's the same on all archs
+gzip-file-is-not-multi-arch-same-safe usr/share/doc/libxpm-dev/xpm.PS.gz

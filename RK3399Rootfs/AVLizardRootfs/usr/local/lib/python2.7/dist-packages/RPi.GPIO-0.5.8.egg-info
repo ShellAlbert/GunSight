@@ -1,0 +1,22 @@
+Metadata-Version: 1.1
+Name: RPi.GPIO
+Version: 0.5.8
+Summary: A module to control Raspberry Pi GPIO channels
+Home-page: http://sourceforge.net/projects/raspberry-gpio-python/
+Author: Ben Croston
+Author-email: ben@croston.org
+License: MIT
+Description: 1. Use the mem method to control the gpio.
+        
+Keywords: Raspberry Pi GPIO
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Operating System :: POSIX :: Linux
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Software Development
+Classifier: Topic :: Home Automation
+Classifier: Topic :: System :: Hardware

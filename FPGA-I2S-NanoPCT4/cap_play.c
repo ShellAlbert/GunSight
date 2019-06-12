@@ -5,16 +5,23 @@
 #include <arpa/inet.h>
 #include <alsa/asoundlib.h>
 
+//how to play in rk3399-linux board.
+//aplay -D plughw:CARD=realtekrt5651co,DEV=0 -c 2 -r 32000 -f S24_3LE -t raw cap.pcm
+
+
 //这里我们使用32KHz的采样率，双声道，采样位数24bit
 //则有bps=2*24bit*32000=1536000bits/s=192000Bytes
+#define PCM_BPS         (32000*3*2) //32khz,24bit,2channel.
 //这里我们设置period为4，即1秒发生4次中断，则中断间隔为1s/4=250ms.
 //则每次中断发生时，我们至少需要填充192000Bytes/(1s/250ms)=48000Bytes
+//#define     ALSA_PERIOD       4
 //#define     BLOCK_SIZE        48000	// Number of bytes
 
 //这里我们设置period为10，即1秒发生10次中断，则中断间隔为1s/10=100ms.
 //则每次中断发生时，我们至少需要填充192000Bytes/(1s/100ms)=19200Bytes
-//#define     BLOCK_SIZE      48000
-#define     ALSA_PERIOD     4
+
+#define     ALSA_PERIOD     10
+#define     BLOCK_SIZE      19200
 
 //* The sample rate of the audio codec **
 #define     SAMPLE_RATE      32000
@@ -24,11 +31,6 @@
 #define CHANNELS_NUM    2
 #define BYTES_PER_FRAME 6
 
-//how to play in rk3399-linux board.
-//aplay -D plughw:CARD=realtekrt5651co,DEV=0 -c 2 -r 32000 -f S24_3LE -t raw cap.pcm
-
-#define PCM_BPS         (32000*3*2) //32khz,24bit,2channel.
-#define BLOCK_SIZE      19200
 static int g_ExitFlag=0;
 void gSigInt(int signo)
 {
@@ -49,7 +51,7 @@ int main(void)
     unsigned int nSampleRate=SAMPLE_RATE;
     // Input and output driver variables
     snd_pcm_hw_params_t *hwparams;
-    snd_pcm_uframes_t pcmFrames;
+    snd_pcm_uframes_t pcmFrames=BYTES_PER_FRAME;
 
     // Now we can open the PCM device:
     /* Open PCM. The last parameter of this function is the mode. */
@@ -59,7 +61,7 @@ int main(void)
     /* PCM device will return immediately. If SND_PCM_ASYNC is    */
     /* specified, SIGIO will be emitted whenever a period has     */
     /* been completely processed by the soundcard.                */
-    if(snd_pcm_open(&pcmHandle,/*"plughw:CARD=rockchiprt5640c,DEV=0"*/"plughw:CARD=realtekrt5651co,DEV=0",SND_PCM_STREAM_PLAYBACK,0)<0)
+    if(snd_pcm_open(&pcmHandle,/*"plughw:CARD=rockchiprt5640c,DEV=0"*/ "plughw:CARD=realtekrt5651co,DEV=0" /*"plughw:CARD=rockchiphdmi,DEV=0"*/,SND_PCM_STREAM_PLAYBACK,0)<0)
     {
         printf("error:failed to open playback device.\n");
         return -1;

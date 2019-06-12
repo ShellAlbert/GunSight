@@ -39,7 +39,7 @@ bool ZAudioTxThread::ZIsExitCleanup()
 void ZAudioTxThread::run()
 {
 #ifdef AUDIO_ENC_OPUS
-    char *pEncBuffer=new char[PERIOD_SIZE];
+    char *pEncBuffer=new char[BLOCK_SIZE];
     char *pOpusTails=new char[OPUS_BLKFRM_SIZEx2];
     qint32 nOpusTailsLen=0;
     int err;
@@ -84,7 +84,7 @@ void ZAudioTxThread::run()
     //3.The total number of streams to encode from the input.This must be no more than the number of channels. 0.
     //4.
     /*
-     *       opus_int32 Fs,
+     *opus_int32 Fs,
       int channels,
       int mapping_family,
       int *streams,
@@ -98,7 +98,10 @@ void ZAudioTxThread::run()
     int streams=1;
     int coupled_streams=1;
     unsigned char stream_map[255];
-    encoder=opus_multistream_surround_encoder_create(SAMPLE_RATE,CHANNELS_NUM,mapping_family,&streams,&coupled_streams,stream_map,OPUS_APPLICATION_AUDIO,&err);
+    //Sampling rate of the input signal (in Hz).
+    //This must be one of 8000, 12000, 16000,
+    //24000, or 48000.
+    encoder=opus_multistream_surround_encoder_create(48000,CHANNELS_NUM,mapping_family,&streams,&coupled_streams,stream_map,OPUS_APPLICATION_AUDIO,&err);
     if(err!=OPUS_OK || encoder==NULL)
     {
         qDebug()<<"<Error>:error at create opus encode "<<opus_strerror(err);
@@ -194,10 +197,10 @@ void ZAudioTxThread::run()
       *          negative error code (see @ref opus_errorcodes) on failure.
       */
     //hold the pcm data.
-    char *pPCMBuffer=new char[PERIOD_SIZE];
+    char *pPCMBuffer=new char[BLOCK_SIZE];
     qint32 nPCMLen=0;
 
-    char *txBuffer=new char[PERIOD_SIZE];
+    char *txBuffer=new char[BLOCK_SIZE];
     qDebug()<<"<MainLoop>:AudioTxThread starts.";
     this->m_bCleanup=false;
     //bind thread to cpu core.
@@ -273,7 +276,7 @@ void ZAudioTxThread::run()
                         }
                     }
                     QByteArray *pcmNs=this->m_usedQueue->dequeue();
-                    nPCMLen=PERIOD_SIZE;
+                    nPCMLen=BLOCK_SIZE;
                     this->m_mutex->unlock();
 
 
@@ -297,7 +300,7 @@ void ZAudioTxThread::run()
                             //but because we are 2 channels.so the length of pcm data should be 2880*2.
                             //frameSize in 16 bit sample here we choose 2880,so the input pcm buffer size is 2880*sizeof(opus_int16) for mono channel.
                             //but we are using two channels,so here is 2880*sizeof(opus_int16)*2.
-                            qint32 nBytes=opus_multistream_encode(encoder,(const opus_int16*)pOpusTails,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,PERIOD_SIZE);
+                            qint32 nBytes=opus_multistream_encode(encoder,(const opus_int16*)pOpusTails,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,BLOCK_SIZE);
                             //qint32 nBytes=opus_multistream_encode_float(encoder,(const float *)pOpusTails,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,BLOCK_SIZE);
                             if(nBytes<0)
                             {
@@ -367,7 +370,7 @@ void ZAudioTxThread::run()
                         //当T0=60.0ms时，则有采样数量N=T0/T=60.0ms/(1/48ms)=2880.
 
                         const opus_int16 *pcmData=(int16_t*)(pcmNs->data()+nPaddingBytes+nOffsetIndex);
-                        qint32 nBytes=opus_multistream_encode(encoder,pcmData,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,PERIOD_SIZE);
+                        qint32 nBytes=opus_multistream_encode(encoder,pcmData,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,BLOCK_SIZE);
                         //qint32 nBytes=opus_multistream_encode_float(encoder,(const float *)pcmData,OPUS_SAMPLE_FRMSIZE,(unsigned char*)pEncBuffer,BLOCK_SIZE);
                         if(nBytes<0)
                         {

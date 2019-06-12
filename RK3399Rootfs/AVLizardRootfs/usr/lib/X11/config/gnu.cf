@@ -1,0 +1,570 @@
+XCOMM platform:  $XFree86: xc/config/cf/gnu.cf,v 1.12 2003/11/24 02:02:26 dawes Exp $
+XCOMM $XdotOrg: xc/config/cf/gnu.cf,v 1.2 2004/04/23 18:41:58 eich Exp $
+
+#ifndef OSName
+#define OSName			DefaultOSName
+#endif
+
+#ifndef OSVendor
+#define OSVendor		/**/
+#endif
+#ifndef OSMajorVersion
+#define OSMajorVersion		DefaultOSMajorVersion
+#endif
+#ifndef OSMinorVersion
+#define OSMinorVersion		DefaultOSMinorVersion
+#endif
+#ifndef OSTeenyVersion
+#define OSTeenyVersion		DefaultOSTeenyVersion
+#endif
+
+#ifndef HasGhostScript
+# define HasGhostScript YES
+#endif
+#ifndef BuildPDFdocs
+# define BuildPDFdocs NO
+#endif
+
+#ifndef GnuBinUtilsMajorVersion
+# define GnuBinUtilsMajorVersion	DefaultGnuBinUtilsMajorVersion
+#endif
+
+#ifndef ProjectRoot
+# define ProjectRoot   /usr
+#endif
+#ifndef ManDirectoryRoot
+# define ManDirectoryRoot      /usr/share/man
+#endif
+
+XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVersion)
+XCOMM libc:	(GnuCLibMajorVersion./**/GnuCLibMinorVersion./**/GnuCLibTeenyVersion)
+XCOMM binutils:	(GnuBinUtilsMajorVersion)
+
+#define HasDevRandom		NO
+#define PollDevRandom		NO
+
+/* Path setup. */
+# ifndef NothingOutsideProjectRoot
+#  define NothingOutsideProjectRoot	NO
+# endif
+# if !defined(NothingOutsideProjectRoot) || !NothingOutsideProjectRoot
+#  define SystemManDirectory	/usr/share/man
+# endif
+
+/* Default GCC options. */
+# ifndef DefaultGcc2OptimizeOpt
+#  define DefaultGcc2OptimizeOpt	-O2
+# endif
+
+# define HasPam			YES
+
+# if !defined(NothingOutsideProjectRoot) || !NothingOutsideProjectRoot
+#  define XAppLoadDir		EtcX11Directory/app-defaults
+# define XFileSearchPathDefault	Concat4(EtcX11Directory/%L/%T/%N%C,%S:EtcX11Directory/%l/%T/%N%C,%S:EtcX11Directory/%T/%N%C,%S:EtcX11Directory/%L/%T/%N%S:EtcX11Directory/%l/%T/%N%S:EtcX11Directory/%T/%N%S):Concat4($(LIBDIR)/%L/%T/%N%C,%S:$(LIBDIR)/%l/%T/%N%C,%S:$(LIBDIR)/%T/%N%C,%S:$(LIBDIR)/%L/%T/%N%S:$(LIBDIR)/%l/%T/%N%S:$(LIBDIR)/%T/%N%S)
+/* the relative symlink created by this rule causes problems for us */
+# define InstallAppDefFiles	YES
+# ifdef InstallAppDefFiles
+#  if InstallAppDefFiles
+#   define InstallAppDefaultsLong(file,class)				@@\
+InstallNamedTarget(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class)
+#  else
+#   define InstallAppDefaultsLong(file,class)				@@\
+InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class)
+#  endif
+# endif /* InstallAppDefFiles */
+# endif /* !defined(NothingOutsideProjectRoot) || !NothingOutsideProjectRoot */
+
+# define SharedLibXdmGreet	NO
+# define LinkGLToUsrInclude	NO
+# define LinkGLToUsrLib		NO
+# define FSUseSyslog		YES
+
+# define DriverManSuffix       4x
+# define DriverManDir          $(MANSOURCEPATH)4
+
+# define MiscManSuffix         7x
+# define MiscManDir            $(MANSOURCEPATH)7
+
+# define ProjectManSuffix	x
+
+# define DebianMaintainer      YES
+
+# ifdef DebianMaintainer
+
+#  ifndef XorgCustomVersion
+#   define XorgCustomVersion		"Debian"
+#  endif
+#  ifndef BuilderEMailAddr
+#   define BuilderEMailAddr		"debian-x@lists.debian.org"
+#  endif
+
+#  define XFree86Devel			YES
+#  define InstallXinitConfig		YES
+#  define InstallXdmConfig		YES
+#  define InstallFSConfig		YES
+#  define DebuggableLibraries		YES
+#  define ForceNormalLib		YES
+#  define SharedLibFont			NO
+#  define SharedLibGlu			YES
+#  define NormalLibGlu			YES
+#  define BuildFontCache		YES
+
+#  define BuildAllSpecsDocs		NO
+#  ifndef BuildSpecsDocs
+#   define BuildSpecsDocs		YES
+#  endif
+#  define SpecsDocDirs			BDF CTEXT FSProtocol GL ICCCM ICE PM \
+					Render SM X11 XDMCP XIM XLFD XProtocol \
+					Xaw Xext Xi Xmu Xserver Xt Xv XvMC \
+					i18n rstart xfs xterm xtrans
+#  define XkbServerDefines		-DNOISY
+#  define BuildHtmlManPages		NO
+
+#  define DontPreprocessManPages	NO
+
+/* We have a local patch that defines PicLibraryTarget(), instead of upstream's
+ * method. */
+#  define StaticNeedsPicForShared	NO
+
+/* Some libraries changed compilation method from static to shared and they do not
+ * ship header files.
+ * Temporary revert the build to static until all the changes will be investigated
+ * properly
+ */
+#  define SharedLibXau                  YES
+#  define SharedLibXdmcp                YES
+#  define NormalOldX                    NO
+#  define DebugOldX                     NO
+#  define SharedOldX                    NO
+#  define SharedLibDmx                  YES
+#  define SharedLibGLw                  NO
+#  define SharedLibFont                 NO
+#  define SharedLibFontEnc              NO
+#  define SharedLibXfontcache           NO
+#  define BuildFreetypeDlModule         NO
+
+#  define KernelVersionInBanner		YES
+
+/* We don't want XRX. */
+#  define BuildPlugin			NO
+
+/* The TT/Meltho fonts are all under non-free licences, except for BitStream
+ * Vera, which is provided by an external package anyway. */
+#  define BuildTrueTypeFonts		NO
+#  define BuildBethMarduthoFonts	NO
+
+#  define MakeDllModules		YES
+
+/* All the following are fulfilled by Build-Depends. */
+#  define BuildRman			NO
+#  define RmanCmd			/usr/bin/rman
+#  define RmanOptions			/**/
+#  define HasTk				YES
+#  define TkLibDir			/usr/lib
+#  define TkIncDir			/usr/include
+#  define TkLibName			tk8.4
+#  define XF86SetupUsesStaticTk		NO
+#  define HasTcl			YES
+#  define TclLibDir			/usr/lib
+#  define TclIncDir			/usr/include
+#  define TclLibName			tcl8.4
+#  define XF86SetupUsesStaticTcl	NO
+#  define BuildExpatLibrary		NO
+#  define HasExpat			YES
+#  define ExpatIncDirStandard		YES
+#  define BuildFontconfigLibrary	NO
+#  define HasFontconfig			YES
+#  define UseFontconfig			YES
+#  define BuildRenderLibrary		NO
+#  define HasRenderLibrary		YES
+#  define BuildXcursorLibrary		NO
+#  define HasXcursorLibrary		YES
+/* Xlib needs to know the available version of Xcursor. */
+#  define SharedXcursorRev		1
+#  define BuildXftLibrary		NO
+#  define HasXftLibrary			YES
+#  define BuildFreetype2Library		NO
+#  define HasFreetype2			YES
+#  define FontLibSharedFreeType		NO
+#  define HasLatex			YES
+#  define HasGroffHtml			YES
+
+/*
+ * The XFree86 Debian package no longer builds the Xprt server, in favor
+ * of a separate xprint package.  We do still build the library,
+ * but only when we're not building servers only, so it gets built in the
+ * normal build, but not -dbg (as it requires libXt headers).
+ */
+#  define XprtServer			NO
+#  define BuildXprintLib		!BuildServersOnly
+
+#  ifdef UseInstalled
+#   define RenderLibraryDir		/usr
+#   define XftLibraryDir		/usr
+#   define XcursorLibraryDir		/usr
+#  else /* We have a special hack to find these. */
+#   define RenderLibraryDir		$(TOP)/../../imports
+#   define XftLibraryDir		$(TOP)/../../imports
+#   define XcursorLibraryDir		$(TOP)/../../imports
+#  endif
+
+/* Wraphelp.c magic is supplied via a custom patch. */
+#  define HasXdmAuth			YES
+
+#  define HasGlide2			NO
+#  define HasGlide3			NO
+
+/* Enable extended instruction set support. */
+#  ifdef i386Architecture
+#   define HasX86Support		YES
+#   define HasMMXSupport		YES
+#   define Has3DNowSupport		YES
+#   define HasSSESupport		YES
+#  endif /* i386Architecture */
+# endif /* DebianMaintainer */
+
+#ifndef BinUtilsMajorVersion
+# define BinUtilsMajorVersion	GnuBinUtilsMajorVersion
+#endif
+
+#ifndef GnuLocaleDefines
+# define GnuLocaleDefines	/**/
+#endif
+
+#ifndef  GnuAdditionalIncludes
+# define GnuAdditionalIncludes	/**/
+#endif
+
+#ifndef GnuGnuSourceDefines
+# ifdef UseInstalled
+#  define GnuGnuSourceDefines	/**/
+# else
+#  define GnuGnuSourceDefines	-D_GNU_SOURCE
+# endif
+#endif
+
+# define GnuSourceDefines	-D_POSIX_C_SOURCE=199309L \
+				-D_POSIX_SOURCE -D_XOPEN_SOURCE \
+				-D_BSD_SOURCE -D_SVID_SOURCE \
+				GnuAdditionalIncludes GnuGnuSourceDefines \
+				GnuLocaleDefines
+# define XawI18nDefines		-DHAS_WCHAR_H -DHAS_WCTYPE_H -DNO_WIDEC_H
+#define HasPosixThreads         YES
+#define ThreadedX               YES
+#define HasThreadSafeAPI        YES
+#define ThreadsLibraries        -lpthread
+#define SystemMTDefines         -D_REENTRANT
+
+#ifndef HasLibCrypt
+#define HasLibCrypt             YES
+#endif
+/* netscape wraps select but not poll as of communicator 4.72 */
+# ifndef HasPoll
+#  define HasPoll		NO
+# endif
+
+#ifndef InstallXloadSetGID
+#define InstallXloadSetGID	NO
+#endif
+
+#ifndef BuildIPv6
+#define BuildIPv6		NO
+#endif
+
+#ifndef HasLinuxInput
+# define HasLinuxInput NO
+#endif
+
+#ifndef JoystickSupport
+# define JoystickSupport	NO
+#endif
+#ifndef HasLinuxJoystick
+# define HasLinuxJoystick	NO
+#endif
+
+#define LibtoolMinorVersions	YES
+
+#ifndef HasMTRRSupport
+# define HasMTRRSupport	NO
+#endif
+
+#ifndef XF86INT10_BUILD
+# define XF86INT10_BUILD	X86EMU_GENERIC
+#endif
+
+#ifndef BuildXF86DRI
+#  define BuildXF86DRI	NO
+#endif
+
+#ifndef HasAgpGart
+# define HasAgpGart	NO
+#endif
+
+#ifndef HasSSESupport
+#  if defined(i386Architecture)
+#    define HasSSESupport		YES
+#  endif
+#endif
+
+#ifndef HasMMXSupport
+#  if defined(i386Architecture)
+#    define HasMMXSupport		YES
+#  endif
+#endif
+
+#ifndef Has3DNowSupport
+#  if defined(i386Architecture)
+#    define Has3DNowSupport		YES
+#  endif
+#endif
+
+#ifndef BuildXF86RushExt
+# define BuildXF86RushExt	YES
+#endif
+
+#ifndef LinuxFBDevSupport
+# define LinuxFBDevSupport	NO
+#endif
+
+#define SourceDefines		GnuSourceDefines
+
+#define BuildLibPathVar		LD_LIBRARY_PATH
+#define GccUsesGas		YES
+#define UseGas			YES
+#define GnuCpp			YES
+#ifndef HasDlopen
+#define HasDlopen		YES
+#endif
+#define HasWeakSymbols		YES
+#ifndef HasShadowPasswd
+#  define HasShadowPasswd	YES
+#endif
+#define HasPutenv		YES
+#ifndef HasShm
+#define HasShm			YES
+#endif
+
+#ifndef HasSecureRPC
+# define HasSecureRPC		YES
+#endif
+
+#define HasBSD44Sockets		YES
+#define HasSockets		YES
+#ifndef HasSnprintf
+#define HasSnprintf		YES
+#endif
+#define HasMkstemp		YES
+#ifndef HasGetresuid
+#define HasGetresuid		YES
+#endif
+#ifndef HasUsableFileMmap
+#define HasUsableFileMmap	YES
+#endif
+#ifndef HasNCurses
+#define HasNCurses		YES
+#endif
+
+#ifndef HasGroff
+#define HasGroff		YES
+#endif
+
+#ifndef HasZlib
+#define HasZlib			YES
+#endif
+
+#ifndef HasLibpng
+#define HasLibpng		YES
+#endif
+
+#ifndef HasExpat
+# define HasExpat		YES
+#endif
+
+#ifndef HasFreetype2
+# define HasFreetype2		YES
+#endif
+
+#define AvoidNullMakeCommand	YES
+#ifndef DebuggableLibraries
+#define DebuggableLibraries	NO
+#endif
+#define CompressAllFonts	YES
+#define Malloc0ReturnsNull	YES
+#define NeedConstPrototypes	YES
+#define NeedFunctionPrototypes	YES
+#define NeedNestedPrototypes	YES
+#define NeedVarargsPrototypes	YES
+#ifndef NeedWidePrototypes
+#define NeedWidePrototypes	NO
+#endif
+#define SetTtyGroup		YES
+
+#ifndef UseStaticTermcapLib
+#define UseStaticTermcapLib	NO
+#endif
+
+#ifndef HasCookieMaker
+#define HasCookieMaker		YES
+#define MkCookieCmd		mcookie
+#endif
+
+#ifndef BourneShell
+/*
+ * This will cause builds/installs to terminate on errors, as on other
+ * platforms.
+ */
+#define BourneShell		/bin/sh -e
+#endif
+
+#define MkdirHierCmd		mkdir -p
+
+#ifndef DoLoadableServer
+# define DoLoadableServer	YES
+#endif
+
+
+#ifndef CcCmd
+#define CcCmd			gcc
+#   define CplusplusCmd		c++
+#endif
+#ifndef AsCmd
+#   define AsCmd		CcCmd -c -x assembler
+#endif
+#  define AsmDefines		-D__ELF__
+#ifndef LdCmd
+#   define LdCmd		CcCmd -nostdlib
+#  endif
+#  ifndef GnuUsesNcurses
+#    define GnuUsesNcurses	YES
+#endif
+#ifndef TermcapLibrary
+#if UseStaticTermcapLib
+#    if GnuUsesNcurses
+#define TermcapLibrary		StaticLibrary(/usr/lib,ncurses)
+#else
+#     define TermcapLibrary	StaticLibrary(/usr/lib/termcap,termcap)
+#    endif
+#   else
+#    if GnuUsesNcurses
+#define TermcapLibrary		-lncurses
+#    else
+#     define TermcapLibrary	-ltermcap
+#endif
+#endif
+#endif
+
+/*
+ * Some older distros still need /lib/cpp.  There's probably a better
+ * test, but this handles the older Red Hat releases at least.
+ */
+#ifndef CppCmd
+# define CppCmd		cpp
+#endif
+
+#define YaccCmd			bison -y
+#define LexCmd			flex -l
+#define HasFlex			YES
+#define LexLib			-lfl
+#define PreProcessCmd		CcCmd -E
+#define PostIncDir		DefaultGccIncludeDir
+#define LdCombineFlags		-r
+#ifndef LdPostLib
+#define LdPostLib		/* Never needed */
+#endif
+#define HasWChar32		YES
+#define StandardCppOptions	-traditional
+#define StandardCppDefines	StandardDefines
+
+#define HasVarRun		YES
+#ifndef VarDbDirectory
+#define VarDbDirectory		$(VARDIR)/lib
+#endif
+
+#ifndef OSXInputDrivers
+# define OSXInputDrivers1	/**/
+# define OSXInputDrivers2	/**/
+# define OSXInputDrivers	OSXInputDrivers1 OSXInputDrivers2
+#endif
+
+#define HasPlugin			YES
+#define VendorHasX11R6_3libXext	YES	/* XC or XFree86 >= 3.3.1 */
+
+#ifdef i386Architecture
+# ifndef OptimizedCDebugFlags
+#  define OptimizedCDebugFlags	DefaultGcc2DebugOpt DefaultGcc2OptimizeOpt GccAliasingArgs
+# endif
+# define GnuMachineDefines	-D__i386__
+#define ServerOSDefines		XFree86ServerOSDefines -DDDXTIME
+#define ServerExtraDefines	-DGCCUSESGAS XFree86ServerDefines
+#endif /* i386Architecture */
+
+#ifndef StandardDefines
+# define StandardDefines	-DGnu GnuMachineDefines GnuSourceDefines
+#endif
+
+#ifndef DlLibrary
+#define DlLibrary		-rdynamic -ldl
+#endif
+
+#define ServerExtraSysLibs	/**/
+
+#ifndef PamLibraries
+#define PamLibraries		-lpam DlLibrary
+#endif
+
+#ifndef PamMiscLibraries
+#define PamMiscLibraries	-lpam_misc
+#endif
+
+#ifndef HasDECnet
+#define HasDECnet		NO
+#endif
+#if HasDECnet
+# define ConnectionFlags	-DUNIXCONN -DTCPCONN -DDNETCONN
+# define ExtraLibraries		-ldnet
+#else
+#define ConnectionFlags		-DUNIXCONN -DTCPCONN
+#endif
+
+#ifndef StaticLibrary
+#define StaticLibrary(libpath,libname) -Wl,-Bstatic Concat(-L,libpath) Concat(-l,libname) -Wl,-Bdynamic
+#endif
+
+#ifndef LinkGLToUsrLib
+# define LinkGLToUsrLib		YES
+#endif
+# ifndef LinkGLToUsrInclude
+# define LinkGLToUsrInclude	YES
+#endif
+
+
+#define HasGnuMake	YES
+
+#define MakeNamedTargetSubdir(dir,flags,subname)\
+        $(MAKE) -C dir $(MFLAGS) $(PARALLELMFLAGS) flags subname
+
+#define ArchitectureDefines	-DGNU_ARCHITECTURE
+
+#define TtClientLibs $(TTLIB) $(XTOOLLIB) $(XLIB)
+#define TtClientDepLibs $(DEPTTLIB) $(DEPXTOOLLIB) $(DEPXLIB)
+
+#ifndef ExtraXawClientLibs
+# define ExtraXawClientLibs /**/
+#endif
+#ifndef ExtraXawClientDepLibs
+# define ExtraXawClientDepLibs /**/
+#endif
+#ifndef ExtraXawReqs
+# define ExtraXawReqs /**/
+#endif
+
+#ifndef BuildDmx
+#define BuildDmx	YES
+#endif
+
+#include <gnuLib.rules>
+#include <xorg.cf>
+
+#ifndef XFree86ServerOSDefines
+# define XFree86ServerOSDefines
+#endif

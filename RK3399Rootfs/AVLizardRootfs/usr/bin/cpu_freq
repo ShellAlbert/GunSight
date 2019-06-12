@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Usage:
+# 1. cpu-freq.sh
+# 2. cpu-freq.sh set freq
+
+function pt_error()
+{
+    echo -e "\033[1;31mERROR: $*\033[0m"
+}
+
+function pt_warn()
+{
+    echo -e "\033[1;31mWARN: $*\033[0m"
+}
+
+function pt_info()
+{
+    echo -e "\033[1;32mINFO: $*\033[0m"
+}
+
+function check_hardware()
+{
+    HARDWARE=`cat /proc/cpuinfo | grep Hardware`
+    HARDWARE=${HARDWARE#*: }
+    pt_info "HARDWARE=${HARDWARE}"
+}
+
+check_hardware
+KER_VERSION=`uname -a`
+KER_VERSION=`echo ${KER_VERSION} | cut -f 3 -d " "`
+opr=$1
+
+if [ -e /sys/devices/system/cpu/online ]; then
+	let ONLINE_NUM=`cat /sys/devices/system/cpu/online | cut -f 2 -d"-"`
+else
+	let ONLINE_NUM=3
+fi
+
+for ((i=0; i<=${ONLINE_NUM}; i++))
+do
+	temp=`cat /sys/class/thermal/thermal_zone0/temp`
+	if [ -e /sys/devices/system/cpu/cpu${i}/online ]; then
+		let online=`cat /sys/devices/system/cpu/cpu${i}/online`	
+	else
+		let online=1
+	fi
+	if [ $online -eq 1 ]; then
+		if [ "x$opr" = "xset" ]; then
+			freq=$2
+			echo userspace > /sys/devices/system/cpu/cpu${i}/cpufreq/scaling_governor
+			echo $freq > /sys/devices/system/cpu/cpu${i}/cpufreq/scaling_setspeed
+		fi
+		governor=`cat /sys/devices/system/cpu/cpu${i}/cpufreq/scaling_governor`
+		freq=`cat /sys/devices/system/cpu/cpu${i}/cpufreq/cpuinfo_cur_freq`
+		printf "CPU%s online=%s temp=%s governor=%s cur_freq=%d\n" $i $online $temp $governor $freq
+	fi
+done
+
+
+if [[ "x${KER_VERSION}" =~ "x4." ]]; then                # linux-4.x.y
+	:
+else
+    ddr_freq
+fi
+

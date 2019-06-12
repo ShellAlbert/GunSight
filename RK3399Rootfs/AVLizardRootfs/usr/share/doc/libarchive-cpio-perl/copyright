@@ -1,0 +1,51 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://metacpan.org/release/Archive-Cpio
+Upstream-Contact: Pascal Rigaux <tmp@rigaux.org>
+Upstream-Name: Archive-Cpio
+
+Files: *
+Copyright: Pascal Rigaux <pixel@rigaux.org>
+License: Artistic or GPL-1+
+Comment:
+ 0) Ad copyright:
+ .
+ The upstream distribution does not contain an explicit statement of
+ copyright ownership. Pursuant to the Berne Convention for the Protection of
+ Literary and Artistic Works, it is assumed that all content is copyright by
+ its respective authors unless otherwise stated.
+ .
+ 1) Ad license:
+ .
+ The licensing terms are taken from the upstream author's statement at
+ https://rt.cpan.org/Public/Bug/Display.html?id=43597 :
+ .
+  Wed Feb 25 04:21:29 2009 tmp [...] merd.net - Correspondence added
+  On Wed Feb 25 04:08:03 2009, RSRCHBOY wrote:
+  > I'm looking to package Archive::Cpio for Fedora, but I can't seem to
+  > find the license for this package.
+  >
+  > Did you intend to license this package "under the same terms as Perl
+  > itself", that is, GPL v1+ and the Artistic License?  (or maybe the LGPL
+  > v2+...? :))
+ .
+  yeah, same as Perl. I'll try to add a mention of it in next release. thanks
+
+Files: debian/*
+Copyright: 2017, gregor herrmann <gregoa@debian.org>
+License: Artistic or GPL-1+
+
+License: Artistic
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the Artistic License, which comes with Perl.
+ .
+ On Debian systems, the complete text of the Artistic License can be
+ found in `/usr/share/common-licenses/Artistic'.
+
+License: GPL-1+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 1, or (at your option)
+ any later version.
+ .
+ On Debian systems, the complete text of version 1 of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-1'.

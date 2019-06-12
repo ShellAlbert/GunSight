@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib/aarch64-linux-gnu
+includedir=${prefix}/include
+
+Name: PAPI
+Description: Performance API to access performance metrics on system
+Version: 5.6.0.0
+Libs: -L${libdir} -lpapi
+Libs.private: -L/usr/lib/aarch64-linux-gnu -lpfm
+Cflags: -I${includedir}

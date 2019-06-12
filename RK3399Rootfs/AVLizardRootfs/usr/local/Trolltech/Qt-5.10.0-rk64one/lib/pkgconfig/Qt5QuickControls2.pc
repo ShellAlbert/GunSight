@@ -1,0 +1,13 @@
+prefix=/opt/rootfs-rk64one/usr/local/Trolltech/Qt-5.10.0-rk64one
+exec_prefix=${prefix}
+libdir=/usr/local/Trolltech/Qt-5.10.0-rk64one/lib
+includedir=/usr/local/Trolltech/Qt-5.10.0-rk64one/include
+
+
+Name: Qt5 QuickControls2
+Description: Qt QuickControls2 module
+Version: 5.10.0
+Libs: -L${libdir} -lQt5QuickControls2 
+Cflags: -I${includedir}/QtQuickControls2 -I${includedir}
+Requires: Qt5Core Qt5Gui Qt5Quick
+

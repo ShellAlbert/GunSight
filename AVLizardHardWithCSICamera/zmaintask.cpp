@@ -41,6 +41,9 @@ qint32 ZMainTask::ZStartTask()
     this->m_timerExit=new QTimer;
     QObject::connect(this->m_timerExit,SIGNAL(timeout()),this,SLOT(ZSlotChkAllExitFlags()));
 
+    //AV UI.
+    this->m_ui=new ZAVUI;
+
 #if 0
     //start Android(tcp) <--> STM32(uart) forward task.
     this->m_tcp2Uart=new ZTcp2UartForwardThread;
@@ -52,6 +55,8 @@ qint32 ZMainTask::ZStartTask()
     QObject::connect(this->m_ctlJson,SIGNAL(ZSigThreadExited()),this,SLOT(ZSlotSubThreadsExited()));
     this->m_ctlJson->ZStartThread();
 #endif
+
+#if 1
     //audio task.
     this->m_audio=new ZAudioTask;
     QObject::connect(this->m_audio,SIGNAL(ZSigAudioTaskExited()),this,SLOT(ZSlotSubThreadsFinished()));
@@ -60,8 +65,9 @@ qint32 ZMainTask::ZStartTask()
         qDebug()<<"<Error>:failed to start audio task.";
         return -1;
     }
+#endif
 
-#if 0
+#if 1
     //video task.
     this->m_video=new ZVideoTask;
     QObject::connect(this->m_video,SIGNAL(ZSigVideoTaskExited()),this,SLOT(ZSlotSubThreadsFinished()));
@@ -75,11 +81,7 @@ qint32 ZMainTask::ZStartTask()
         qDebug()<<"<Error>:failed to start video task!";
         return -1;
     }
-#endif
-    //AV UI.
-    this->m_ui=new ZAVUI;
 
-#if 0
     //use signal-slot event to notify local UI flush.
     QObject::connect(this->m_video->ZGetImgCapThread(0),SIGNAL(ZSigNewImgArrived(QImage)),this->m_ui->ZGetImgDisp(0),SLOT(ZSlotFlushImg(QImage)),Qt::AutoConnection);
     QObject::connect(this->m_video->ZGetImgCapThread(1),SIGNAL(ZSigNewImgArrived(QImage)),this->m_ui->ZGetImgDisp(1),SLOT(ZSlotFlushImg(QImage)),Qt::AutoConnection);
@@ -125,11 +127,11 @@ void ZMainTask::ZSlotChkAllExitFlags()
         return;
     }
 
-//    if(!this->m_video->ZIsExitCleanup())
-//    {
-//        qDebug()<<"<Exit>:waiting for video task...";
-//        return;
-//    }
+    if(!this->m_video->ZIsExitCleanup())
+    {
+        qDebug()<<"<Exit>:waiting for video task...";
+        return;
+    }
 
     this->m_timerExit->stop();
     qApp->exit(0);

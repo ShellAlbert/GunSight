@@ -1,0 +1,405 @@
+#!/usr/bin/perl -w
+
+=head1 NAME
+
+debconf-gettextize - convert master and localized templates files to PO files
+
+=cut
+
+use strict;
+use Debconf::Template::Transient;
+use Getopt::Long;
+use Text::Wrap;
+use Text::Tabs;
+use File::Spec;
+use File::Path;
+use File::Temp;
+
+sub usage {
+        print STDERR <<EOF;
+Usage: debconf-gettextize [OPTIONS] master [master ...]
+Options:
+  -h,  --help          display this help message
+  -v,  --verbose       enable verbose mode
+       --podir=DIR     specify PO output directory
+                       (Default: <master directory>/po)
+       --choices       prepend two underscores before Choices fields
+       --merge         merge extracted strings with existing PO files
+EOF
+        exit $_[0];
+}
+
+# Ignore the users locale settings.
+Debconf::Template::Transient->i18n(0);
+
+# Prevent a wrapped line from beginning with a space
+$Text::Wrap::break = qr/\n|\s(?=\S)/;
+
+my $help = 0;
+my $verbose = 0;
+my $podir = "";
+my $choices = 0;
+my $merge = 0;
+GetOptions(
+        'podir=s' => \$podir,
+        'choices' => \$choices,
+        'merge' => \$merge,
+        'verbose|v' => \$verbose,
+        'help|h' => \$help,
+) or usage(1);
+$help && usage(0);
+$#ARGV >= 0 || usage(1);
+
+$ENV{PODEBCONF_ENCODINGS} ||= "/usr/share/po-debconf/encodings";
+$ENV{PODEBCONF_HEADER} ||= "/usr/share/po-debconf/pot-header";
+
+if ($podir eq '') {
+        $podir = $ARGV[0];
+        if ($podir =~ m#/#) {
+                $podir =~ s{/[^/]*$}{/po};
+        } else {
+                $podir = 'po';
+        }
+}
+
+my $tmpdir = '';
+my $oldpodir = '';
+if ($merge) {
+        die "Error: $podir subdirectory does not exist ...exiting\n"
+                unless -d $podir;
+        $oldpodir = $podir;
+        $tmpdir = File::Temp::tempdir() or die "tmpdir() failed: $!\n";
+        print STDERR "Running po2debconf --podir=$podir -e po -o $tmpdir/templates $ARGV[0]\n" if $verbose;
+        system("po2debconf", "--podir=$podir", "-e", "po", "-o", $tmpdir."/templates", $ARGV[0]) == 0
+                or die "po2debconf failed: $? $!\n";
+        shift @ARGV;
+        for (@ARGV) {
+                system("po2debconf", "--podir=$podir", "-e", "po", "-o", $tmpdir."/templates.tmp", $_) == 0
+                        or die "po2debconf failed: $!\n";
+                local $/ = undef;
+                open (IN, "<", $tmpdir."/templates.tmp");
+                my $add = <IN>;
+                close (IN);
+                open (OUT, ">>", $tmpdir."/templates");
+                print OUT "\n".$add;
+                close (OUT);
+                unlink $tmpdir."/templates.tmp";
+        }
+        @ARGV = ($tmpdir."/templates");
+        $podir = $tmpdir."/po";
+} else {
+        die "Error: $podir subdirectory already exist ...exiting\n"
+                if -d $podir;
+}
+
+#   Hacked version of the stringify routine from Debconf/Template.pm
+#   It prepends an underscore to translatable entries
+sub new_stringify {
+        my $template = shift;
+        my @needfields = @_;
+
+        my @templatestrings;
+        my $transfields = ','.join(',', @needfields).',';
+        foreach (($template)) {
+                my $data='';
+                # Order the fields with Template and Type the top and the
+                # rest sorted.
+                foreach my $key ('template', 'type',
+                        (grep { $_ ne 'template' && $_ ne 'type'} sort $_->fields)) {
+                        next if $key=~/^extended_/;
+                        # Do not output localized fields.
+                        next if $key =~ m/-/;
+
+                        if ($transfields =~ m/,$key,/) {
+                                $data.='_';
+                                $data.='_' if ($key eq 'choices' && $choices);
+                        }
+                        $data.=ucfirst($key).": ".$_->$key."\n";
+                        my $e="extended_$key";
+                        my $ext=$_->$e;
+                        if (defined $ext) {
+                                # Add extended field.
+                                my $extended=expand(wrap(' ', ' ', $ext));
+                                # The word wrapper sometimes outputs multiple
+                                # " \n" lines, so collapse those into one.
+                                $extended=~s/(\n )+\n/\n .\n/g;
+                                $data.=$extended."\n" if length $extended;
+                        }
+                }
+                push @templatestrings, $data;
+        }
+        return join("\n", @templatestrings);
+}
+
+sub escape_po {
+        my $txt = shift;
+
+        $txt =~ s/\\/\\\\/g;
+        $txt =~ s/\n/\\n/g;
+        $txt =~ s/"/\\"/g;
+
+        return $txt;
+}
+
+my %out = ();
+my %enc = ();
+my %txt = ();
+my @obsolete = ();
+my @files = @ARGV;
+
+#     Initialization
+foreach my $master (@ARGV) {
+        die "Invalid master file: $master ...exiting\n".
+  "templates.* file names are reserved for localized templates files, you\n".
+  "should rename master files before running debconf-gettextize.\n".
+  "When finished, you can rename new master files into templates.in and\n".
+  "update POTFILES.in accordingly.\n\n"
+                if $master =~ m#templates\.([^./]+)$#;
+        die "File $master.old already exist ...exiting\n"
+                if -e "$master.old";
+        push (@obsolete, "$master.old");
+        push (@files, glob ("$master.?? $master.??_??"));
+        push (@obsolete, glob ("$master.?? $master.??_??"));
+}
+
+-d $podir || mkdir ($podir, 0755) || die "Can't create directory $podir: $!\n";
+
+#     Fix relative links
+foreach (@ARGV) {
+        $_ = File::Spec->abs2rel($_, $podir);
+        s/^\.\.\///;
+}
+
+#     Load master files
+my %templates = ();
+foreach my $fn (@files) {
+        next if $fn =~ m#templates\.([^./]+)$#;
+        $txt{$fn} = '';
+        my %master = map { $_->template => $_ } Debconf::Template::Transient->load($fn);
+        foreach (keys %master) {
+                $templates{$_} = $master{$_};
+        }
+}
+
+#     Parse master and localized templates files
+foreach my $fn (@files) {
+        print STDERR "Reading $fn\n" if $verbose;
+
+        my $filelang = ($fn=~m#templates\.([^./]+)$# ? lc($1) : undef);
+        foreach my $in (Debconf::Template::Transient->load($fn)) {
+                next unless exists $templates{$in->template};
+                my $master=$templates{$in->template};
+
+                # Work out what fields need to be translated.
+                my @needfields=qw{description extended_description};
+                if ($master->type !~ /^((multi)?select|note|boolean)$/) {
+                        push @needfields, 'default' if defined $master->default;
+                }
+                if ($master->type =~ /(multi)?select/) {
+                        push @needfields, 'choices';
+                }
+
+                # Parse the translated material
+                foreach my $field ($in->fields) {
+                        next if $field eq 'template';
+                        if ($field =~ m/^(.*?)-(.+)$/) {
+                                my $origin_field=$1;
+                                my $lang=$2;
+                                if ($lang =~ s/\.(.*)//) {
+                                        die "Multiple encoding found for language: $lang ... exiting\n"
+                                                if (defined ($enc{$lang}) && $enc{$lang} ne uc ($1));
+                                        $enc{$lang} = uc ($1);
+                                }
+                                # Skip fields that are for some other language.
+                                if (!defined($filelang) || $lang eq $filelang) {
+                                        $out{$lang} = []
+                                                unless (defined($out{$lang}));
+
+                                        my $label = $origin_field;
+                                        $label =~ s/extended_//;
+                                        $label = ucfirst($label);
+                                        my $origmaster = $master->$origin_field || '';
+                                        my @orig = split(/\n\n+/, $origmaster);
+                                        my $orignew = $in->$origin_field || '';
+                                        my @trans = split(/\n\n+/, $in->$field());
+                                        if ($label eq 'Choices' && $choices) {
+                                                @orig = ();
+                                                for my $value (split(/(?<!\\), */, $origmaster, 0))
+                                                {
+                                                        $value =~ s/\\,/,/g;
+                                                        push @orig, $value;
+                                                }
+                                                @trans = ();
+                                                for my $value (split(/(?<!\\), */, $in->$field(), 0))
+                                                {
+                                                        $value =~ s/\\,/,/g;
+                                                        push @trans, $value;
+                                                }
+                                        }
+                                        $origmaster =~ s/[\n\s]+//g;
+                                        $orignew =~ s/[\n\s]+//g;
+                                        my $fuzzy = ($origmaster ne $orignew) || (scalar @orig != scalar @trans);
+                                        if (scalar @orig <= scalar @trans) {
+                                                foreach (@orig) {
+                                                        push @{$out{$lang}}, $label, $fuzzy, $_, shift(@trans);
+                                                }
+                                        } else {
+                                                foreach (@trans) {
+                                                        push @{$out{$lang}}, $label, 1, shift(@orig), $_;
+                                                }
+                                                foreach (@orig) {
+                                                        push @{$out{$lang}}, $label, 1, $_, '';
+                                                }
+                                        }
+                                }
+                        }
+                }
+
+                $txt{$fn} .= new_stringify($in, @needfields)."\n"
+                        unless defined $filelang;
+        }
+        $txt{$fn} =~ s/\s*$/\n/s unless defined $filelang;
+}
+
+if (-f $ENV{PODEBCONF_ENCODINGS}) {
+        open(ENC, "<", $ENV{PODEBCONF_ENCODINGS})
+                || die "Can't open $ENV{PODEBCONF_ENCODINGS} for reading: $!\n";
+        while (<ENC>) {
+                chomp;
+                next unless s/^([a-z][a-z](_[A-Z][A-Z])?)\s+//;
+                $enc{lc $1} ||= $_;
+        }
+        close(ENC);
+}
+foreach my $lang (sort keys %out) {
+        $enc{$lang} ||= 'CHARSET';
+}
+
+my $unknown_encoding = 0;
+foreach my $lang (sort keys %out) {
+        my $polang = $lang;
+        $polang =~ s/_(..)$/_\U$1\E/;
+        $polang .= '.po';
+        print STDERR "Creating $podir/$polang\n" if $verbose;
+
+        my $header = '';
+        unless (-e "$podir/$polang") {
+                if (open (TOP, "<", $ENV{PODEBCONF_HEADER})) {
+                        while (<TOP>) {
+                                $header .= $_;
+                        }
+                        close (TOP);
+                }
+                $header .= "#\n"
+                 ."#, fuzzy\n"
+                 ."msgid \"\"\n"
+                 ."msgstr \"\"\n"
+                 ."\"Project-Id-Version: PACKAGE VERSION\\n\"\n"
+                 ."\"Report-Msgid-Bugs-To: \\n\"\n"
+                 ."\"POT-Creation-Date: ".localtime()."\\n\"\n"
+                 ."\"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\\n\"\n"
+                 ."\"Last-Translator: FULL NAME <EMAIL\@ADDRESS>\\n\"\n"
+                 ."\"Language-Team: LANGUAGE <LL\@li.org>\\n\"\n"
+                 ."\"MIME-Version: 1.0\\n\"\n"
+                 ."\"Content-Type: text/plain; charset=".$enc{$lang}."\\n\"\n"
+                 ."\"Content-Transfer-Encoding: 8bit\\n\"\n\n";
+        }
+
+        open (OUT, ">>", "$podir/$polang")
+                || die "Can't open $podir/$polang for writing: $!\n";
+        binmode(OUT);
+        print OUT $header;
+        while (@{$out{$lang}}) {
+                print OUT "#: ".(shift @{$out{$lang}})."\n";
+                print OUT "#, fuzzy\n" if (shift @{$out{$lang}});
+                print OUT "msgid \"".
+                          escape_po(shift @{$out{$lang}}).
+                          "\"\n";
+                print OUT "msgstr \"".
+                          escape_po(shift @{$out{$lang}}).
+                          "\"\n\n";
+        }
+        close (OUT) || die "Can't write $podir/$polang: $!\n";
+        if ($enc{$lang} eq 'CHARSET') {
+                $unknown_encoding = 1;
+                warn "Warning: Encoding for language $lang is unknown.\n".
+                     "Warning: This must be fixed before running po2debconf, so\n".
+                     "Warning:   $podir/$polang is renamed into $podir/$polang.unknown\n".
+                     "Warning: in order not to break other languages.\n".
+                     "Warning: Do not forget to rename it after having fixed its ".
+                     "encoding declaration!\n";
+                rename "$podir/$polang", "$podir/$polang.unknown";
+        } else {
+                system("msguniq", "--use-first", "-o", "$podir/$polang.tmp", "$podir/$polang") == 0 or die "msguniq failed: $!\n";
+                rename "$podir/$polang.tmp", "$podir/$polang";
+        }
+}
+
+foreach my $master (keys %txt) {
+        rename $master, "$master.old"
+                or die "Unable to rename $master into $master.old\n";
+        print STDERR "Creating $master\n" if $verbose;
+        open (NEW, ">", $master) ||
+                die "Can't open $master for writing: $!\n";
+        print NEW $txt{$master};
+        close (NEW);
+}
+
+my $current = '';
+if (-e "$podir/POTFILES.in") {
+        local $/ = undef;
+        open (LIST, "<",  "$podir/POTFILES.in") ||
+                die "Can't read $podir/POTFILES.in: $!\n";
+        $current = <LIST>;
+        close (LIST);
+}
+print STDERR "Create $podir/POTFILES.in\n" if $verbose;
+open (LIST, ">", "$podir/POTFILES.in") ||
+        die "Can't open $podir/POTFILES.in for writing: $!\n";
+print LIST $current;
+foreach (@ARGV) {
+        print LIST "[type: gettext/rfc822deb] $_\n"
+                unless $current =~ m/ $_\b/m;
+}
+close (LIST) || die "Can't open write $podir/POTFILES.in$!\n";
+
+if ($merge) {
+        foreach my $lang (keys %out) {
+                my $polang = $lang;
+                $polang =~ s/_(..)$/_\U$1\E/;
+                if (-f "$oldpodir/$polang.po") {
+                        unlink "$podir/temp";
+                        system("msgcat", "--use-first", "-o", "$podir/temp", "$oldpodir/$polang.po", "$podir/$polang.po") == 0 && system("cp", "$podir/temp", "$oldpodir/$polang.po");
+                } else {
+                        system("cp", "$podir/$polang.po", "$oldpodir/$polang.po");
+                }
+        }
+        File::Path::rmtree($tmpdir, 0, 1);
+        print "\n".
+                "  To complete conversion, you must:\n".
+                "    a. Adjust _Choices or __Choices fields in master templates file.\n".
+                "    b. Run debconf-updatepo\n";
+} else {
+        print STDERR "Running debconf-updatepo --podir=$podir\n" if $verbose;
+        system("debconf-updatepo", "--podir=$podir");
+
+        print "\n".
+                "  To complete conversion, you must:\n".
+                "    a. Check that new templates files contain all the localized fields\n".
+                "    b. Add po-debconf to Build-Depends or Build-Depends-Indep in debian/control\n".
+                "    c. Remove obsolete files:\n".
+                wrap('         ', '         ', join(' ', @obsolete))."\n".
+                "    d. Edit debian/rules to generate the localized templates file, either\n".
+                "       with dh_installdebconf or directly with po2debconf\n";
+        print   "    e. Check encoding in $podir/*.po.unknown files\n"
+                if ($unknown_encoding);
+}
+
+exit 0;
+
+=head1 AUTHORS
+
+Martin Quinson <martin.quinson@ens-lyon.fr>
+Denis Barbier <barbier@linuxfr.org>
+
+=cut

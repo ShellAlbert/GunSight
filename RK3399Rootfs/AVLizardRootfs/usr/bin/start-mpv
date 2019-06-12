@@ -1,0 +1,10 @@
+#!/bin/bash
+sudo switch-malilib-to.sh libmali-midgard-t86x-r14p0-gbm.so
+SCREENSIZE=800x1280
+HDMISTATUS=`cat /sys/class/drm/card0-HDMI-A-1/status`
+if [ x$HDMISTATUS = x"disconnected" ]; then
+	SCREENSIZE=`cat /sys/class/drm/card0-eDP-1/mode | cut -d'p' -f1`
+else
+	SCREENSIZE=`cat /sys/class/drm/card0-HDMI-A-1/mode | cut -d'p' -f1`
+fi
+mpv $@ --drm-osd-size=$SCREENSIZE

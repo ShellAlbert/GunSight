@@ -1,0 +1,58 @@
+CC=arm-linux-gnueabihf-g++
+
+# INCLUDE_DIRS = -I /usr/local/include
+# LIB_DIRS = -L /usr/local/lib
+
+CFLAGS+=-fPIC -DWEBRTC_POSIX
+LDFLAGS+=-shared -lpthread
+
+TARGET=libwebrtc.so
+
+OBJS=*.o
+
+SOURCES=	\
+	analog_agc.c							\
+	complex_bit_reverse.c			\
+	complex_fft.c							\
+	copy_set_operations.c			\
+	cross_correlation.c				\
+	digital_agc.c							\
+	division_operations.c			\
+	dot_product_with_scale.c	\
+	downsample_fast.c					\
+	energy.c									\
+	fft4g.c										\
+	get_scaling_square.c			\
+	min_max_operations.c			\
+	noise_suppression.c				\
+	noise_suppression_x.c			\
+	ns_core.c									\
+	nsx_core.c								\
+	nsx_core_c.c							\
+	nsx_core_neon_offsets.c		\
+	real_fft.c								\
+	resample.c								\
+	resample_48khz.c					\
+	resample_by_2.c						\
+	resample_by_2_internal.c	\
+	resample_by_2_mips.c			\
+	resample_fractional.c			\
+	ring_buffer.c							\
+	spl_init.c								\
+	spl_sqrt.c								\
+	spl_sqrt_floor.c					\
+	splitting_filter.c				\
+	vector_scaling_operations.c
+
+.PHONY: all clean
+
+$(TARGET): $(OBJS)
+		$(CC) -o $(TARGET) $(OBJS) $(LDFLAGS)
+		
+$(OBJS): $(SOURCES)
+		$(CC) -c $(SOURCES) $(CFLAGS)
+		
+all: $(TARGET)
+
+clean:
+		rm -f $(OBJS) $(TARGET)

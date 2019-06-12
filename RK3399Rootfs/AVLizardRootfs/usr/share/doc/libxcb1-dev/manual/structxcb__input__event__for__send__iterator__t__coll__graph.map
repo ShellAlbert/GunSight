@@ -1,0 +1,13 @@
+<map id="xcb_input_event_for_send_iterator_t" name="xcb_input_event_for_send_iterator_t">
+<area shape="rect" id="node2" href="$unionxcb__input__event__for__send__t.html" title="xcb_input_event_for_send_t " alt="" coords="419,305,573,346"/>
+<area shape="rect" id="node3" href="$structxcb__input__device__valuator__event__t.html" title="xcb_input_device_valuator_event_t " alt="" coords="8,10,204,51"/>
+<area shape="rect" id="node4" href="$structxcb__input__device__presence__notify__event__t.html" title="xcb_input_device_presence_notify_event_t " alt="" coords="5,75,207,117"/>
+<area shape="rect" id="node5" href="$structxcb__input__device__button__state__notify__event__t.html" title="xcb_input_device_button_state_notify_event_t " alt="" coords="14,141,198,182"/>
+<area shape="rect" id="node6" href="$structxcb__input__device__focus__in__event__t.html" title="xcb_input_device_focus_in_event_t " alt="" coords="17,206,195,247"/>
+<area shape="rect" id="node7" href="$structxcb__input__change__device__notify__event__t.html" title="xcb_input_change_device_notify_event_t " alt="" coords="11,271,201,313"/>
+<area shape="rect" id="node8" href="$structxcb__input__device__mapping__notify__event__t.html" title="xcb_input_device_mapping_notify_event_t " alt="" coords="7,337,205,378"/>
+<area shape="rect" id="node9" href="$structxcb__input__device__key__state__notify__event__t.html" title="xcb_input_device_key_state_notify_event_t " alt="" coords="23,402,189,443"/>
+<area shape="rect" id="node10" href="$structxcb__raw__generic__event__t.html" title="Raw Generic event. " alt="" coords="13,468,199,495"/>
+<area shape="rect" id="node11" href="$structxcb__input__device__state__notify__event__t.html" title="xcb_input_device_state_notify_event_t " alt="" coords="19,519,193,561"/>
+<area shape="rect" id="node12" href="$structxcb__input__device__key__press__event__t.html" title="xcb_input_device_key_press_event_t " alt="" coords="23,646,189,687"/>
+</map>

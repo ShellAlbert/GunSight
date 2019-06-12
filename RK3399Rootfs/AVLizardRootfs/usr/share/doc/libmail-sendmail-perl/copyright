@@ -1,0 +1,36 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://metacpan.org/release/Mail-Sendmail
+Upstream-Contact: Milivoj Ivkovic <mi@alma.ch>
+Upstream-Name: Mail-Sendmail
+
+Files: *
+Copyright: 1998-2017, Milivoj Ivkovic <mi@alma.ch>
+License: public-domain
+ You can use it freely. (Someone complained this is too vague. So, more
+ precisely: do whatever you want with it, but be warned that terrible
+ things will happen to you if you use it badly, like for sending spam,
+ claiming you wrote it alone, or ...?)
+
+Files: debian/*
+Copyright: 2000, 2001, 2003, 2005, Jaldhar H. Vyas <jaldhar@debian.org>
+ 2005, Niko Tyni <ntyni@iki.fi>
+ 2008, Gunnar Wolf <gwolf@debian.org>
+ 2008, gregor herrmann <gregoa@debian.org>
+ 2016-2017, Florian Schlichting <fsfs@debian.org>
+License: Artistic or GPL-1+
+
+License: Artistic
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the Artistic License, which comes with Perl.
+ .
+ On Debian systems, the complete text of the Artistic License can be
+ found in `/usr/share/common-licenses/Artistic'.
+
+License: GPL-1+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 1, or (at your option)
+ any later version.
+ .
+ On Debian systems, the complete text of version 1 of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-1'.

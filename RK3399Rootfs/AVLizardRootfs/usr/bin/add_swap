@@ -1,0 +1,39 @@
+#!/bin/bash
+
+#set -x
+
+if [ $UID -ne 0 ]; then
+    echo Please run as root.
+    exit
+fi
+
+if [ $# -ne 1 ]; then
+    echo "usage:$0 [size]"
+    exit
+fi
+
+size=$1
+
+if [ ${size} -gt 0 ] 2>/dev/null ;then 
+    echo "generating /mnt/${size}MB.swap" 
+else 
+    echo 'size must be a number' 
+    exit
+fi
+
+swap=/mnt/${size}MB.swap
+[ -f ${swap} ] && swapoff ${swap} && rm ${swap}
+dd if=/dev/zero of=${swap} bs=1M count=${size}
+sync
+chmod 0600 ${swap}
+mkswap ${swap}
+swapon ${swap}
+
+grep ${swap} /etc/fstab
+if [ $? -eq 0 ]
+then
+    sed -i /swap/d /etc/fstab
+fi
+
+echo "${swap}    none    swap    sw    0    0" >> /etc/fstab
+sync

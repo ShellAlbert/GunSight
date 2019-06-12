@@ -1,0 +1,314 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body>
+
+
+
+<h1 id="T-N">TÊN</h1>
+
+<p>po-debconf — giới thiệu</p>
+
+<h1 id="M-T">MÔ TẢ</h1>
+
+<p>Mục đích của <code>debconf</code> là làm cho tiến trình cấu hình gói là thân thiện với người dùng. Để đạt được, quan trọng là đảm bảo mỗi người dùng sẽ thấy câu hỏi bằng ngôn ngữ mẹ đẻ. Người dịch yêu cầu một khuôn khổ để dịch dễ dàng mà không cần theo dõi tiến trình phát triển gói phần mềm. <code>po-debconf</code> đã được thiết kế để chạy đúng với các công cụ <code>gettext</code> tiêu chuẩn khi dịch tập tin mẫu debconf.</p>
+
+<h1 id="TH-M-H-TR-I18N-V-O-T-P-TIN-M-U-DEBCONF">THÊM HỔ TRỢ I18N VÀO TẬP TIN MẪU DEBCONF</h1>
+
+<p>Muốn thêm hỗ trợ debconf vào gói thì bạn đã ghi một tập tin mẫu chứa văn bản tiếng Anh (ngôn ngữ gốc). Để thêm khả năng hỗ trợ tiến trình quốc tế hoá (i18n) vào gói, bạn cần phải:</p>
+
+<dl>
+
+<dt id="T-o-debian-po-POTFILES.in">• Tạo <i>debian/po/POTFILES.in</i></dt>
+<dd>
+
+<p>Tập tin này chứa danh sách các mẫu chủ. Bình thường nó chứa chỉ một dòng riêng lẻ:</p>
+
+<pre><code>  [type: gettext/rfc822deb] templates</code></pre>
+
+<p>Đường dẫn tương đối với thư mục cha.</p>
+
+</dd>
+<dt id="Th-m-m-t-d-u-g-ch-d-i-v-o-tr-c-m-i-tr-ng-c-th-d-ch-c-trong-m-i-m-u">• Thêm một dấu gạch dưới vào trước mọi trường có thể dịch được trong mỗi mẫu</dt>
+<dd>
+
+<p>Bình thường có thể dịch được các trường kiểu <code>Description</code>, <code>Choices</code> và đôi khi <code>Default</code>.</p>
+
+</dd>
+<dt id="Ch-y-debconf-updatepo">• Chạy <b>debconf-updatepo</b></dt>
+<dd>
+
+<p>Tiến trình này sẽ tạo tập tin <i>debian/po/templates.pot</i> mà người dịch sẽ dịch sang ngôn ngữ khác.</p>
+
+</dd>
+<dt id="Th-m-v-o-debian-control-m-t-quan-h-ph-thu-c-x-y-d-ng-v-o-po-debconf">• Thêm vào <i>debian/control</i> một quan hệ phụ thuộc xây dựng vào <code>po-debconf</code>.</dt>
+<dd>
+
+</dd>
+</dl>
+
+<h1 id="C-P-NH-T-M-U">CẬP NHẬT MẪU</h1>
+
+<p>Để giúp đỡ người dịch thì bạn nên bảo tồn một gói phần mềm có các tập tin PO hiện thời. (Không thì người dịch hoài phí thì giờ vì dịch chuỗi vô ích.) Để cứ cập nhật các tập tin PO, hãy gọi câu lệnh theo đây (không có đối số):</p>
+
+<pre><code>  $ debconf-updatepo</code></pre>
+
+<p>Để duy trì các tập tin PO hiện thời, bạn nên chạy lệnh này mỗi lần thay đổi chuỗi tiếng Anh trong mẫu. Cũng nên chạy nó khi bạn nhận bản dịch mới hay bản dịch đã cập nhật, vì người dịch có thể đã dịch tập tin PO cũ.</p>
+
+<p>Nếu bạn thay tên, thêm hay gỡ bỏ bất kỳ tập tin mẫu, cũng nhớ để chỉnh sửa tập tin <i>debian/po/POTFILES.in</i> một cách tương ứng. Không thì một số chuỗi tiếng Anh bị thiếu trong tập tin PO; các chuỗi tiếng Anh này sẽ được hiển thị cho người dùng xem, thậm chí nếu các tập tin PO đã được dịch hoàn toàn.</p>
+
+<p>Chương trình <b>debconf-updatepo</b> là luỹ đẳng: nó sửa đổi tập tin PO chỉ nếu nội dung bị cập nhật. Vì vậy phương pháp tốt nhất cung cấp các tập tin PO hiện thời trong gói mã nguồn là gọi câu lệnh này từ đích <code>clean</code> của tập tin <i>debian/rules</i>.</p>
+
+<p>Ghi chú rằng bạn cần phải chạy <b>debconf-updatepo</b> thậm chí nếu bạn sử dụng <b>dh_installdebconf</b>. Hàm thứ hai này gọi <b>po2debconf</b> mà từng gọi <b>debconf-updatepo</b> nếu phát hiện tập tin bị lỗi thời, nhưng không còn là trường hợp lại vì hai lý do :</p>
+
+<ol>
+
+<li><p><b>po2debconf</b> nhờ nhãn giờ để phát hiện tập tin bị lỗi thời, và có thể không chạy đúng khi dùng <code>pbuilder</code> hoặc nếu bản dịch cũ đã được lưu vào đĩa sau khi mẫu bị sửa đổi.</p>
+
+</li>
+<li><p><b>dh_installdebconf</b> được gọi đã lâu sau khi tạo ra tập tin <code>.diff.gz</code>.</p>
+
+</li>
+</ol>
+
+<h1 id="TR-N-B-N-D-CH-V-I-B-N-G-C">TRỘN BẢN DỊCH VỚI BẢN GỐC</h1>
+
+<p>Bạn cần phải kiểm tra các bản dịch được hợp nhất trong gói đã xây dựng khi nó được biên dịch. Bạn có thể tự kiểm tra, hoặc tự động kiểm tra bằng cách sử dụng văn lệnh <b>dh_installdebconf</b> (hãy đảm bảo có một quan hệ phụ thuộc xây dựng đặt phiên bản với <code>debhelper (&gt;= 4.1.16)</code>).</p>
+
+<p>Để tự kiểm tra, bạn cần phải trộn các mẫu với các bản dịch vào lúc biên dịch (và đặt quan hệ phụ thuộc xây dựng với <code>po-debconf</code>) như thế:</p>
+
+<pre><code>  $ po2debconf debian/templates &gt; debian/tmp/DEBIAN/templates</code></pre>
+
+<p><b>BE CAREFUL</b>: hai tập tin tên <i>templates</i> không phải trùng nhau. Tập tin thứ nhất chứa chỉ văn bản gốc (thường là tiếng Anh), và đánh dấu một số trường cần dịch, còn tập tin thứ hai chứa tất cả các ngôn ngữ. Vì vậy bạn KHÔNG thể giữ chỉ những mẫu đã trộn: có giữ thì bạn không thể xử lý mỗi bản dịch được đệ trình.</p>
+
+<h1 id="M-U-CH-M-I">MẪU CHỦ MỚI</h1>
+
+<p>Định dạng nguồn tập tin mẫu mới là gần trùng với một của những tập tin mẫu đã phát hành, nhưng mỗi trường có thể dịch được có dấu gạch dưới nằm trước. Thí dụ :</p>
+
+<pre><code>  Template: debconf/frontend
+  Type: select
+  _Choices: Dialog, Readline, Gnome, Editor, Noninteractive
+  Default: Dialog
+  _Description: Interface to use for configuring packages:
+   Packages that use debconf for configuration share a common look and
+   feel.  You can select the type of user interface they use.
+   .
+   The dialog frontend is a full-screen, character based interface,
+   while the readline frontend uses a more traditional plain text
+   interface, and the gnome frontend is a modern X interface.  The
+   editor frontend lets you configure things using your favorite text
+   editor. The noninteractive frontend never asks you any questions.</code></pre>
+
+<h2 id="X-DANH-S-CH-T-Y-CH-N">XẺ DANH SÁCH TÙY CHỌN</h2>
+
+<p>Kể từ <code>po-debconf</code> 0.6.0, trường đã địa phương hoá có thể chứa hai dấu gạch dưới đi trước. Trong trường hợp này, giá trị trường nên là một danh sách các giá trị định giới bằng dấu phẩy, mỗi chuỗi msgid thì chứa một giá trị. Do đó, nếu mẫu ví dụ trước chứa</p>
+
+<pre><code>  __Choices: Dialog, Readline, Gnome, Editor, Noninteractive</code></pre>
+
+<p>thì tạo 5 chuỗi msgid khác nhau. Ghi chú rằng dấu cách nằm sau dấu phẩy không có nghĩa.</p>
+
+<p>Có một danh sách sự chọn không bao giờ biến đổi thì <code>_Choices</code> là đúng. Tuy nhiên, chia tách danh sách như vậy có thể giúp tránh lỗi thường gặp trong bản dịch (v.d. bỏ sót một sự chọn, sử dụng dấu phẩy không tiêu chuẩn). Vì lý do này, rất khuyên bạn sử dụng <code>__Choices</code> để thay thế.</p>
+
+<p>Tiếc là nếu bạn chuyển đổi từ <code>_Choices</code> sang <code>__Choices</code> thì cũng làm cho mọi chuỗi dịch là dịch mờ (fuzzy). Tuy nhiên, có một phương pháp chuyển đổi như thế mà không mất trạng thái về chuỗi dịch (phương pháp này yêu cầu <code>po-debconf</code> &gt;= 1.0). Muốn chuyển đổi mẫu ví dụ trước sang <code>__Choices</code>: trước tiên cần sao chép tập tin <i>templates</i> vào một tập tin tạm thời.</p>
+
+<pre><code>  $ cp debian/templates debian/foo</code></pre>
+
+<p>Sửa <i>debian/foo</i>, giữ chỉ những trường <code>Template</code>, <code>Type</code> và <code>_Choices</code> mà nằm trong thí dụ này.</p>
+
+<pre><code>  Template: debconf/frontend
+  Type: select
+  _Choices: Dialog, Readline, Gnome, Kde, Editor, Noninteractive</code></pre>
+
+<p>Chạy <b>debconf-gettextize</b> với hai cờ <code>--merge</code> và <code>--choices</code> để xây dựng các tập tin PO như thể là <code>__Choices</code> đã được ghi, và trộn các tập tin PO này với các tập tin đã tồn tại:</p>
+
+<pre><code>  $ debconf-gettextize --merge --choices debian/foo</code></pre>
+
+<p>Cuối cùng bạn cần phải gỡ bỏ <i>foo</i> và tự chỉnh sửa <i>debian/templates</i> để thay thế <code>_Choices</code> bằng <code>__Choices</code> trước khi chạy <b>debconf-updatepo</b>.</p>
+
+<h2 id="GHI-CH-D-NH-CHO-NG-I-D-CH">GHI CHÚ DÀNH CHO NGƯỜI DỊCH</h2>
+
+<p>Các nhà duy trì <code>Dpkg</code> đã quyết định rằng theo quy ước mỗi dòng bắt đầu với dấu thăng (<code>#</code>) là chú thích trong tập tin <i>debian/control</i>: <code>po-debconf</code> cũng theo quy ước này. Kể từ <code>po-debconf</code> 0.8.0, các chú thích như vậy được ghi vào tập tin PO, và có thể chứa thông tin hữu ích cho người dịch. Hơn nữa, các phiên bản <code>po-debconf</code> trước bỏ qua mọi dòng không chứa dấu hai chấm, vì vậy nếu chú thích không chứa dấu hai chấm thì không cần thêm quan hệ phụ thuộc xây dựng lập phiên bản đối với <code>po-debconf</code>. Thí dụ :</p>
+
+<pre><code>  Template: debconf/button-yes
+  Type: text
+  # Translators, this text will appear on a button, so KEEP IT SHORT
+  _Description: Yes</code></pre>
+
+<p>Chú thích đặc biệt đã được giới thiệu trong <code>po-debconf</code> 1.0 để quản lý chuỗi chứa vài mục khác nhau (như trong trường <i>Choices</i>) hay vài đoạn văn khác nhau (như <i>Description</i>). Hai chỉ thị này cho nhà phát triển điều khiển hữu ích hơn thông tin được hiển thị cho người dịch. Chú thích này theo dạng <code>#flag:<i>directive</i></code>; các chỉ thị được diễn tả bên dưới.</p>
+
+<dl>
+
+<dt id="translate:spec-translate-:spec"><b>translate:</b><i>spec</i>, <b>translate!:</b><i>spec</i></dt>
+<dd>
+
+<p>Đánh dấu chỉ một số mục là « có thể dịch được »; <i>spec</i> là danh sách con số định giới bằng dấu phẩy, nó xác định những chuỗi nào sẽ được in ra tập tin PO. Cũng có thể xác định phạm vi bằng dấu trừ (v.d. <code>2-6</code>), và dấu sao (<code>*</code>) có nghĩa « mọi chuỗi ». Chẳng hạn, đối với</p>
+
+<pre><code>  Template: partman-basicfilesystems/fat_mountpoint
+  Type: select
+  #flag:translate:3,4
+  __Choices: /dos, /windows, Enter manually, Do not mount it
+  _Description: Mount point for this partition:</code></pre>
+
+<p>Hai mục <code>Enter manually</code> và <code>Do not mount it</code> sẽ xuất hiện trong tập tin PO, nhưngkhông phải hai mục <code>/dos</code> và <code>/windows</code>. Có dấu chấm than nằm sau từ khoá <b>translate</b> thì <i>spec</i> xác định những chuỗi nào sẽ bị hủy ra tập tin PO: các chuỗi khác được in ra. Thí dụ trước tương tự với</p>
+
+<pre><code>  Template: partman-basicfilesystems/fat_mountpoint
+  Type: select
+  #flag:translate!:1,2
+  __Choices: /dos, /windows, Enter manually, Do not mount it
+  _Description: Mount point for this partition:</code></pre>
+
+<p>Có thể áp dụng cùng từ khoá cho trường <i>Description</i> để đảm bảo một số chuỗi riêng sẽ không được dịch.</p>
+
+<pre><code>  Template: partman-crypto/options_missing
+  Type: error
+  #flag:translate!:3
+  _Description: Required encryption options missing
+   The encryption options for ${DEVICE} are incomplete. Please
+   return to the partition menu and select all required options.
+   .
+   ${ITEMS}</code></pre>
+
+<p>Nhưng mà trường hợp này nguy hiểm, vì ngữ cảnh có thể bị hủy ra tập tin PO: hãy ghi chú để cho người dịch thông tin cần thiết.</p>
+
+</dd>
+<dt id="comment:spec-comment-:spec"><b>comment:</b><i>spec</i>, <b>comment!:</b><i>spec</i></dt>
+<dd>
+
+<p>Ghi chú đúng bên dưới chỉ thị này áp dụng cho những chuỗi được ghi rõ bởi <i>spec</i>, mà được xác định bên trên. Mặc định là ghi chú được ghi vào đằng trước một trường có thể dịch được thì được in ra cùng với tất cả các chuỗi thuộc về trường đó. (Ghi chú : dùng <code>po-debconf</code> &lt; 1.0, ghi chú được ghi chỉ với chuỗi thứ nhất.)</p>
+
+<pre><code>  Template: arcboot-installer/prom-variables
+  Type: note
+  # Translators, the 4th string of this description has been dropped
+  # from PO files.  It contains shell commands and should not be
+  # translated.
+  #flag:comment:3
+  # &quot;Stop for Maintenance&quot; should be left in English
+  #flag:translate!:4
+  _Description: Setting PROM variables for Arcboot
+   If this is the first Linux installation on this machine, or if the
+   hard drives have been repartitioned, some variables need to be set
+   in the PROM before the system is able to boot normally.
+   .
+   At the end of this installation stage, the system will reboot.
+   After this, enter the command monitor from the &quot;Stop for
+   Maintenance&quot; option, and enter the following commands:
+   .
+      setenv OSLoader arcboot
+      setenv OSLoadFilename Linux
+   .
+   You will only need to do this once.  Afterwards, enter the &quot;boot&quot;
+   command or reboot the system to proceed to the next stage of the
+   installation.</code></pre>
+
+<p>Thí dụ bên trên có một ghi chú mà không dùng chỉ thị <code>#flag:comment</code>, vào đó một <code>#flag:comment:*</code> ngầm được thêm. Ghi chú này xuất hiện với mọi chuỗi, nhưng lời về <i>Stop for Maintenance</i> được in ra chỉ đằng trước chuỗi thích hợp.</p>
+
+</dd>
+<dt id="partial"><b>partial</b></dt>
+<dd>
+
+<p>Từ khoá này báo <b>po2debconf</b> nên giữ lại các chuỗi đã dịch, thậm chí nếu chưa dịch mọi chuỗi. Hãy sử dụng cẩn thận: từ khoá này đã được giới thiệu nhằm mục đích chính xác.</p>
+
+</dd>
+</dl>
+
+<h2 id="TH-NG-B-O-NG-I-D-CH-TR-C-KHI-T-I-L-N">THÔNG BÁO NGƯỜI DỊCH TRƯỚC KHI TẢI LÊN</h2>
+
+<p>Dù người dịch có thể thấy bản dịch cũ trên các trang Web trạng thái (xem dưới), và gửi đắp vá để bao gồm trong bản tải lên về sau, người dịch (giống như nhà phát triển) có ít thời gian rảnh. Để tiết kiệm thời gian cho cả hai nhà phát triển và người dịch, và cải tiến tiến trình liên lạc giữa cả hai, Dự án Debian cung cấp một công cụ chuyên dụng, <b>podebconf-report-po</b>. Dùng công cụ này, bạn có thể yêu cầu người dịch trước cập nhật bản dịch (v.d. 2 tuần đằng trước ngày tải lên), cuối cùng nhận nhiều bản dịch được cập nhật hơn. Rất khuyên nhà phát triển sử dụng công cụ này.</p>
+
+<h1 id="G-R-I">GỠ RỐI</h1>
+
+<p><b>debconf-loadtemplate</b> không chấp nhận tập tin mẫu có mã đánh dấu quốc tế hoá. Tuy nhiên, nó có phải chấp nhận một tập tin hoà trộn, thì nếu bạn từng gỡ rối thiết lập debconf như thế</p>
+
+<pre><code>  rm /tmp/{config,templates}.dat{,-old}
+  debconf-loadtemplate debian/templates
+  DEBIAN_PRIORITY=low debconf -freadline debian/config configure 28.0</code></pre>
+
+<p>bây giờ bạn cần phải sử dụng (v.d.):</p>
+
+<pre><code>  po2debconf debian/templates &gt; debian/tmp/DEBIAN/templates
+  rm /tmp/{config,templates}.dat{,-old}
+  debconf-loadtemplate debian/tmp/DEBIAN/templates
+  DEBIAN_PRIORITY=low debconf -freadline debian/config configure 28.0</code></pre>
+
+<h1 id="C-N-TH-N">CẨN THẬN</h1>
+
+<ul>
+
+<li><p><code>Debconf</code> 1.2.0 nhận ra trường theo dạng <i>Name</i>-<i>lang</i>.<i>encoding</i>, v.d. <code>Description-de.ISO-8859-1</code> hay <code>Choices-vi.UTF-8</code>. Mặc định là <b>po2debconf</b> ghi các tập tin mẫu theo định dạng mới đó. <code>debconf</code> cũ sẽ bỏ qua các trường này, chỉ hiển thị văn bản gốc (thường là tiếng Anh). Xem <a href="http://man.he.net/man1/po2debconf">po2debconf(1)</a> để biết cách thay đổi bảng mã và định dạng kết xuất.</p>
+
+</li>
+<li><p>Một chuỗi tiếng Anh đưa ra có thể nhận bằng mỗi ngôn ngữ chỉ một bản dịch duy nhất. Không thể cung cấp được hai bản dịch khác nhau phụ thuộc vào ngữ cảnh. Để giải quyết vấn đề này, bạn cần phải đánh dấu đặc biệt các lần gặp chuỗi khác nhau, để tạo nhiều chuỗi riêng. (Dấu này chỉ hiển thị cho người dịch: nó bị gỡ bỏ ra chuỗi trước khi người dùng xem.)</p>
+
+<p>Dấu như vậy phải được phụ thêm vào chuỗi cần dịch: nó phải bắt đầu với <code>[ </code> (dấu ngoặc mở có dấu cách theo sau) và kết thúc với <code>]</code> (dấu ngoặc đóng), và có thể chứa bất cứ ký tự nào trừ dấu ngoặc hay ký tự dòng mới. Chẳng hạn, <code>[ bi_bô]</code> là dấu hợp lệ, còn <code>[ bi[bô]bi]</code> không phải. Các dấu này bị gỡ bỏ bằng biểu thức chính quy này:</p>
+
+<pre><code>  $msg =~ s/\[\s[^\[\]]*\]$//s;</code></pre>
+
+</li>
+<li><p>Khoảng cách không phải được xử lý một cách trùng bởi <code>po-debconf</code> và <code>debconf-utils</code>; hàm thứ hai định dạng lại các đoạn văn khi cập nhật và trộn các bản dịch, vì vậy <code>debconf-utils</code> rất khéo, dấu cách không phải được xử lý là một phần của chuỗi khi quyết định chuỗi nào được dịch mờ (fuzzy: chuỗi có bản dịch cần chỉnh sửa vì chuỗi gốc bị thay đổi).</p>
+
+<p>Mặt khác, <code>po-debconf</code> nhờ <code>gettext</code> phát hiện chuỗi dịch mờ, và nó không xử lý dấu cách như ký tự đặc biệt. Vì vậy, các dấu cách thừa phải bị gỡ bỏ ra kết thúc dòng trong mỗi mẫu chủ, để tránh xuất hiện trong các tập tin PO va POT.</p>
+
+<p>Vì lý do tương tự, <b>debconf-gettextize</b> có khả năng đánh dấu chuỗi là « dịch mờ » do các ký tự khoảng cách khác nhau, thì người dịch cần phải tự chỉnh sửa mỗi chuỗi như vậy. Trường hợp này chỉ xảy ra một lần khi chuyển đổi mẫu sang định dạng <code>po-debconf</code>, trừ bạn thay đổi khoảng cách một cách ngẫu nhiên trong tập tin chủ, mà làm phiền các người dịch.</p>
+
+</li>
+<li><p>Bình thường không nên dịch trường <i>Default:</i> khi mẫu có kiểu <b>Select</b> hay <b>Multiselect</b>. Trong rất ít trường hợp (v.d. khi chọn ngôn ngữ mặc định cho ứng dụng), giá trị đã địa phương hoá cũng có ích.</p>
+
+<p>Không nên dịch giá trị đã địa phương hoá: nên chọn nó trong những giá trị tiếng Anh được liệt kê trong trường <i>Choices</i>. Phương pháp tốt nhất để làm như thế là ghi chú vào tập tin mẫu : chú thích này sẽ cũng được sao chép vào các tập tin PO.</p>
+
+<pre><code>  Template: geneweb/lang
+  Type: select
+  __Choices: Danish (da), Dutch (nl), English (en), Esperanto (eo)
+  #  You must NOT translate this string, but you can change its value.
+  #  The comment between brackets is used to distinguish this msgid
+  #  from the one in the Choices list; you do not have to worry about
+  #  them, and have to simply choose a msgstr among the English values
+  #  listed in the Choices field above, e.g. msgstr &quot;Dutch (nl)&quot;
+  _Default: English (en)[ default language]
+  _Description: Geneweb default language</code></pre>
+
+<p>Giá trị mặc định cũng xuất hiện trong trường <i>Choices</i>, và mỗi giá trị có bản dịch riêng: giá trị thứ nhất là giá trị chưa được dịch mà được chọn trong các giá trị <i>Choices</i>, còn giá trị thứ hai là bản dịch chuẩn. Vì <code>gettext</code> không thể chứa hai bản dịch khác nhau cho cùng một <i>msgid</i>, mỗi <i>msgids</i> phải được khác biệt bằng chú thích nằm trong dấu ngoặc, như diễn tả trong phần con trên.</p>
+
+<p>Trước <code>po-debconf</code> 0.8.0, không có khả năng ghi chú như vậy nên nhà duy trì phải thay thế trường <i>_Default:</i> bằng <i>_DefaultChoice:</i> để phân biệt trường riêng trong tập tin PO:</p>
+
+<pre><code>  #. DefaultChoice
+  msgid &quot;&quot;
+  &quot;English[ default: do not translate bracketed material, put your &quot;
+  &quot;own language here but UNTRANSLATED.  If it is not in the list, &quot;
+  &quot;put English (without bracketed material)]&quot;
+  msgstr &quot;&quot;
+  &quot;Swedish&quot;</code></pre>
+
+<p>Chú thích chuẩn trong tập tin mẫu ít bị lỗi hơn thì khuyến khích.</p>
+
+</li>
+</ul>
+
+<h1 id="TRANG-WEB-TR-NG-TH-I">TRANG WEB TRẠNG THÁI</h1>
+
+<p>Thống kê về bản dịch <code>po-debconf</code> sẵn sàng ở <a href="http://www.debian.org/intl/l10n/po-debconf/">http://www.debian.org/intl/l10n/po-debconf/</a> (hoặc từ máy nhân bản); tất cả được tự động cập nhật khi gói mới được tải lên. Chỉ gói có sẵn tập tin <i>debian/po/templates.pot</i> và <i>debian/po/POTFILES.in</i> được xử lý, vì vậy bạn nên kiểm tra gói mã nguồn chứa các tập tin này.</p>
+
+<p>Người dịch có thể lấy tập tin PO và POT từ trang trạng thái, nhưng cũng nên liên lạc với người dịch trước (địa chỉ thư điện tử nằm trong phần đầu của tập tin PO) và/hay nhóm dịch trong hộp thư chung debian-l10n-<i>&lt;language&gt;</i>@lists.debian.org (nếu có : một số nhóm dịch dùng hộp thư chung bên ngoài) để kiểm tra không có người dịch khác đảm nhận cùng bản dịch, và đọc các báo cáo lỗi hiện thời về gói đó để kiểm tra bản dịch đã được đệ trình chưa.</p>
+
+<p>Sau khi dịch tập tin thì người dịch nên đệ trình bản dịch cho nhà duy trì bằng cách gửi một báo cáo lỗi có mức quan trọng <b>wishlist</b> và thẻ <b>patch</b>.</p>
+
+<h1 id="XEM-C-NG">XEM CŨNG</h1>
+
+<p><a href="http://man.he.net/man1/debconf-gettextize">debconf-gettextize(1)</a>, <a href="http://man.he.net/man1/debconf-updatepo">debconf-updatepo(1)</a>, <a href="http://man.he.net/man1/dh_installdebconf">dh_installdebconf(1)</a>, <a href="http://man.he.net/man1/podebconf-report-po">podebconf-report-po(1)</a>, <a href="http://man.he.net/man1/po2debconf">po2debconf(1)</a>, <a href="http://man.he.net/man7/debconf-devel">debconf-devel(7)</a>.</p>
+
+<h1 id="T-C-GI">TÁC GIẢ</h1>
+
+<pre><code>  Martin Quinson &lt;Martin.Quinson@ens-lyon.fr&gt;
+  Denis Barbier &lt;barbier@linuxfr.org&gt;</code></pre>
+
+
+</body>
+
+</html>
+
+

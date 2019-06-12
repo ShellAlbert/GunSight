@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib/arm-linux-gnueabihf
+includedir=/usr/include/arm-linux-gnueabihf
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 57.107.100
+Requires: 
+Requires.private: libswresample >= 2.9.100, libavutil >= 55.78.100
+Conflicts:
+Libs: -L${libdir}  -lavcodec 
+Libs.private: -lXv -lX11 -lXext -lSDL2 -lzmq -lwebp -lssh -lpulse -lopenmpt -ldrm -lbs2b -lbluray -lass -lgnutls -lSDL2 -lvdpau -lX11 -lva -lva-x11 -lX11 -lva -lva-drm -lva -lxcb -lxcb-shm -lxcb-xfixes -lxcb-shape -lcdio_paranoia -lcdio_cdda -lcdio -lsndio -ljack -lasound -lSDL2 -lGL -lopenal -lxml2 -lzvbi -lzmq -lxvidcore -lx265 -lx264 -lwebpmux -lwebp -lwebp -lwavpack -lvpx -lm -lvpx -lm -lvpx -lm -lvpx -lm -lvorbisenc -lvorbis -ltwolame -ltwolame -ltheoraenc -ltheoradec -logg -lspeex -lssh -lsoxr -lsnappy -lm -lshine -lrubberband -lrsvg-2 -lm -lgio-2.0 -lgdk_pixbuf-2.0 -lgobject-2.0 -lglib-2.0 -lcairo -lpulse -lopus -lopus -lopenmpt -lopenjp2 -lopencv_core -lopencv_imgproc -lmysofa -lmp3lame -lgsm -lgme -lstdc++ -lfribidi -lfreetype -lfontconfig -lfreetype -lflite_cmu_time_awb -lflite_cmu_us_awb -lflite_cmu_us_kal -lflite_cmu_us_kal16 -lflite_cmu_us_rms -lflite_cmu_us_slt -lflite_usenglish -lflite_cmulex -lflite -ldrm -ldc1394 -lcaca -lbs2b -lbluray -lass -lraw1394 -lavc1394 -lrom1394 -liec61883 -lgnutls -lchromaprint -lm -ldl -llzma -lbz2 -lz -pthread -pthread
+Cflags: -I${includedir}

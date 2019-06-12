@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Usage:
+# 1. ddr_freq.sh
+# 2. ddr_freq.sh set freq
+
+opr=$1
+DDR_FREQ_DIR=/sys/class/devfreq/sunxi-ddrfreq
+if [ "x$opr" = "xset" ]; then
+	freq=$2
+	echo $freq > ${DDR_FREQ_DIR}/userspace/set_freq
+fi
+governor=`cat ${DDR_FREQ_DIR}/governor`
+freq=`cat ${DDR_FREQ_DIR}/cur_freq`
+max_freq=`cat ${DDR_FREQ_DIR}/max_freq`
+min_freq=`cat ${DDR_FREQ_DIR}/min_freq`
+
+printf "DDR governor=%s cur_freq=%d max=%d min=%d\n" ${governor} ${freq} ${max_freq} ${min_freq}
+

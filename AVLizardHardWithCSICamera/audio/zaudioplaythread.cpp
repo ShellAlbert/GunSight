@@ -38,10 +38,21 @@ bool ZAudioPlayThread::ZIsExitCleanup()
 
 void ZAudioPlayThread::run()
 {
+    //bind thread to cpu core.
+    cpu_set_t cpuSet;
+    CPU_ZERO(&cpuSet);
+    CPU_SET(3,&cpuSet);
+    if(0!=pthread_setaffinity_np((int)this->currentThreadId(),sizeof(cpu_set_t),&cpuSet))
+    {
+        qDebug()<<"<Error>:failed to bind AudioPlay thread to cpu core 3.";
+    }else{
+        qDebug()<<"<Info>:success to bind AudioPlay thread to cpu core 3.";
+    }
+
     // Input and output driver variables
     snd_pcm_hw_params_t *hwparams;
-    int periods=PERIODS;
-    snd_pcm_uframes_t periodSize=PERIOD_SIZE;
+    int periods=ALSA_PERIOD;
+    snd_pcm_uframes_t periodSize=BLOCK_SIZE;
 
     // Now we can open the PCM device:
     /* Open PCM. The last parameter of this function is the mode. */
@@ -51,7 +62,7 @@ void ZAudioPlayThread::run()
     /* PCM device will return immediately. If SND_PCM_ASYNC is    */
     /* specified, SIGIO will be emitted whenever a period has     */
     /* been completely processed by the soundcard.                */
-    if(snd_pcm_open(&this->m_pcmHandle,/*(char*)this->m_playCardName.toStdString().c_str()*/"plughw:CARD=realtekrt5651co,DEV=0",SND_PCM_STREAM_PLAYBACK,0)<0)
+    if(snd_pcm_open(&this->m_pcmHandle,(char*)this->m_playCardName.toStdString().c_str(),SND_PCM_STREAM_PLAYBACK,0)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_open():"<<this->m_playCardName;
         this->ZDoCleanBeforeExit();
@@ -118,7 +129,8 @@ void ZAudioPlayThread::run()
     /* Set sample format */
     //SND_PCM_FORMAT_S24_LE:指的是4字节数据，但只有3字节有效，最高位全为无效的0
     //SND_PCM_FORMAT_S24_3LE:指的是3字节数据，都有效
-    if(snd_pcm_hw_params_set_format(this->m_pcmHandle,hwparams,/*SND_PCM_FORMAT_S16_LE*/SND_PCM_FORMAT_S24_3BE)<0)
+    if(snd_pcm_hw_params_set_format(this->m_pcmHandle,hwparams,SND_PCM_FORMAT_S16_LE)<0)
+    //if(snd_pcm_hw_params_set_format(this->m_pcmHandle,hwparams,SND_PCM_FORMAT_S24_3BE)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_format().";
         this->ZDoCleanBeforeExit();
@@ -127,14 +139,14 @@ void ZAudioPlayThread::run()
 
     /* Set sample rate. If the exact rate is not supported */
     /* by the hardware, use nearest possible rate.         */
-    unsigned int nRealSampleRate=32000;//SAMPLE_RATE;
+    unsigned int nRealSampleRate=SAMPLE_RATE;
     if(snd_pcm_hw_params_set_rate_near(this->m_pcmHandle,hwparams,&nRealSampleRate,0u)<0)
     {
         qDebug()<<"<Error>:Audio PlayThread,error at snd_pcm_hw_params_set_rate_near().";
         this->ZDoCleanBeforeExit();
         return;
     }
-    if(nRealSampleRate!=/*SAMPLE_RATE*/32000)
+    if(nRealSampleRate!=SAMPLE_RATE)
     {
         qDebug()<<"<Warning>:Audio PlayThread,the rate "<<SAMPLE_RATE<<" Hz is not supported by hardware.";
         qDebug()<<"<Warning>:Using "<<nRealSampleRate<<" instead.";
@@ -168,9 +180,12 @@ void ZAudioPlayThread::run()
         The unit of the buffersize depends on the function.
         Sometimes it is given in bytes, sometimes the number of frames has to be specified.
         One frame is the sample data vector for all channels.
-        For 16 Bit stereo data, one frame has a length of four bytes.
+        For 16 Bit stereo data, one frame has a length of four bytes.(16bit*2channel=4bytes).
     */
     snd_pcm_uframes_t bufferSizeInFrames=(periods*periodSize)>>2;
+
+    //for 24 bit stereo data,one frame has a length of 6 bytes(24bit*2channels=6 bytes).
+    //snd_pcm_uframes_t bufferSizeInFrames=(periods*periodSize)/6;
     snd_pcm_uframes_t bufferSizeInFrames2=bufferSizeInFrames;
     if(snd_pcm_hw_params_set_buffer_size_near(this->m_pcmHandle,hwparams,&bufferSizeInFrames)<0)
     {
@@ -182,6 +197,7 @@ void ZAudioPlayThread::run()
     {
         qDebug()<<"request buffer size:"<<bufferSizeInFrames2<<",really:"<<bufferSizeInFrames;
     }
+    qDebug()<<"request buffer size:"<<bufferSizeInFrames2<<",really:"<<bufferSizeInFrames;
     /*
         If your hardware does not support a buffersize of 2^n,
         you can use the function snd_pcm_hw_params_set_buffer_size_near.
@@ -200,22 +216,26 @@ void ZAudioPlayThread::run()
     //the main loop.
     qDebug()<<"<MainLoop>:PlaybackThread starts.";
     this->m_bCleanup=false;
-    //bind thread to cpu core.
-    cpu_set_t cpuSet;
-    CPU_ZERO(&cpuSet);
-    CPU_SET(3,&cpuSet);
-    if(0!=pthread_setaffinity_np((int)this->currentThreadId(),sizeof(cpu_set_t),&cpuSet))
-    {
-        qDebug()<<"<Error>:failed to bind AudioPlay thread to cpu core 3.";
-    }else{
-        qDebug()<<"<Info>:success to bind AudioPlay thread to cpu core 3.";
-    }
+
     //这里不能使用事件循环，还是需要用队列的方式
     //因为声卡播放需要时间，如果使用signal/slot会导致采样数据太快，
     //而声卡缓冲区内的数据未消耗干净，所以填充数据失败，导致丢帧现象.
     //enter event-loop until exit() is called.
     //this->exec();
 
+    //waiting for buffer enough data 10s.
+//    while(!gGblPara.m_bGblRst2Exit)
+//    {
+//        this->m_mutex->lock();
+//        if(this->m_usedQueue->size()>10)
+//        {
+//            this->m_mutex->unlock();
+//            break;
+//        }else{
+//            this->m_mutex->unlock();
+//            this->usleep(1000*1);
+//        }
+//    }
     while(!gGblPara.m_bGblRst2Exit)
     {
         //get a data buffer from fifo.
@@ -238,23 +258,22 @@ void ZAudioPlayThread::run()
         QByteArray *bufferIn=this->m_usedQueue->dequeue();
         this->m_mutex->unlock();
         //qDebug()<<"play one frame";
-        while(1)
+
+        //in ALSA api,all sizes are in frame unit.
+        //one frame=sample bit * channel number / 8.
+        snd_pcm_uframes_t pcmFrames=BLOCK_SIZE/BYTES_PER_FRAME;
+        qint32 ret=snd_pcm_writei(this->m_pcmHandle,bufferIn->data(),pcmFrames);
+        if(ret==-EPIPE)
         {
-            qint32 ret=snd_pcm_writei(this->m_pcmHandle,bufferIn->data(),PERIOD_SIZE>>2);
-            if(ret==-EPIPE)
-            {
-                snd_pcm_prepare(this->m_pcmHandle);
-                qDebug()<<QDateTime::currentDateTime()<<",<Playback>:Buffer Underrun\n";
-                continue;
-            }else{
-                break;
-            }
+            snd_pcm_prepare(this->m_pcmHandle);
+            qDebug()<<"<Playback>:Buffer Underrun\n";
         }
 
         this->m_mutex->lock();
         this->m_freeQueue->enqueue(bufferIn);
         this->m_condQueueEmpty->wakeAll();
         this->m_mutex->unlock();
+        this->usleep(1000);
     }
 
 

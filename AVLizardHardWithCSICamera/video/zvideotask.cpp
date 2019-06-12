@@ -152,18 +152,20 @@ qint32 ZVideoTask::ZDoInit()
     }
     this->m_Cap2ProFIFOUsedAux.clear();
 
+    //  /dev/video0==/dev/video2
+    //  /dev/video4==/dev/video6
     //create capture threads & bind FIFOs.
-    this->m_capThread[0]=new ZImgCapThread(validDevFileList.at(0),CAM1_ID_Main);
+    this->m_capThread[0]=new ZImgCapThread(/*validDevFileList.at(0)*/"/dev/video2",CAM1_ID_Main);
     this->m_capThread[0]->ZBindOut1FIFO(&this->m_Cap2ProFIFOFreeMain,&this->m_Cap2ProFIFOUsedMain,&this->m_Cap2ProFIFOMutexMain,&this->m_condCap2ProFIFOEmptyMain,&this->m_condCap2ProFIFOFullMain);
     this->m_capThread[0]->ZBindOut2FIFO(&this->m_Cap2EncFIFOFreeMain,&this->m_Cap2EncFIFOUsedMain,&this->m_Cap2EncFIFOMutexMain,&this->m_condCap2EncFIFOEmptyMain,&this->m_condCap2EncFIFOFullMain);
     QObject::connect(this->m_capThread[0],SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
 
-    this->m_capThread[1]=new ZImgCapThread(validDevFileList.at(1),CAM2_ID_Aux);
+    this->m_capThread[1]=new ZImgCapThread(/*validDevFileList.at(1)*/"/dev/video6",CAM2_ID_Aux);
     this->m_capThread[1]->ZBindOut1FIFO(&this->m_Cap2ProFIFOFreeAux,&this->m_Cap2ProFIFOUsedAux,&this->m_Cap2ProFIFOMutexAux,&this->m_condCap2ProFIFOEmptyAux,&this->m_condCap2ProFIFOFullAux);
     this->m_capThread[1]->ZBindOut2FIFO(&this->m_Cap2EncFIFOFreeAux,&this->m_Cap2EncFIFOUsedAux,&this->m_Cap2EncFIFOMutexAux,&this->m_condCap2EncFIFOEmptyAux,&this->m_condCap2EncFIFOFullAux);
     QObject::connect(this->m_capThread[1],SIGNAL(ZSigFinished()),this,SLOT(ZSlotSubThreadsFinished()));
 
-    this->m_capThread[2]=new ZImgCapThread(validDevFileList.at(2),CAM3_ID_MainEx);
+    this->m_capThread[2]=new ZImgCapThread(/*validDevFileList.at(2)*/"/dev/video10",CAM3_ID_MainEx);
     this->m_capThread[2]->ZBindOut1FIFO(&this->m_Cap2ProFIFOFreeMain,&this->m_Cap2ProFIFOUsedMain,&this->m_Cap2ProFIFOMutexMain,&this->m_condCap2ProFIFOEmptyMain,&this->m_condCap2ProFIFOFullMain);
     this->m_capThread[2]->ZBindOut2FIFO(&this->m_Cap2EncFIFOFreeMain,&this->m_Cap2EncFIFOUsedMain,&this->m_Cap2EncFIFOMutexMain,&this->m_condCap2EncFIFOEmptyMain,&this->m_condCap2EncFIFOFullMain);
 

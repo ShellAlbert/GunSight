@@ -1,0 +1,9 @@
+<map id="xcb_randr_notify_data_t" name="xcb_randr_notify_data_t">
+<area shape="rect" id="node2" href="$structxcb__randr__resource__change__t.html" title="xcb_randr_resource_change_t " alt="" coords="35,5,185,47"/>
+<area shape="rect" id="node3" href="$structxcb__randr__output__change__t.html" title="xcb_randr_output_change_t " alt="" coords="9,71,211,98"/>
+<area shape="rect" id="node4" href="$structxcb__randr__provider__property__t.html" title="xcb_randr_provider_property_t " alt="" coords="37,123,183,164"/>
+<area shape="rect" id="node5" href="$structxcb__randr__crtc__change__t.html" title="xcb_randr_crtc_change_t " alt="" coords="19,189,201,215"/>
+<area shape="rect" id="node6" href="$structxcb__randr__lease__notify__t.html" title="xcb_randr_lease_notify_t " alt="" coords="17,239,203,266"/>
+<area shape="rect" id="node7" href="$structxcb__randr__output__property__t.html" title="xcb_randr_output_property_t " alt="" coords="5,290,215,317"/>
+<area shape="rect" id="node8" href="$structxcb__randr__provider__change__t.html" title="xcb_randr_provider_change_t " alt="" coords="37,341,183,383"/>
+</map>

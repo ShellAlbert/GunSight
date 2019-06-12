@@ -1,0 +1,13 @@
+prefix=/opt/rootfs-rk64one/usr/local/Trolltech/Qt-5.10.0-rk64one
+exec_prefix=${prefix}
+libdir=/usr/local/Trolltech/Qt-5.10.0-rk64one/lib
+includedir=/usr/local/Trolltech/Qt-5.10.0-rk64one/include
+
+
+Name: Qt5 OpenGL
+Description: Qt OpenGL module
+Version: 5.10.0
+Libs: -L${libdir} -lQt5OpenGL 
+Cflags: -I${includedir}/QtOpenGL -I${includedir}
+Requires: Qt5Core Qt5Gui Qt5Widgets
+

@@ -1,0 +1,12 @@
+Document: ninja-build-manual
+Title: Ninja Manual
+Author: Evan Martin
+Abstract: Ninja is yet another build system.  It takes as input the
+ interdependencies of files (typically source code and output
+ executables) and orchestrates building them, quickly.
+Section: Programming
+
+Format: html
+Index: /usr/share/doc/ninja-build/html/manual.html
+Files: /usr/share/doc/ninja-build/html/*
+

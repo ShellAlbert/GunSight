@@ -1,0 +1,24 @@
+# Lines beginning with a number sign are comments, they are removed when
+# sending mails.  If a line is composed of a # followed by a 'Name: Value'
+# pair, it is interpreted as a mail header field and is passed to your mail
+# transport agent.  You can edit/add/remove those header fields.
+#
+# From: <from>
+# Subject: <package_and_version>: Please update the PO translation for the package <package>
+# Reply-To: <reply-to>
+#
+# This mail will be sent to the following people:
+# (you can update email addresses, or remove lines.  Only email addresses
+# with the check box checked will receive the message).
+<filelist>
+
+Hi,
+
+You are noted as the last translator of the translation for
+<package>. The English template has been changed, and now some messages
+are marked "fuzzy" in your translation or are missing.
+I would be grateful if you could take the time and update it.
+<reply>
+<deadline>
+
+Thanks in advance,

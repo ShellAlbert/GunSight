@@ -1,0 +1,103 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body>
+
+
+
+<h1 id="T-N">TÊN</h1>
+
+<p>debconf-updatepo — cập nhật các tập tin PO về mẫu cấu hình debconf</p>
+
+<h1 id="T-M-T-T">TÓM TẮT</h1>
+
+<p><b>debconf-updatepo</b> [<b>-v</b>] [<b>-h</b>] [<b>--podir=<i>THƯ_MỤC</i></b>] [<b>--skip-pot</b>] [<b>--skip-merge</b>] [<b>--msgid-bugs-address=<i>ĐỊA_CHỈ</i></b>]</p>
+
+<h1 id="M-T">MÔ TẢ</h1>
+
+<p>Chương trình này đọc <i>po/POTFILES.in</i> để quyết định những tập tin chủ nào cần xử lý, sau đó trích các chuỗi gettext mới vào tập tin <i>po/templates.pot</i> và cập nhật tất cả các tập tin <i>po/*.po</i>. Văn lệnh này có thể được gọi hoặc trong thư mục cấp đầu, hoặc trong thư mục con <i>debian</i> hay <i>debian/po</i>. Nó được chạy bởi nhà phát triển và/hay người dịch để cập nhật các tập tin PO khi chuỗi gốc (thường là tiếng Anh) bị sửa đổi trong tập tin <i>templates</i>.</p>
+
+<h1 id="T-Y-CH-N">TÙY CHỌN</h1>
+
+<dl>
+
+<dt id="h---help"><b>-h</b>, <b>--help</b></dt>
+<dd>
+
+<p>Hiển thị bản tóm tắt cách sử dụng, rồi thoát.</p>
+
+</dd>
+<dt id="v---verbose"><b>-v</b>, <b>--verbose</b></dt>
+<dd>
+
+<p>Xử lý ở chế độ chi tiết (xuất nhiều dữ liệu diễn tả tiến trình, hữu ích để gỡ lỗi).</p>
+
+</dd>
+<dt id="podir-TH-_M-C"><b>--podir=<i>THƯ_MỤC</i></b></dt>
+<dd>
+
+<p>Đặt thư mục chứa các tập tin PO. Mặc định là tìm kiếm các tập tin PO trong thư mục <i>debian/po</i>, <i>po</i> và <i>../po</i> theo thứ tự đó.</p>
+
+</dd>
+<dt id="skip-pot"><b>--skip-pot</b></dt>
+<dd>
+
+<p>Đừng tạo ra tập tin <i>po/templates.pot</i> mới.</p>
+
+</dd>
+<dt id="skip-merge"><b>--skip-merge</b></dt>
+<dd>
+
+<p>Đừng trộn các tập tin PO đã tồn tại với <i>po/templates.pot</i>.</p>
+
+</dd>
+<dt id="msgid-bugs-address-A_CH"><b>--msgid-bugs-address=<i>ĐỊA_CHỈ</i></b></dt>
+<dd>
+
+<p>Đặt địa chỉ thư điện tử sẽ được hiển thị trong trường Report-Msgid-Bugs-To của tập tin POT. Khuyên bạn đặt giá trị này: nó giúp người dịch thông báo lỗi và hỏi câu về chuỗi gốc, vì vậy tạo cả chuỗi gốc lẫn chuỗi dịch đều tốt hơn.</p>
+
+<p>Mặc định là trường này có giá trị &lt;tên_gói&gt;@package.debian.org.</p>
+
+<p>Nó dự định cho nhà duy trì bản phát hành dựa vào Debian, và nên được dùng trong trường hợp này:</p>
+
+<dl>
+
+<dt id="o">o</dt>
+<dd>
+
+<p>Gói không nằm trong Debian (thì địa chỉ&lt;tên_gói&gt;@packages.debian.org không tồn tại).</p>
+
+</dd>
+<dt id="o1">o</dt>
+<dd>
+
+<p>Nhà duy trì đã thay đổi đáng kể các mẫu debconf (hoặc thêm mẫu vào gói Debian không có mẫu), và không muốn làm phiền nhà duy trì Debian đáp ứng báo cáo lỗi không thích hợp.</p>
+
+</dd>
+</dl>
+
+<p>Địa chỉ mặc định vẫn khuyến khích để tránh sửa bản phát hành dựa vào Debian mà không thông báo nhà duy trì Debian.</p>
+
+</dd>
+</dl>
+
+<h1 id="XEM-C-NG">XEM CŨNG</h1>
+
+<p><a href="http://man.he.net/man1/debconf-gettextize">debconf-gettextize(1)</a>, <a href="http://man.he.net/man1/po2debconf">po2debconf(1)</a>, <a href="http://man.he.net/man1/podebconf-report-po">podebconf-report-po(1)</a>, <a href="http://man.he.net/man7/po-debconf">po-debconf(7)</a>.</p>
+
+<h1 id="T-C-GI">TÁC GIẢ</h1>
+
+<pre><code>  Denis Barbier &lt;barbier@linuxfr.org&gt;</code></pre>
+
+
+</body>
+
+</html>
+
+

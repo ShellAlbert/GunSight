@@ -14,10 +14,10 @@ extern "C"
 #include <audio/webrtc/noise_suppression.h>
 #include <audio/webrtc/gain_control.h>
 //#include <audio/bevis/WindNSManager.h>
-extern "C"
-{
-#include "audio/LogMMSE/type.h"
-}
+//extern "C"
+//{
+//#include "audio/LogMMSE/type.h"
+//}
 class ZNoiseCutThread : public QThread
 {
     Q_OBJECT
@@ -57,10 +57,10 @@ private:
 //    _WINDNSManager m_bevis;
     qint32 ZCutNoiseByBevis(QByteArray *baPCM);
     //logMMSE.
-    LOGMMSE_VAR *m_logMMSE;
-    X_INT16 *m_SigIn;
-    X_INT16 *m_SigOut;
-    X_FLOAT32 *m_OutBuf;
+    //LOGMMSE_VAR *m_logMMSE;
+    //X_INT16 *m_SigIn;
+    //X_INT16 *m_SigOut;
+    //X_FLOAT32 *m_OutBuf;
     qint32 ZCutNoiseByLogMMSE(QByteArray *baPCM);
 
     //for 48khz downsampling 16khz buffer.

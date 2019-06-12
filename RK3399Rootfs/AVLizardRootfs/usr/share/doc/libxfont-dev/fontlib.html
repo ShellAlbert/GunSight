@@ -1,0 +1,701 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>The X Font Library</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><style xmlns="" type="text/css">/*
+ * Copyright (c) 2011 Gaetan Nadon
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice (including the next
+ * paragraph) shall be included in all copies or substantial portions of the
+ * Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
+/*
+ * Shared stylesheet for X.Org documentation translated to HTML format
+ * http://www.sagehill.net/docbookxsl/UsingCSS.html
+ * http://www.w3schools.com/css/default.asp
+ * https://addons.mozilla.org/en-US/firefox/addon/web-developer/developers
+ * https://addons.mozilla.org/en-US/firefox/addon/font-finder/
+ */
+
+/*
+ * The sans-serif fonts are considered more legible on a computer screen
+ * http://dry.sailingissues.com/linux-equivalents-verdana-arial.html
+ *
+ */
+body {
+  font-family: "Bitstream Vera Sans", "DejaVu Sans", Tahoma, Geneva, Arial, Sans-serif;
+  /* In support of using "em" font size unit, the w3c recommended method */
+  font-size: 100%;
+}
+
+/*
+ * Selection: all elements requiring mono spaced fonts.
+ *
+ * The family names attempt to match the proportionally spaced font
+ * family names such that the same font name is used for both.
+ * We'd like to use Bitstream, for example, in both proportionally and
+ * mono spaced font text.
+ */
+.command,
+.errorcode,
+.errorname,
+.errortype,
+.filename,
+.funcsynopsis,
+.function,
+.parameter,
+.programlisting,
+.property,
+.screen,
+.structname,
+.symbol,
+.synopsis,
+.type
+{
+  font-family:  "Bitstream Vera Sans Mono", "DejaVu Sans Mono", Courier, "Liberation Mono", Monospace;
+}
+
+/*
+ * Books have a title page, a preface, some chapters and appendices,
+ * a glossary, an index and a bibliography, in that order.
+ *
+ * An Article has no preface and no chapters. It has sections, appendices,
+ * a glossary, an index and a bibliography.
+ */
+
+/*
+ * Selection: book main title and subtitle
+ */
+div.book>div.titlepage h1.title,
+div.book>div.titlepage h2.subtitle {
+  text-align: center;
+}
+
+/*
+ * Selection: article main title and subtitle
+ */
+div.article>div.titlepage h2.title,
+div.article>div.titlepage h3.subtitle,
+div.article>div.sect1>div.titlepage h2.title,
+div.article>div.section>div.titlepage h2.title {
+  text-align: center;
+}
+
+/*
+ * Selection: various types of authors and collaborators, individuals or corporate
+ *
+ * These authors are not always contained inside an authorgroup.
+ * They can be contained inside a lot of different parent types where they might
+ * not be centered.
+ * Reducing the margin at the bottom makes a visual separation between authors
+ * We specify here the ones on the title page, others may be added based on merit.
+ */
+div.titlepage .authorgroup,
+div.titlepage .author,
+div.titlepage .collab,
+div.titlepage .corpauthor,
+div.titlepage .corpcredit,
+div.titlepage .editor,
+div.titlepage .othercredit {
+  text-align: center;
+  margin-bottom: 0.25em;
+}
+
+/*
+ * Selection: the affiliation of various types of authors and collaborators,
+ * individuals or corporate.
+ */
+div.titlepage .affiliation {
+  text-align: center;
+}
+
+/*
+ * Selection: product release information (X Version 11, Release 7)
+ *
+ * The releaseinfo element can be contained inside a lot of different parent
+ * types where it might not be centered.
+ * We specify here the one on the title page, others may be added based on merit.
+ */
+div.titlepage p.releaseinfo {
+  font-weight: bold;
+  text-align: center;
+}
+
+/*
+ * Selection: publishing date
+ */
+div.titlepage .pubdate {
+  text-align: center;
+}
+
+/*
+ * The legal notices are displayed in smaller sized fonts
+ * Justification is only supported in IE and therefore not requested.
+ *
+ */
+.legalnotice {
+  font-size: small;
+  font-style: italic;
+}
+
+/*
+ * For documentation having multiple licenses, the copyright and legalnotice
+ * elements sequence cannot instantiated multiple times.
+ * The copyright notice and license text are therefore coded inside a legalnotice
+ * element. The role attribute on the paragraph is used to allow styling of the
+ * copyright notice text which should not be italicized.
+ */
+p.multiLicensing {
+  font-style: normal;
+  font-size: medium;
+}
+
+/*
+ * Selection: book or article main ToC title
+ * A paragraph is generated for the title rather than a level 2 heading.
+ * We do not want to select chapters sub table of contents, only the main one
+ */
+div.book>div.toc>p,
+div.article>div.toc>p {
+  font-size: 1.5em;
+  text-align: center;
+}
+
+/*
+ * Selection: major sections of a book or an article
+ *
+ * Unlike books, articles do not have a titlepage element for appendix.
+ * Using the selector "div.titlepage h2.title" would be too general.
+ */
+div.book>div.preface>div.titlepage h2.title,
+div.book>div.chapter>div.titlepage h2.title,
+div.article>div.sect1>div.titlepage h2.title,
+div.article>div.section>div.titlepage h2.title,
+div.book>div.appendix>div.titlepage h2.title,
+div.article>div.appendix h2.title,
+div.glossary>div.titlepage h2.title,
+div.index>div.titlepage h2.title,
+div.bibliography>div.titlepage h2.title {
+   /* Add a border top over the major parts, just like printed books */
+   /* The Gray color is already used for the ruler over the main ToC. */
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: Gray;
+  /* Put some space between the border and the title */
+  padding-top: 0.2em;
+  text-align: center;
+}
+
+/*
+ * A Screen is a verbatim environment for displaying text that the user might
+ * see on a computer terminal. It is often used to display the results of a command.
+ *
+ * http://www.css3.info/preview/rounded-border/
+ */
+.screen {
+  background: #e0ffff;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #B0C4DE;
+  border-radius: 1.0em;
+  /* Browser's vendor properties prior to CSS 3 */
+  -moz-border-radius: 1.0em;
+  -webkit-border-radius: 1.0em;
+  -khtml-border-radius: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 1.0em;
+  padding: 0.5em;
+}
+
+/*
+ * Emphasis program listings with a light shade of gray similar to what
+ * DocBook XSL guide does: http://www.sagehill.net/docbookxsl/ProgramListings.html
+ * Found many C API docs on the web using like shades of gray.
+ */
+.programlisting {
+  background: #F4F4F4;
+  border-width: 1px;
+  border-style: solid;
+  border-color: Gray;
+  padding: 0.5em;
+}
+
+/*
+ * Emphasis functions synopsis using a darker shade of gray.
+ * Add a border such that it stands out more.
+ * Set the padding so the text does not touch the border.
+ */
+.funcsynopsis, .synopsis {
+  background: #e6e6fa;
+  border-width: 1px;
+  border-style: solid;
+  border-color: Gray;
+  clear: both;
+  margin: 0.5em;
+  padding: 0.25em;
+}
+
+/*
+ * Selection: paragraphs inside synopsis
+ *
+ * Removes the default browser margin, let the container set the padding.
+ * Paragraphs are not always used in synopsis
+ */
+.funcsynopsis p,
+.synopsis p {
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * Selection: variable lists, informal tables and tables
+ *
+ * Note the parameter name "variablelist.as.table" in xorg-xhtml.xsl
+ * A table with rows and columns is constructed inside div.variablelist
+ *
+ * Set the left margin so it is indented to the right
+ * Display informal tables with single line borders
+ */
+table {
+  margin-left: 0.5em;
+  border-collapse: collapse;
+}
+
+/*
+ * Selection: paragraphs inside tables
+ *
+ * Removes the default browser margin, let the container set the padding.
+ * Paragraphs are not always used in tables
+ */
+td p {
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * Add some space between the left and right column.
+ * The vertical alignment helps the reader associate a term
+ * with a multi-line definition.
+ */
+td, th {
+  padding-left: 1.0em;
+  padding-right: 1.0em;
+  vertical-align: top;
+}
+
+.warning {
+  border: 1px solid red;
+  background: #FFFF66;
+  padding-left: 0.5em;
+}
+</style></head><body><div class="article"><div class="titlepage"><div><div><h2 class="title"><a id="fontlib"></a>
+	The X Font Library
+      </h2></div><div><div class="authorgroup"><div class="author"><h3 class="author"><span class="firstname">Keith</span> <span class="surname">Packard</span></h3><div class="affiliation"><span class="orgname">MIT X Consortium<br /></span></div></div><div class="author"><h3 class="author"><span class="firstname">David</span> <span class="surname">Lemke</span></h3><div class="affiliation"><span class="orgname">Network Computing Devices<br /></span></div></div></div></div><div><p class="releaseinfo">X Version 11, Release 7.7</p></div><div><p class="copyright">Copyright © 1993 Network Computing Devices</p></div><div><div class="legalnotice"><a id="idm19"></a><p>
+	  Permission to use, copy, modify, distribute, and sell this
+	  software and its documentation for any purpose is hereby
+	  granted without fee, provided that the above copyright
+	  notice appear in all copies and that both that copyright
+	  notice and this permission notice appear in supporting
+	  documentation, and that the name of Network Computing
+	  Devices not be used in advertising or publicity pertaining
+	  to distribution of the software without specific, written
+	  prior permission.  Network Computing Devices makes no
+	  representations about the suitability of this software for
+	  any purpose.  It is provided “as is” without
+	  express or implied warranty.
+	</p><p class="multiLicensing">
+	  Copyright © 1993, 1994 X Consortium
+	</p><p>
+	  Permission is hereby granted, free of charge, to any person
+	  obtaining a copy of this software and associated
+	  documentation files (the “Software”), to deal in the
+	  Software without restriction, including without limitation
+	  the rights to use, copy, modify, merge, publish, distribute,
+	  sublicense, and/or sell copies of the Software, and to
+	  permit persons to whom the Software is furnished to do so,
+	  subject to the following conditions:
+	</p><p>
+	  The above copyright notice and this permission notice shall be
+	  included in all copies or substantial portions of the Software.
+	</p><p>
+	  THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY
+	  OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+	  THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+	  PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE X
+	  CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+	  OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+	  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	</p><p>
+	  Except as contained in this notice, the name of the X
+	  Consortium shall not be used in advertising or otherwise to
+	  promote the sale, use or other dealings in this Software
+	  without prior written authorization from the X Consortium.
+	</p><p>X Window System is a trademark of The Open Group.</p></div></div><div><p class="pubdate">July 27, 1991</p></div></div><hr /></div><div class="toc"><p><strong>Table of Contents</strong></p><dl class="toc"><dt><span class="sect1"><a href="#Requirements_for_the_Font_library">Requirements for the Font library</a></span></dt><dt><span class="sect1"><a href="#General_Font_Library_Interface_details">General Font Library Interface details.</a></span></dt><dt><span class="sect1"><a href="#Font_Path_Elements">Font Path Elements</a></span></dt><dd><dl><dt><span class="sect2"><a href="#name_check">(*name_check)</a></span></dt><dt><span class="sect2"><a href="#init_fpe">(*init_fpe)</a></span></dt><dt><span class="sect2"><a href="#reset_fpe">(*reset_fpe)</a></span></dt><dt><span class="sect2"><a href="#free_fpe">(*free_fpe)</a></span></dt><dt><span class="sect2"><a href="#open_font">(*open_font)</a></span></dt><dt><span class="sect2"><a href="#close_font">(*close_font)</a></span></dt><dt><span class="sect2"><a href="#list_fonts">(*list_fonts)</a></span></dt><dt><span class="sect2"><a href="#start_list_fonts_with_info">(*start_list_fonts_with_info)</a></span></dt><dt><span class="sect2"><a href="#list_next_font_with_info">(*list_next_font_with_info)</a></span></dt><dt><span class="sect2"><a href="#wakeup_fpe">(*wakeup_fpe)</a></span></dt><dt><span class="sect2"><a href="#client_died">(*client_died)</a></span></dt></dl></dd><dt><span class="sect1"><a href="#Fonts">Fonts</a></span></dt><dd><dl><dt><span class="sect2"><a href="#get_glyphs">(*get_glyphs)</a></span></dt><dt><span class="sect2"><a href="#get_metrics">(*get_metrics)</a></span></dt><dt><span class="sect2"><a href="#get_bitmaps">(*get_bitmaps)</a></span></dt><dt><span class="sect2"><a href="#get_extents">(*get_extents)</a></span></dt><dt><span class="sect2"><a href="#unload_font">(*unload_font)</a></span></dt><dt><span class="sect2"><a href="#maxPrivate">maxPrivate</a></span></dt></dl></dd></dl></div><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>
+	This document has not been updated since X11R6, and is likely
+	to be somewhat out of date for the current libXfont.
+      </p></div><p>
+      This document describes the data structures and interfaces for
+      using the X Font library.  It is intended as a reference for
+      programmers building X and Font servers.  You may want to refer
+      to the following documents:
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+	  “<span class="citetitle">Definition of the Porting Layer for
+	    the X v11 Sample Server</span>” for a discussion on how this
+	  library interacts with the X server
+	</p></li><li class="listitem"><p>
+	  <span class="olink">
+	  “<span class="citetitle">Font Server Implementation
+	    Overview</span>”</span> which discusses the design of the font
+	  server.
+	</p></li><li class="listitem"><p>
+	  “<span class="citetitle">Bitmap Distribution Format</span>”
+	  which covers the contents of the bitmap font files which this
+	  library reads; although the library is capable of reading other
+	  formats as well, including non-bitmap fonts.
+	</p></li><li class="listitem"><p>
+	  <span class="olink">
+	  “<span class="citetitle">The X Font Service Protocol</span>”
+	  </span>
+	  for a description of the constraints placed  on the design by
+	  including support for this font service mechanism.
+	</p></li></ul></div><p>
+      This document assumes the reader is familiar with the X server design,
+      the X protocol as it relates to fonts and the C programming language.
+      As with most MIT produced documentation, this relies heavily on the
+      source code, so have a listing handy.
+    </p><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="Requirements_for_the_Font_library"></a>Requirements for the Font library</h2></div></div></div><p>
+	To avoid miles of duplicate code in the X server, the font server
+	and the various font manipulation tools, the font library should
+	provide interfaces appropriate for all of these	tasks.  In
+	particular, the X server and font server should be able to both
+	use the library to access disk based fonts, and	to communicate
+	with a font server.  By providing a general library, we hoped to
+	avoid duplicating code between the X server and font server.
+      </p><p>
+	Another requirement is that the X server (or even a font server)
+	be able to continue servicing requests from other clients while
+	awaiting a response from the font server on behalf of one client.
+	This is the strongest requirement placed on the	font library, and
+	has warped the design in curious ways.	Because both the X server
+	and font server are single threaded, the font library must not
+	suspend internally, rather it returns an indication of suspension
+	to the application which continues processing other things, until
+	the font data is ready, at which time it restarts the suspended
+	request.
+      </p><p>
+	Because the code for reading and manipulating bitmap font data is
+	used by the font applications <span class="command"><strong>mkfontdir</strong></span> and
+	<span class="command"><strong>bdftopcf</strong></span>, the font library includes
+	bitmap-font specific interfaces which those applications use,
+	instead of the more general interfaces used by the X and font
+	servers, which are unaware of the source of the font data.
+	These routines will be refered to as the bitmap font access
+	methods.
+      </p></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="General_Font_Library_Interface_details"></a>General Font Library Interface details.</h2></div></div></div><p>
+	To avoid collision between the #define name space for errors, the Font
+	library defines a new set of return values:
+      </p><pre class="programlisting">
+#define AllocError      80
+#define StillWorking    81
+#define FontNameAlias   82
+#define BadFontName     83
+#define Suspended       84
+#define Successful      85
+#define BadFontPath     86
+#define BadCharRange    87
+#define BadFontFormat   88
+#define FPEResetFailed  89
+      </pre><p>
+	Whenever a routine returns <span class="errorname">Suspended</span>,
+	the font library will notify the caller (via the ClientSignal
+	interface described below) who should then reinvoke the same routine
+	again with the same arguments.
+      </p></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="Font_Path_Elements"></a>Font Path Elements</h2></div></div></div><p>
+	At the center of the general font access methods used by X and
+	<span class="command"><strong>xfs</strong></span> is the Font Path Element data structure.
+	Like most structures in the X server, this contains a collection
+	of data and some function pointers for manipulating this data:
+      </p><pre class="programlisting">
+/* External view of font paths */
+typedef struct _FontPathElement {
+    int         name_length;
+    char       *name;
+    int         type;
+    int         refcount;
+    pointer     private;
+} FontPathElementRec, *FontPathElementPtr;
+
+typedef struct _FPEFunctions {
+    int         (*name_check) ( /* name */ );
+    int         (*init_fpe) ( /* fpe */ );
+    int         (*reset_fpe) ( /* fpe */ );
+    int         (*free_fpe) ( /* fpe */ );
+    int         (*open_font) (  /* client, fpe, flags,
+                        name, namelen, format,
+                        fid,  ppfont, alias */ );
+    int         (*close_font) ( /* pfont */ );
+    int         (*list_fonts) ( /* client, fpe, pattern,
+                        patlen, maxnames, paths */ );
+    int         (*start_list_fonts_with_info) (
+                        /* client, fpe, name, namelen,
+                           maxnames, data */ );
+    int         (*list_next_font_with_info) (
+                        /* client, fpe, name, namelen,
+                           info, num, data */ );
+    int         (*wakeup_fpe) ( /* fpe, mask */ );
+    int         (*client_died) ( /* client, fpe */ );
+} FPEFunctionsRec, FPEFunctions;
+      </pre><p>
+	The function pointers are split out from the data structure to
+	save memory; additionally, this avoids any complications when
+	initializing the data structure as there would not be any way
+	to discover the appropriate function to	call (a chicken and
+	egg problem).
+      </p><p>
+	When a font path type is initialized, it passes the function
+	pointers to the server which are then stored in an
+	<span class="structname">FPEFunctionsRec</span>. Each function is
+	described below in turn.
+      </p><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="name_check"></a>(*name_check)</h3></div></div></div><p>
+	  Each new font path member is passed to this function; if
+	  the return value is <span class="errorname">Successful</span>, then
+	  the FPE recognises the format of the string.  This does not
+	  guarantee that the FPE will be able to successfully use this
+	  member.  For example, the disk-based font directory file
+	  <code class="filename">fonts.dir</code> may be corrupted, this will
+	  not be detected until the font path is initialized.  This
+	  routine never returns <span class="errorname">Suspended</span>.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="init_fpe"></a>(*init_fpe)</h3></div></div></div><p>
+	  Initialize a new font path element.  This function prepares
+	  a new font path element for other requests: the disk font
+	  routine reads the <code class="filename">fonts.dir</code> and
+	  <code class="filename">fonts.alias</code> files into the internal
+	  format, while the font server routine connects to the
+	  requested font server and prepares for using it.  This
+	  routine returns <span class="errorname">Successful</span> if
+	  everything went OK, otherwise the return value indicates the
+	  source of the problem.  This routine never returns
+	  <span class="errorname">Suspended</span>.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="reset_fpe"></a>(*reset_fpe)</h3></div></div></div><p>
+	  When the X font path is reset, and some of the new members
+	  are also in the old font path, this function is called to
+	  reinitialize those FPEs.  This routine returns
+	  <span class="errorname">Successful</span> if everything went OK.  It
+	  returns <span class="errorname">FPEResetFailed</span> if (for some
+	  reason) the reset failed, and the caller should remove the
+	  old FPE and simply create a new one in its place.  This is
+	  used by the disk-based fonts routine as resetting the
+	  internal directory structures would be more complicated than
+	  simply having destroying the old and creating a new.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="free_fpe"></a>(*free_fpe)</h3></div></div></div><p>
+	  When the server is finished with an FPE, this function is
+	  called to dispose of any internal state.  It should return
+	  <span class="errorname">Successful</span>, unless something terrible
+	  happens.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="open_font"></a>(*open_font)</h3></div></div></div><p>
+	  This routine requests that a font be opened.  The <em class="parameter"><code>client</code></em> argument is used by the
+	  font library only in connection with suspending/restarting
+	  the request.  The <em class="parameter"><code>flags</code></em>
+	  argument specifies some behaviour for the library and can be
+	  any of:
+	</p><pre class="programlisting">
+/* OpenFont flags */
+#define FontLoadInfo    0x0001
+#define FontLoadProps   0x0002
+#define FontLoadMetrics 0x0004
+#define FontLoadBitmaps 0x0008
+#define FontLoadAll     0x000f
+#define FontOpenSync    0x0010
+	</pre><p>
+	  The various fields specify which portions of the font should
+	  be loaded at this time.  When <code class="constant">FontOpenSync</code>
+	  is specified, this routine will not return until all of the
+	  requested portions are loaded.  Otherwise, this routine may
+	  return <span class="errorname">Suspended</span>.  When the presented
+	  font name is actually an alias for some other font name,
+	  <span class="errorname">FontNameAlias</span> is returned, and the
+	  actual font name is stored in the location pointed to by the
+	  <em class="parameter"><code>alias</code></em> argument as a
+	  null-terminated string.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="close_font"></a>(*close_font)</h3></div></div></div><p>
+	  When the server is finished with a font, this routine
+	  disposes of any internal state and frees the font data
+	  structure.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="list_fonts"></a>(*list_fonts)</h3></div></div></div><p>
+	  The <em class="parameter"><code>paths</code></em> argument is
+	  a data structure which will be filled with all of the font names
+	  from this directory which match the specified
+	  <em class="parameter"><code>pattern</code></em>.  At
+	  most <em class="parameter"><code>maxnames</code></em> will be added.
+	  This routine may return <span class="errorname">Suspended</span>.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="start_list_fonts_with_info"></a>(*start_list_fonts_with_info)</h3></div></div></div><p>
+	  This routine sets any internal state for a verbose listing of
+	  all fonts matching the specified pattern.  This routine may
+	  return <span class="errorname">Suspended</span>.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="list_next_font_with_info"></a>(*list_next_font_with_info)</h3></div></div></div><p>
+	  To avoid storing huge amounts of data, the interface for
+	  ListFontsWithInfo allows the server to get one reply at a time
+	  and forward that to the client.  When the font name returned
+	  is actually an alias for some other font,
+	  <span class="errorname">FontNameAlias</span> will be returned.  The
+	  actual font name is return instead, and the font alias which
+	  matched the pattern is returned in the location pointed to by
+	  data as a null-terminated string.  The caller can then get the
+	  information by recursively listing that font name with a
+	  maxnames of 1.  When <span class="errorname">Successful</span> is
+	  returned, the matching font name is returned, and a
+	  FontInfoPtr is stored in the location pointed to by
+	  <em class="parameter"><code>data</code></em>.
+	  <em class="parameter"><code>Data</code></em> must be initialized
+	  with a pointer to a FontInfoRec allocated by the caller.  When the
+	  pointer pointed to by <em class="parameter"><code>data</code></em>
+	  is not left pointing at that storage, the caller mustn't free the
+	  associated property data. This routine may return
+	  <span class="errorname">Suspended</span>.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="wakeup_fpe"></a>(*wakeup_fpe)</h3></div></div></div><p>
+	  Whenever an FPE function has returned
+	  <span class="errorname">Suspended</span>, this routine is called
+	  whenever the application wakes up from waiting for input
+	  (from <span class="citerefentry"><span class="refentrytitle">select</span>(2)</span>).  This
+	    <em class="parameter"><code>mask</code></em> argument should be
+	    the value returned from <code class="function">select(2)</code>.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="client_died"></a>(*client_died)</h3></div></div></div><p>
+	  When an FPE function has returned <span class="errorname">Suspended</span>
+	  and the associated client is being destroyed, this function
+	  allows the font library to dispose of any state associated
+	  with that client.
+	</p></div></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="Fonts"></a>Fonts</h2></div></div></div><p>
+	The data structure which actually contains the font information has
+	changed significantly since previous releases; it now attempts to
+	hide the actual storage format for the data from the application,
+	providing accessor functions to get at the data.  This allows a
+	range of internal details for different font sources.  The structure
+	is split into two pieces, so that ListFontsWithInfo can share
+	information from the font when it has been loaded.  The
+	<span class="structname">FontInfo</span> structure, then, contains only
+	information germane to LFWI.
+      </p><pre class="programlisting">
+typedef struct _FontInfo {
+    unsigned short firstCol;            /* range of glyphs for this font */
+    unsigned short lastCol;
+    unsigned short firstRow;
+    unsigned short lastRow;
+    unsigned short defaultCh;           /* default character index */
+    unsigned int noOverlap:1;           /* no combination of glyphs overlap */
+    unsigned int terminalFont:1;        /* Character cell font */
+    unsigned int constantMetrics:1;     /* all metrics are the same */
+    unsigned int constantWidth:1;       /* all character widths are the same*/
+    unsigned int inkInside:1;           /* all ink inside character cell */
+    unsigned int inkMetrics:1;          /* font has ink metrics */
+    unsigned int allExist:1;            /* no missing chars in range */
+    unsigned int drawDirection:2;       /* left-to-right/right-to-left*/
+    unsigned int cachable:1;            /* font needn't be opened each time*/
+    unsigned int anamorphic:1;          /* font is strangely scaled */
+    short       maxOverlap;             /* maximum overlap amount */
+    short       pad;                    /* unused */
+    xCharInfo   maxbounds;              /* glyph metrics maximums */
+    xCharInfo   minbounds;              /* glyph metrics minimums */
+    xCharInfo   ink_maxbounds;          /* ink metrics maximums */
+    xCharInfo   ink_minbounds;          /* ink metrics minimums */
+    short       fontAscent;             /* font ascent amount */
+    short       fontDescent;            /* font descent amount */
+    int         nprops;                 /* number of font properties */
+    FontPropPtr props;                  /* font properties */
+    char       *isStringProp;           /* boolean array */
+}           FontInfoRec, *FontInfoPtr;
+      </pre><p>
+	The font structure, then, contains a font info record, the format of
+	the bits in each bitmap and the functions which access the font
+	records (which are stored in an opaque format hung off of
+	<em class="structfield"><code>fontPrivate</code></em>).
+      </p><pre class="programlisting">
+typedef struct _Font {
+    int         refcnt;
+    FontInfoRec info;
+    char        bit;                    /* bit order: LSBFirst/MSBFirst */
+    char        byte;                   /* byte order: LSBFirst/MSBFirst */
+    char        glyph;                  /* glyph pad: 1, 2, 4 or 8 */
+    char        scan;                   /* glyph scan unit: 1, 2 or 4 */
+    fsBitmapFormat format;              /* FS-style format (packed) */
+    int         (*get_glyphs)  ( /* font, count, chars, encoding, count, glyphs */ );
+    int         (*get_metrics) ( /* font, count, chars, encoding, count, glyphs */ );
+    int         (*get_bitmaps) ( /* client, font, flags, format,
+                                    flags, nranges, ranges, data_sizep,
+                                    num_glyphsp, offsetsp, glyph_datap,
+                                    free_datap */ );
+    int         (*get_extents) ( /* client, font, flags, nranges,
+                                    ranges, nextentsp, extentsp */);
+    void        (*unload_font) ( /* font */ );
+    FontPathElementPtr fpe;             /* FPE associated with this font */
+    pointer     svrPrivate;             /* X/FS private data */
+    pointer     fontPrivate;            /* private to font */
+    pointer     fpePrivate;             /* private to FPE */
+    int         maxPrivate;             /* devPrivates (see below) */
+    pointer     *devPrivates;           /*  ... */
+}           FontRec, *FontPtr;
+      </pre><p>
+	Yes, there are several different private pointers in the
+	<em class="structfield"><code>Font</code></em> structure; they were added
+	haphazardly until the devPrivate pointers were added.  Future
+	releases may remove some (or all) of the specific pointers,
+	leaving only the <em class="structfield"><code>devPrivates</code></em>mechanism.
+      </p><p>
+	There are two similar interfaces implemented -
+	<em class="structfield"><code>get_glyphs</code></em>/<em class="structfield"><code>get_metrics</code></em>
+	and
+	<em class="structfield"><code>get_bitmaps</code></em>/<em class="structfield"><code>get_extents</code></em>.
+	Too little time caused the font-server specific interfaces to
+	be placed in the font library (and portions duplicated in each
+	renderer) instead of having them integrated into the font server
+	itself.  This may change.  The X server uses only
+	<em class="structfield"><code>get_glyphs</code></em>/<em class="structfield"><code>get_metrics</code></em>,
+	and those will not change dramatically.  Each of the routines
+	is described below.
+      </p><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="get_glyphs"></a>(*get_glyphs)</h3></div></div></div><p>
+	  This routine returns <span class="structname">CharInfoPtrs</span>
+	  for each of the requested characters in the font.  If the
+	  character does not exist in the font, the default character
+	  will be returned, unless no default character exists in
+	  which case that character is skipped.  Thus, the number of
+	  glyphs returned will not always be the same as the number of
+	  characters passed in.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="get_metrics"></a>(*get_metrics)</h3></div></div></div><p>
+	  This is similar to <em class="structfield"><code>(*get_glyphs)</code></em>
+	  except that pointers to <span class="structname">xCharInfo</span>
+	  structures are returned, and, if the font has ink metrics,
+	  those are returned instead of the bitmap metrics.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="get_bitmaps"></a>(*get_bitmaps)</h3></div></div></div><p>
+	  This packs the glyph image data in the requested
+	  <em class="parameter"><code>format</code></em> and returns it.  The
+	  <em class="parameter"><code>ranges</code></em>/<em class="parameter"><code>nranges</code></em>
+	  argument specify the set of glyphs from the font to pack together.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="get_extents"></a>(*get_extents)</h3></div></div></div><p>
+	  This returns the metrics for the specified font from the
+	  specified <em class="parameter"><code>ranges</code></em>.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="unload_font"></a>(*unload_font)</h3></div></div></div><p>
+	  This is called from the FPE routine
+	  <code class="function">(*close_font)</code>, and so should not ever be
+	  called from the application.
+	</p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="maxPrivate"></a>maxPrivate</h3></div></div></div><p>
+	  When initializing a new font structure,
+	  <em class="structfield"><code>maxPrivate</code></em> should be set to -1 so
+	  that the <code class="function">FontSetPrivate()</code> macro works
+	  properly with an index of 0.  Initializing
+	  <em class="structfield"><code>maxPrivate</code></em> to 0 can cause
+	  problems if the server tries to set something at index 0.
+	</p></div></div></div></body></html>

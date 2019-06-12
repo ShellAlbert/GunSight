@@ -49,7 +49,7 @@ void ZAudioCaptureThread::ZDoCleanBeforeExit()
 }
 void ZAudioCaptureThread::run()
 {
-#if 0
+#if 1
     /*
         The most important ALSA interfaces to the PCM devices are the "plughw" and the "hw" interface.
         If you use the "plughw" interface, you need not care much about the sound hardware.
@@ -66,8 +66,8 @@ void ZAudioCaptureThread::run()
     // Input and output driver variables
     snd_pcm_t	*pcmHandle;
     snd_pcm_hw_params_t *hwparams;
-    int periods=PERIODS;
-    snd_pcm_uframes_t periodSize=PERIOD_SIZE;
+    int periods=ALSA_PERIOD;
+    snd_pcm_uframes_t periodSize=BLOCK_SIZE;
 
 
     // Now we can open the PCM device:
@@ -262,7 +262,7 @@ void ZAudioCaptureThread::run()
         // Read capture buffer from ALSA input device.
         while(1)
         {
-            qint32 nRet=snd_pcm_readi(pcmHandle,pcmBuffer->data(),PERIOD_SIZE>>2);
+            qint32 nRet=snd_pcm_readi(pcmHandle,pcmBuffer->data(),BLOCK_SIZE>>2);
             if(nRet<0)
             {
                 snd_pcm_prepare(pcmHandle);
@@ -280,7 +280,6 @@ void ZAudioCaptureThread::run()
     }
 
 
-
     //do some clean here.
     /*
         If we want to stop playback, we can either use snd_pcm_drop or snd_pcm_drain.
@@ -294,28 +293,16 @@ void ZAudioCaptureThread::run()
     //snd_pcm_drain(pcmHandle);
     snd_pcm_close(pcmHandle);
 #else
-    //这里我们使用32KHz的采样率，双声道，采样位数24bit
-    //则有bps=2*24bit*32000=1536000bits/s=192000Bytes
-    //这里我们设置period为4，即1秒发生4次中断，则中断间隔为1s/4=250ms.
-    //则每次中断发生时，我们至少需要填充192000Bytes/(1s/250ms)=48000Bytes
-    //#define     BLOCK_SIZE        48000	// Number of bytes
-
-    //这里我们设置period为10，即1秒发生10次中断，则中断间隔为1s/10=100ms.
-    //则每次中断发生时，我们至少需要填充192000Bytes/(1s/100ms)=19200Bytes
-#define     I2S_BLOCK_SIZE      48000
-#define     I2S_ALSA_PERIOD     4
-#define     I2S_PERIOD_SIZE     I2S_BLOCK_SIZE//(I2S_BLOCK_SIZE>>2)
-    //* The sample rate of the audio codec **
-#define     I2S_SAMPLE_RATE      32000
-
-    //frame帧是播放样本的一个计量单位，由通道数和比特数决定。
-    //立体声32KHz 24-bit的PCM，那么一帧的大小就是6字节(2 Channels*24-bit=48bit/8bit=6 bytes)
-#define I2S_CHANNELS_NUM    2
-#define I2S_BYTES_PER_FRAME 6
 
     //how to play in rk3399-linux board.
     //aplay -D plughw:CARD=realtekrt5651co,DEV=0 -c 2 -r 32000 -f S24_3LE -t raw cap.pcm
-    char pcmBuffer[I2S_BLOCK_SIZE*2];
+    char *pcmBuffer=new char[BLOCK_SIZE*2];
+    if(NULL==pcmBuffer)
+    {
+        qDebug()<<"failed to allocate pcm buffer for audio capture!\n";
+        this->ZDoCleanBeforeExit();
+        return;
+    }
     int fd=open("/dev/fpga-i2s",O_RDONLY);
     if(fd<0)
     {
@@ -324,25 +311,21 @@ void ZAudioCaptureThread::run()
         return;
     }
 
-    QFile pcmFile("32khz.24be.pcm");
-    pcmFile.open(QIODevice::WriteOnly);
-
+//    QFile pcmFile("32khz.24be.2ch.pcm");
+//    pcmFile.open(QIODevice::WriteOnly);
 
     int nPcmLen=0;
     while(!gGblPara.m_bGblRst2Exit)
     {
         //capture.
-        int ret=read(fd,pcmBuffer+nPcmLen,sizeof(pcmBuffer)-nPcmLen);
-        //printf("read %d bytes:\n",ret);
+        int ret=read(fd,pcmBuffer+nPcmLen,/*sizeof(pcmBuffer)-nPcmLen*/BLOCK_SIZE);
         if(ret>0)
         {
             //add new data to pcm buffer.
             nPcmLen+=ret;
-            if(nPcmLen>=I2S_PERIOD_SIZE)
+            if(nPcmLen>=BLOCK_SIZE)
             {
-                int nRemainingBytes=nPcmLen-I2S_PERIOD_SIZE;
-                //move data to fifo.
-                //get a free buffer from fifo.
+                //move data to fifo.get a free buffer from fifo.
                 this->m_mutex->lock();
                 while(this->m_freeQueue->isEmpty())
                 {//timeout 5s to check exit flag.
@@ -359,27 +342,28 @@ void ZAudioCaptureThread::run()
                 {
                     break;
                 }
-
                 QByteArray *pcmFIFO=this->m_freeQueue->dequeue();
-                memcpy(pcmFIFO->data(),pcmBuffer,I2S_PERIOD_SIZE);
-#if 1
-        //dump pcm to file
-        pcmFile.write(pcmFIFO->data(),pcmFIFO->size());
-#endif
+                memcpy(pcmFIFO->data(),pcmBuffer,BLOCK_SIZE);
+
+                //dump pcm to file
+//                pcmFile.write(pcmFIFO->data(),pcmFIFO->size());
+//                pcmFile.flush();
+
                 this->m_usedQueue->enqueue(pcmFIFO);
                 this->m_condQueueFull->wakeAll();
                 this->m_mutex->unlock();
 
                 //reset length.
-                nPcmLen=nRemainingBytes;
+                int nRemainingBytes=nPcmLen-BLOCK_SIZE;
                 if(nRemainingBytes>0)
                 {
-                    memmove(pcmBuffer,pcmBuffer+I2S_PERIOD_SIZE,nRemainingBytes);
+                    memmove(pcmBuffer,pcmBuffer+BLOCK_SIZE,nRemainingBytes);
                 }
+                nPcmLen=nRemainingBytes;
             }
         }else if(0==ret)
         {
-            qDebug()<<"<warning>:timeout to read pcm data!";
+            //qDebug()<<"<warning>:timeout to read pcm data!";
         }else if(ret<0)
         {
             qDebug()<<"<error>:failed to read pcm data!";
@@ -388,8 +372,10 @@ void ZAudioCaptureThread::run()
         this->usleep(1000);
     }
     close(fd);
-    pcmFile.close();
+    //pcmFile.close();
+    delete [] pcmBuffer;
 #endif
+
     this->ZDoCleanBeforeExit();
     return;
 }

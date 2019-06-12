@@ -1,0 +1,82 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body>
+
+
+
+<h1 id="T-N">TÊN</h1>
+
+<p>podebconf-display-po — hiển thị nội dung của tập tin PO trên giao diện debconf</p>
+
+<h1 id="T-M-T-T">TÓM TẮT</h1>
+
+<p><b>podebconf-display-po</b> [<b>-h</b>] [<b>-f</b> <i>GIAO_DIỆN</i>] <i>tập_tin.po</i></p>
+
+<h1 id="M-T">MÔ TẢ</h1>
+
+<p>Đúng như mọi công việc địa phương hoá, người dịch nên kiểm tra bản dịch bằng cách chạy chương trình đang dịch. Tuy nhiên, đây là tiến trình rất khó, dùng các văn lệnh cấu hình phức tạp, vì chưa có phương pháp tự động hiển thị mọi chuỗi đã dịch.</p>
+
+<p>Chương trình <b>podebconf-display-po</b> cũng có thể được gọi là <i>Bộ Kiểm Tra Nhanh Bản Địa Hoá</i> cho debconf. Nó phân tách tập tin PO, thử đoán hình thức của tập tin mẫu gốc, và hiển thị các chuỗi trên giao diện debconf.</p>
+
+<p>Không cần đăng nhập dưới người chủ (root), và <b>podebconf-display-po</b> không tương tác với bất kỳ thiết lập toàn hệ thống.</p>
+
+<h1 id="T-Y-CH-N">TÙY CHỌN</h1>
+
+<dl>
+
+<dt id="h---help"><b>-h</b>, <b>--help</b></dt>
+<dd>
+
+<p>Hiển thị bản tóm tắt cách sử dụng, rồi thoát.</p>
+
+</dd>
+<dt id="f---frontend-GIAO_DI-N"><b>-f</b>, <b>--frontend=<i>GIAO_DIỆN</i></b></dt>
+<dd>
+
+<p>Chọn giao diện debconf khác.</p>
+
+</dd>
+</dl>
+
+<h1 id="C-N-TH-N">CẨN THẬN</h1>
+
+<ul>
+
+<li><p>Vì <b>podebconf-display-po</b> nhờ <code>debconf</code> để hiển thị câu hỏi, môi trường của bạn phải được thiết lập để hiển thị câu hỏi đã dịch bằng ngôn ngữ của tập tin PO. Vậy nếu bạn cần kiểm tra bản dịch bằng một ngôn ngữ khác, chỉ cần sửa đổi tạm thời thiết lập , v.d.</p>
+
+<pre><code>  $ LANGUAGE=vi podebconf-display-po vi.po</code></pre>
+
+<p>Nếu tập tin PO không chuyển đổi được sang bảng mã hiện thời, các chuỗi được hiển thị chỉ bằng ngôn ngữ gốc (thường là tiếng Anh) thay cho các chuỗi dịch. Để tránh trường hợp bảng mã không tương ứng, khuyên bạn sử dụng một môi trường UTF-8 (Unicode).</p>
+
+</li>
+<li><p>Trước phiên bản 0.8.3, <code>po-debconf</code> chỉ chèn vào tập tin PO tên của trường. Tuy nhiên, một số cuộc thảo luận trong hộp thư chung đã giải thích rằng định dạng văn bản phụ thuộc vào kiểu mẫu, v.d. chuỗi và luận lý có kiểu khác nhau vì chuỗi là câu hỏi mở, vào đó người dùng nên gõ văn bản, còn luận lý cơ bản là câu hỏi Có/Không, chỉ có hai đáp ứng có thể. Tác giả và người dịch nên suy tính trường hợp này khi tạo và dịch chuỗi.</p>
+
+<p>Tập tin PO được tạo ra bởi po-debconf &gt;= 0.8.3 cũng chèn vào tập tin PO kiểu của mẫu. Đối với phiên bản cũ, <b>podebconf-display-po</b> dùng thuật toán đơn giản để quyết định kiểu mẫu, đôi khi chạy sai.</p>
+
+</li>
+<li><p>Giao diện <code>dialog</code>, khi dựa vào <code>whiptail</code>, bắt các ký hiệu của hệ thống, thì <b>podebconf-display-po</b> không thể bị <code>Ctrl-C</code> gián đoạn khi dùng giao diện này.</p>
+
+</li>
+</ul>
+
+<h1 id="XEM-C-NG">XEM CŨNG</h1>
+
+<p><a href="http://man.he.net/man1/debconf">debconf(1)</a></p>
+
+<h1 id="T-C-GI">TÁC GIẢ</h1>
+
+<pre><code>  Denis Barbier &lt;barbier@linuxfr.org&gt;</code></pre>
+
+
+</body>
+
+</html>
+
+

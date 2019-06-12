@@ -1,0 +1,4 @@
+<map id="xcb_input_touch_begin_event_t" name="xcb_input_touch_begin_event_t">
+<area shape="rect" id="node2" href="$structxcb__input__group__info__t.html" title="xcb_input_group_info_t " alt="" coords="5,13,179,39"/>
+<area shape="rect" id="node3" href="$structxcb__input__modifier__info__t.html" title="xcb_input_modifier_info_t " alt="" coords="203,5,349,47"/>
+</map>

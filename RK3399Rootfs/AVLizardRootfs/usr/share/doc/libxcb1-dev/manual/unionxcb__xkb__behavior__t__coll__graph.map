@@ -1,0 +1,10 @@
+<map id="xcb_xkb_behavior_t" name="xcb_xkb_behavior_t">
+<area shape="rect" id="node2" href="$structxcb__xkb__lock__behavior__t.html" title="xcb_xkb_lock_behavior_t " alt="" coords="20,9,207,36"/>
+<area shape="rect" id="node3" href="$structxcb__xkb__common__behavior__t.html" title="xcb_xkb_common_behavior_t " alt="" coords="5,60,221,87"/>
+<area shape="rect" id="node4" href="$structxcb__xkb__permament__radio__group__behavior__t.html" title="xcb_xkb_permament_radio_group_behavior_t " alt="" coords="14,111,213,153"/>
+<area shape="rect" id="node5" href="$structxcb__xkb__radio__group__behavior__t.html" title="xcb_xkb_radio_group_behavior_t " alt="" coords="33,177,193,218"/>
+<area shape="rect" id="node6" href="$structxcb__xkb__permament__lock__behavior__t.html" title="xcb_xkb_permament_lock_behavior_t " alt="" coords="17,242,210,283"/>
+<area shape="rect" id="node7" href="$structxcb__xkb__overlay__behavior__t.html" title="xcb_xkb_overlay_behavior_t " alt="" coords="9,308,217,335"/>
+<area shape="rect" id="node8" href="$structxcb__xkb__permament__overlay__behavior__t.html" title="xcb_xkb_permament_overlay_behavior_t " alt="" coords="6,361,221,402"/>
+<area shape="rect" id="node9" href="$structxcb__xkb__default__behavior__t.html" title="xcb_xkb_default_behavior_t " alt="" coords="11,427,216,453"/>
+</map>

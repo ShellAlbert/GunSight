@@ -1,0 +1,11 @@
+#/bin/bash
+
+QTVER=5.10.0
+export QTDIR=/usr/local/Trolltech/Qt-${QTVER}-rk64one
+if [ ! -d $QTDIR ]; then
+	echo "Not found Qt5"
+else
+	export LD_LIBRARY_PATH=/usr/rk3399-libs/lib64:$LD_LIBRARY_PATH
+	export XDG_RUNTIME_DIR="/tmp"
+	export LD_LIBRARY_PATH=$QTDIR/lib:$LD_LIBRARY_PATH
+fi

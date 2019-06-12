@@ -1,0 +1,323 @@
+#!/usr/bin/perl -w
+
+use strict;
+use File::Temp;
+use Getopt::Long;
+
+sub usage {
+        my $rc = shift;
+        print "Usage: podebconf-display-po [-h] [-f frontend] file.po\n";
+        exit($rc);
+}
+
+my $help = 0;
+my $frontend = '';
+Getopt::Long::Configure('bundling');
+Getopt::Long::GetOptions(
+        "h|help" => \$help,
+        "f|frontend=s" => \$frontend,
+) || usage(1);
+usage(0) if $help;
+usage(1) if $#ARGV != 0;
+
+sub unescapechar {
+        my $char = shift;
+        if ($char eq 'n') {
+                # Add a space to conform to debconf templates format
+                return "\n ";
+        } elsif ($char eq 't') {
+                return "\t";
+        } elsif ($char eq 'r') {
+                return "\r";
+        } else {
+                #  Fallback also works for \\ and \"
+                return $char;
+        }
+}
+sub unescapestr {
+        my $text = shift;
+        my $out = '';
+        my $last = 0;
+        while ($text =~ m/\G([^\\]*)\\([ntr"\\])/g) {
+                $last = pos($text);
+                $out .= $1 . unescapechar($2);
+        }
+        $out .= substr($text, $last);
+        return $out;
+}
+#  Format 1: No "Type:" in comments
+#  Format 2: Only one reference per string and file, line numbers
+#            match the ones in templates files
+#  Format 3: All references are written into PO files; first template
+#            is numbered from 1001, 2nd from 2001 etc.
+sub guessFormat {
+        my $text = shift;
+        return 1 unless $text =~ m/^#\. Type:/;
+        while ($text =~ s/#:\s*([^:\s]+):(\d+)/#:/) {
+                my ($file,$line) = ($1, $2);
+                return 2 if $line < 1000;
+        }
+        return 3;
+}
+
+#  1.  Read the PO file and write a fake templates file
+
+my $fields = {};
+my $rfc822Format = 0;
+
+#  Recode PO files into UTF-8 to avoid stateful encodings
+{
+        open(PO, "msgconv -t UTF-8 $ARGV[0] |")
+                or die "'msgconv -t UTF-8 $ARGV[0]' failed: $!\n";
+        local $/ = "\n\n";
+        while (<PO>) {
+                next unless m/^msgid/m;
+                s/"\n"//g;
+                #  Skip header entry
+                next if m/^msgid ""$/m;
+
+                my $type = '';
+                my $field = '';
+                m/^msgid "(.*)"/m;
+                my $msgid = unescapestr($1);
+                m/^msgstr "(.*)"/m;
+                my $msgstr = unescapestr($1);
+                #  Escape dollar signs to prevent variable substitutions
+                $msgid =~ s/\$/\${dollarsign}/g;
+                $msgstr =~ s/\$/\${dollarsign}/g;
+                $rfc822Format = guessFormat($_) if $rfc822Format == 0;
+                while (s/#:\s*([^:\s]+):(\d+)/#:/) {
+                        my ($file,$line) = ($1, $2);
+                        my $tmp = $_;
+                        if ($rfc822Format == 1) {
+                                #  Old format
+                                1 while ($tmp =~ s/^#\.\s+(.*)//m);
+                                $field = $1;
+                        } else {
+                                #  New format
+                                if ($tmp =~ s/^#\. Type:\s*(\S+)\n//) {
+                                        $type = lc($1);
+                                }
+                                #  The entropy-text type is a plugin
+                                $type = "text" if $type eq "entropy-text";
+                                if ($tmp =~ s/^#\. (\S+)\n//) {
+                                        $field = $1;
+                                }
+                        }
+                        $field = ucfirst($field);
+                        $fields->{$file} = {} unless defined($fields->{$file});
+                        if (defined $fields->{$file}->{$line}) {
+                                if ($field eq 'Choices') {
+                                        if ($msgstr =~ m/,/) {
+                                            warn "The translation of Choices ".
+                                                 "should not contain commas. ".
+                                                 "Please fix the translation ".
+                                                 "of '$msgid'.";
+                                        }
+                                        $fields->{$file}->{$line}->{msgid} .= ", ".$msgid;
+                                        $fields->{$file}->{$line}->{msgstr} .= ", ".$msgstr;
+                                } else {
+                                        $fields->{$file}->{$line}->{msgid} .= "\n ".($fields->{$file}->{$line}->{msgid} =~ m/\n/ ? ".\n " : '').$msgid;
+                                        $fields->{$file}->{$line}->{msgstr} .= "\n ".($fields->{$file}->{$line}->{msgstr} =~ m/\n/ ? ".\n " : '').$msgstr;
+                                }
+                        } else {
+                                $fields->{$file}->{$line} = {
+                                        type => $type,
+                                        field => $field,
+                                        msgid => $msgid,
+                                        msgstr => $msgstr,
+                                        line => $line,
+                                };
+                        }
+                }
+        }
+        close(PO);
+}
+
+#  Translated fields in the generated templates file will be written
+#  with an extension which is suitable for current user's environment.
+#  Of course, there will be trouble if there is some encoding mismatch.
+my $lang = $ENV{LANGUAGE} || $ENV{LC_ALL} || $ENV{LC_MESSAGES} || $ENV{LANG} || $ARGV[0];
+#  For LANGUAGE
+$lang =~ s/:.*//;
+#  For filename
+$lang =~ s{.*/}{};
+$lang =~ s/\.po$//;
+#  For locale variables.  Charset and modifiers have to be stripped.
+$lang =~ s/[.@].*//;
+
+my $count = 0;
+my $new = 1;
+my $choices = 0;
+my @tempfiles = ();
+my ($fh, $template) = File::Temp::tempfile()
+        or die "Unable to write temporary files";
+push (@tempfiles, $template);
+$SIG{INT} = sub { unlink (@tempfiles); exit(1); };
+
+my $titles = {};
+
+#  TODO: Refactor this code
+if ($rfc822Format < 3) {
+        for my $file (keys %$fields) {
+                for (sort { $a <=> $b } keys %{$fields->{$file}}) {
+                        $titles->{$count} = 1 if ($fields->{$file}->{$_}->{type} =~ m/title/);
+                        print $fh "Template: foo/bar$count\n" if $new;
+                        if ($fields->{$file}->{$_}->{field} eq 'Description') {
+                                print $fh "Type: ".
+                                        (length($fields->{$file}->{$_}->{type}) ?
+                                         $fields->{$file}->{$_}->{type} :
+                                         ($choices ?  "select" : "string"))."\n";
+                        } elsif ($fields->{$file}->{$_}->{field} eq 'Choices') {
+                                $choices = 1;
+                        } elsif ($fields->{$file}->{$_}->{field} eq 'DefaultChoice') {
+                                $fields->{$file}->{$_}->{field} = 'Default';
+                        }
+                        if ($fields->{$file}->{$_}->{field} eq 'Description' && $choices == 0 && $fields->{$file}->{$_}->{type} =~ m/select/)
+                        {
+                                #   Dummy Choices field, needed to display the
+                                #   question.
+                                print $fh "Choices: dummy1, dummy2\n";
+                        }
+                        print $fh "$fields->{$file}->{$_}->{field}: $fields->{$file}->{$_}->{msgid}\n";
+                        print $fh "$fields->{$file}->{$_}->{field}-$lang.UTF-8: $fields->{$file}->{$_}->{msgstr}\n";
+                        $new = 0;
+                        if ($fields->{$file}->{$_}->{field} eq 'Description') {
+                                $count++;
+                                $new = 1;
+                                $choices = 0;
+                                print $fh "\n";
+                        }
+                }
+        }
+}
+else
+{
+        my $text = "";
+        my %last = ();
+        for my $file (keys %$fields) {
+                my $oldTemplateNr = 0;
+                for (sort { $a <=> $b } keys %{$fields->{$file}}) {
+                        $titles->{$count} = 1 if ($fields->{$file}->{$_}->{type} =~ m/title/);
+                        my $newTemplateNr = sprintf("%d", $_ / 1000);
+                        if ($newTemplateNr != $oldTemplateNr) {
+                                if ($count > 0) {
+                                        printf $fh "\nTemplate: foo/bar%d\n", $count - 1;
+                                        print $fh "Type: ".
+                                                (length($last{type}) ?  $last{type} :
+                                                 ($choices ?  "select" : "string"))."\n";
+                                        if ($choices == 0 && $last{type} =~ m/select/)
+                                        {
+                                                #   Dummy Choices field, needed to display the
+                                                #   question.
+                                                print $fh "Choices: dummy1, dummy2\n";
+                                        }
+                                        print $fh "$text\n";
+                                }
+                                $count++;
+                                $choices = 0;
+                                $text = "";
+                                $oldTemplateNr = $newTemplateNr;
+                                %last = %{$fields->{$file}->{$_}};
+                        }
+                        if ($fields->{$file}->{$_}->{field} eq 'Choices') {
+                                $choices = 1;
+                        } elsif ($fields->{$file}->{$_}->{field} eq 'DefaultChoice') {
+                                $fields->{$file}->{$_}->{field} = 'Default';
+                        }
+                        # debconf is kind enough to not display a Select question if there
+                        # is only one choice, so add a dummy item
+                        if ($fields->{$file}->{$_}->{field} eq 'Choices' && $fields->{$file}->{$_}->{type} eq 'select' && $fields->{$file}->{$_}->{msgid} !~ /,/) {
+                                $fields->{$file}->{$_}->{msgid} .= ", dummy2";
+                                $fields->{$file}->{$_}->{msgstr} .= ", dummy2";
+                        }
+                        $text .= "$fields->{$file}->{$_}->{field}: $fields->{$file}->{$_}->{msgid}\n";
+                        $text .= "$fields->{$file}->{$_}->{field}-$lang.UTF-8: $fields->{$file}->{$_}->{msgstr}\n";
+                }
+        }
+        if ($text ne "") {
+                printf $fh "Template: foo/bar%d\n", $count - 1;
+                print $fh "Type: ".
+                        (length($last{type}) ?  $last{type} :
+                         ($choices ?  "select" : "string"))."\n";
+                if ($choices == 0 && $last{type} =~ m/select/)
+                {
+                        #   Dummy Choices field, needed to display the
+                        #   question.
+                        print $fh "Choices: dummy1, dummy2\n";
+                }
+                print $fh "$text";
+        }
+}
+close($fh);
+
+#  2.  Load the templates file in debconf DB
+
+use Debconf::Db;
+use Debconf::AutoSelect qw(:all);
+use Debconf::Config;
+
+my ($dbth, $dbt) = File::Temp::tempfile()
+        or die "Unable to write temporary files";
+my ($dbch, $dbc) = File::Temp::tempfile()
+        or die "Unable to write temporary files";
+push (@tempfiles, $dbt, $dbc);
+
+my %hashconfig = (
+        driver => "File",
+        mode => '0600',
+        name => "config",
+        backup => 0,
+        filename => $dbc
+);
+my %hashtemplates = (
+        driver => "File",
+        mode => '0600',
+        name => "templates",
+        backup => 0,
+        filename => $dbt
+);
+
+$Debconf::Db::config=Debconf::Db->makedriver(%hashconfig);
+$Debconf::Db::templates=Debconf::Db->makedriver(%hashtemplates);
+Debconf::Template->load($template, 'display');
+Debconf::Db->save;
+unlink $template;
+
+# 3.  Display questions
+
+$Debconf::Db::config=Debconf::Db->makedriver(%hashconfig);
+$Debconf::Db::templates=Debconf::Db->makedriver(%hashtemplates);
+Debconf::Config->frontend($frontend) if length($frontend);
+my $dc_frontend=make_frontend();
+my $dc_confmodule=make_confmodule();
+my $code=127;
+
+my $cnt = 0;
+while (1) {
+	$_="RESET foo/bar$cnt\n";
+	my $ret=$dc_confmodule->process_command($_);
+	if ($titles->{$cnt}) {
+		$_="SETTITLE foo/bar$cnt\n";
+		$ret=$dc_confmodule->process_command($_);
+		$cnt++;
+		next;
+	}
+	$_="SUBST foo/bar$cnt dollarsign \$\n";
+	$ret=$dc_confmodule->process_command($_);
+	$_="INPUT high foo/bar$cnt\n";
+	$ret=$dc_confmodule->process_command($_);
+	($code, undef)=split(/ /, $ret, 2);
+	last if $code ne 0 && $code ne 30;
+	$_="GO\n";
+	$ret=$dc_confmodule->process_command($_);
+	($code, undef)=split(/ /, $ret, 2);
+	$cnt++;
+}
+
+$dc_frontend->shutdown;
+$dc_confmodule->finish;
+Debconf::Db->save;
+unlink $dbt, $dbc;
+
+1;

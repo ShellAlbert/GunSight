@@ -1,0 +1,199 @@
+#!/usr/bin/perl -w
+
+=head1 NAME
+
+dh_autoreconf - Call autoreconf -f -i and keep track of the changed files.
+
+=cut
+
+use strict;
+use Debian::Debhelper::Dh_Lib;
+use Cwd;
+
+=head1 SYNOPSIS
+
+B<dh_autoreconf> [S<I<debhelper options>>] [B<-X>I<item>] [B<--mode=>I<mode>]
+[S<I<program> B<--> I<params>>]
+
+=head1 DESCRIPTION
+
+dh_autoreconf is responsible for calling autoreconf and creating the files
+debian/autoreconf.before and debian/autoreconf.after which contain checksums
+of all files before/after the build. It is complemented by dh_autoreconf_clean
+which creates a list of all changed and added files and removes them.
+
+Please note that dh_autoreconf can only be run once. Thus, if you need to
+run multiple commands, use a script or similar. An example is given in
+L<dh-autoreconf(7)>.
+
+=head1 FILES
+
+=over 4
+
+=item debian/autoreconf
+
+This file can contain a list of directories. If present, dh_autoreconf will
+only scan the given directories for changes. If no special command is given
+to dh_autoreconf, it will also forward the directory list to autoreconf
+which causes it to be run only on those sub directories.
+
+=back
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-X>I<item> B<--exclude=>I<item>
+
+Exclude files that contain "item" anywhere in their filename from being
+checked for changes. This means that those files won't be deleted by
+C<dh_autoreconf_clean> even if there are changes. You may use this option
+multiple times to build up a list of things to exclude.
+
+Starting with version 3, the directories of common version control systems
+such as cvs, git, hg, svn, and bzr are excluded automatically.
+
+=item B<--mode=>I<mode>
+
+Change the way in which modifications to files are detected. The default mode
+is I<md5> for using MD5 checksums, but there is also I<timesize> for using
+the time of the last modification and the file size.
+
+=item B<--as-needed>
+
+Enable support for -Wl,--as-needed in all ltmain.sh files identical to
+the one of the libtool package. This only works in the MD5 mode (the
+default one). The changes are reverted in dh_autoreconf_clean. You should
+not prevent LIBTOOLIZE from running with this, as it only works correctly
+with libtoolize running.
+
+=item  B<-D>I<dir> B<--sourcedirectory>=I<dir>
+
+Run everything in the source directory. Supported only in debhelper compat
+level 10 for backwards compatibility.
+
+=item I<program> B<--> I<params>
+
+Run the program given by I<program> with the arguments given by I<params>
+instead of autoreconf -f -i. If you need to run multiple commands, put them in
+a script and pass the script instead (or add a target to debian/rules).
+
+=back
+
+=head1 ENVIRONMENT
+
+For each tool executed by L<autoreconf(1)>, one can export a variable with
+the uppercase name of the tool to the specific program which shall be run,
+including B<true> to prevent the tool in question from being run. The following
+example shows the beginning of a debian/rules for a package where automake
+1.11 shall be run instead of the default automake version and libtoolize
+shall not be run:
+
+    #!/usr/bin/make -f
+    export AUTOMAKE = automake-1.11
+    export LIBTOOLIZE = true
+
+=cut
+
+my $opt_sourcedir;
+
+init(options => { "mode=s" => \$dh{MODE},
+                  "D=s" => \$opt_sourcedir,
+                  "sourcedirectory=s" => \$opt_sourcedir,
+                  "as-needed" => \$dh{AS_NEEDED}});
+
+my $exception;
+my @directories;
+my $find_options='! -ipath "./debian/*" -a ';
+my @exclude_default = ("'*/.git/*'", "'*/.hg/*'", "'*/.bzr/*'", "'*/.svn/*'",
+                       "'*/CVS/*'");
+
+$find_options .= ("! \\( -path " . join(" -o -path ", @exclude_default) .
+                      " \\) -a ");
+
+if (defined($dh{EXCLUDE_FIND}) && $dh{EXCLUDE_FIND} ne '') {
+    $find_options .= "! \\( $dh{EXCLUDE_FIND} \\) -a ";
+}
+
+# Find ltmain.sh
+my $LTMAIN = "/usr/share/libtool/build-aux/ltmain.sh";
+$LTMAIN = "/usr/share/libtool/config/ltmain.sh" if (! -e "$LTMAIN");
+
+if ($dh{AS_NEEDED}) {
+    $find_options = "$LTMAIN . " . $find_options;
+}
+
+if (-e "debian/autoreconf") {
+    @directories=filearray("debian/autoreconf", ".");
+    $find_options = join(" ",@directories)." ".$find_options;
+} elsif (not @ARGV) {
+    # No debian/autoreconf and no arguments - perhaps there is nothing
+    # to do.
+    my $dir = '.';
+    $dir = $opt_sourcedir if defined($opt_sourcedir);
+    if (not -f "${dir}/configure.ac" and not -f "${dir}/configure.in") {
+        # Nothing to do, exit early.
+        exit(0);
+    }
+}
+
+if (-e "debian/autoreconf.before" || -e "debian/autoreconf.after") {
+    warning("Only runs once, see dh-autoreconf(7)");
+    exit(0);
+}
+
+my %modes = (
+    'md5' => "find $find_options -type f -exec md5sum {} + -o -type l -printf \"symlink  %p\n\"",
+    'timesize' => "find $find_options -type f -printf \"%s|%T@  %p\n\"  -o -type l -printf \"symlink  %p\n\""
+);
+
+my $find = $modes{$dh{MODE} || "md5"} ||
+    error("Unknown value $dh{MODE} passed to --mode");
+
+complex_doit("$find > debian/autoreconf.before");
+
+eval {
+    # Run autoreconf to recreate the needed files.
+    my $pwd = getcwd();
+    chdir $opt_sourcedir if (defined($opt_sourcedir) && !compat(9));
+
+    @ARGV ? doit(@ARGV, @{$dh{U_PARAMS}}) : doit('autoreconf', '-f', '-i', @directories);
+
+    chdir $pwd;
+    1;
+} or do {
+    $exception = $@;
+};
+
+complex_doit("$find > debian/autoreconf.after");
+
+# Let's fail here if autoreconf failed.
+die $exception if (defined $exception);
+
+# Fix ltmain.sh to support -Wl,--as-needed
+if ($dh{AS_NEEDED}) {
+    open(FILE, 'debian/autoreconf.after') or die($!);
+    my $ltcheck = "";
+    while(<FILE>) {
+        chomp($_);
+        my ($checksum, $filename) = split;
+        if ($filename eq "$LTMAIN") {
+            $ltcheck = $checksum;
+        } elsif ($filename =~ m/\/ltmain.sh$/ and $checksum eq $ltcheck) {
+            doit("patch", "-f", "--no-backup-if-mismatch", "-i",
+                 "/usr/share/dh-autoreconf/ltmain-as-needed.diff",
+                 $filename);
+        }
+    }
+    close(FILE);
+}
+
+=head1 SEE ALSO
+
+L<debhelper(7)>, L<dh_autoreconf_clean(1)>, L<dh-autoreconf(7)>
+
+=head1 AUTHOR
+
+Julian Andres Klode <jak@debian.org>
+
+=cut

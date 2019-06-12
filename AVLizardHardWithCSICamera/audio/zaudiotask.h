@@ -34,21 +34,21 @@ private:
     QTimer *m_timerExit;
 private:
     //capture to noise queue(fifo).
-    QByteArray* m_Cap2NsFIFO[5];
+    QByteArray* m_Cap2NsFIFO[FIFO_DEPTH_AUDIO];
     QQueue<QByteArray*> m_Cap2NsFIFOFree;
     QQueue<QByteArray*> m_Cap2NsFIFOUsed;
     QMutex m_Cap2NsFIFOMutex;
     QWaitCondition m_condCap2NsFIFOFull;
     QWaitCondition m_condCap2NsFIFOEmpty;
     //noise to playback fifo.
-    QByteArray* m_Ns2PbFIFO[5];
+    QByteArray* m_Ns2PbFIFO[FIFO_DEPTH_AUDIO];
     QQueue<QByteArray*> m_Ns2PbFIFOFree;
     QQueue<QByteArray*> m_Ns2PbFIFOUsed;
     QMutex m_Ns2PbFIFOMutex;
     QWaitCondition m_condNs2PbFIFOFull;
     QWaitCondition m_condNs2PbFIFOEmpty;
     //noise to tx fifo.
-    QByteArray* m_Ns2TxFIFO[5];
+    QByteArray* m_Ns2TxFIFO[FIFO_DEPTH_AUDIO];
     QQueue<QByteArray*> m_Ns2TxFIFOFree;
     QQueue<QByteArray*> m_Ns2TxFIFOUsed;
     QMutex m_Ns2TxFIFOMutex;

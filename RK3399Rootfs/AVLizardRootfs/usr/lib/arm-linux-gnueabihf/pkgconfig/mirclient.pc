@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib/arm-linux-gnueabihf
+includedir=/usr/include/mirclient
+
+Name: mirclient
+Description: Mir client library
+Version: 0.31.1
+Requires: mircore
+Requires.private: protobuf-lite >= 2.4.1, mircookie, xkbcommon
+Libs: -L${libdir} -lmirclient
+Cflags: -I${includedir}

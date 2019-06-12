@@ -1,0 +1,48 @@
+#
+#   Legacy encoding for these languages
+#
+
+ar       UTF-8
+bg       CP1251
+bs       UTF-8
+ca       ISO-8859-15
+cs       ISO-8859-2
+cy       UTF-8
+da       ISO-8859-1
+de       ISO-8859-15
+el       ISO-8859-7
+en       ISO-8859-1
+eo       ISO-8859-3
+es       ISO-8859-15
+eu       ISO-8859-1
+fi       ISO-8859-15
+fr       ISO-8859-15
+gl       ISO-8859-15
+he       ISO-8859-8
+hr       ISO-8859-2
+hu       ISO-8859-2
+id       ISO-8859-1
+it       ISO-8859-15
+ja       EUC-JP
+ko       EUC-KR
+lt       ISO-8859-13
+nb       ISO-8859-1
+nl       ISO-8859-15
+nn       ISO-8859-1
+no       ISO-8859-1
+pl       ISO-8859-2
+pt       ISO-8859-15
+pt_BR    ISO-8859-1
+ro       ISO-8859-2
+ru       KOI8-R
+sk       ISO-8859-2
+sl       ISO-8859-2
+sq       UTF-8
+sv       ISO-8859-1
+th       TIS-620
+tr       ISO-8859-9
+tr_TR    ISO-8859-9
+uk       KOI8-U
+zh_CN    GB2312
+zh_HK    Big5HKSCS
+zh_TW    Big5

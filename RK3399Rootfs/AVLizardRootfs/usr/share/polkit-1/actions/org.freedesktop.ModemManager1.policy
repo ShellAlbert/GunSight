@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+<policyconfig>
+
+  <vendor>ModemManager</vendor>
+  <vendor_url>http://www.freedesktop.org/wiki/ModemManager</vendor_url>
+  <icon_name>ModemManager</icon_name>
+
+  <action id="org.freedesktop.ModemManager1.Control">
+    <description>Control the Modem Manager daemon</description>
+    <description xml:lang="de">Den Modem-Manager-Daemon steuern</description>
+    <description xml:lang="uk">Керування фоновою службою Modem Manager</description>
+    <message>System policy prevents controlling the Modem Manager.</message>
+    <message xml:lang="de">Die Systemrichtlinien verhindern die Steuerung von ModemManager.</message>
+    <message xml:lang="uk">Правила системи перешкоджають керування Modem Manager.</message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.ModemManager1.Device.Control">
+    <description>Unlock and control a mobile broadband device</description>
+    <description xml:lang="de">Ein mobiles Breitbandgerät entsperren und steuern</description>
+    <description xml:lang="uk">Розблокувати пристрій мобільної широкосмугової мережі і керувати ним</description>
+    <message>System policy prevents unlocking or controlling the mobile broadband device.</message>
+    <message xml:lang="de">Die Systemrichtlinien verhindern das Entsperren oder Steuern des mobilen Breitbandgerätes.</message>
+    <message xml:lang="uk">Правила системи забороняють розблокування і керування пристроями широкосмугових мобільних мереж.</message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_self_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.ModemManager1.Contacts">
+    <description>Add, modify, and delete mobile broadband contacts</description>
+    <description xml:lang="de">Kontakte für mobiles Breitband hinzufügen, ändern und löschen</description>
+    <description xml:lang="uk">Додати, внести зміни і вилучити контакти пристрою мобільних широкосмугових мереж</description>
+    <message>System policy prevents adding, modifying, or deleting this device's contacts.</message>
+    <message xml:lang="de">Die Systemrichtlinien verhindern das Hinzufügen, Ändern oder Löschen der Kontakte dieses Gerätes.</message>
+    <message xml:lang="uk">Правила системи перешкоджають додаванню, внесенню змін та вилученню записів контактів на цьому пристрої.</message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_self_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.ModemManager1.Messaging">
+    <description>Send, save, modify, and delete text messages</description>
+    <description xml:lang="de">Textnachrichten senden, speichern, bearbeiten und löschen</description>
+    <description xml:lang="uk">Надіслати, зберегти, внести зміни або вилучити текстові повідомлення</description>
+    <message>System policy prevents sending or manipulating this device's text messages.</message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_self_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.ModemManager1.Voice">
+    <description>Accept incoming voice calls or start outgoing voice calls.</description>
+    <message>System policy prevents voice calls.</message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_self_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.ModemManager1.Location">
+    <description>Enable and view geographic location and positioning information</description>
+    <description xml:lang="de">Informationen zum geografischen Standort und Positionierung aktivieren und anzeigen</description>
+    <description xml:lang="uk">Увімкнути або переглянути дані щодо географічного розташування і позиціювання</description>
+    <message>System policy prevents enabling or viewing geographic location information.</message>
+    <message xml:lang="de">Die Systemrichtlinien verhindern das Aktivieren oder Ändern der Informationen zum geografischen Standort.</message>
+    <message xml:lang="uk">Правила системи забороняють вмикання або перегляд даних щодо розташування.</message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_self_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.ModemManager1.USSD">
+    <description>Query and utilize network information and services</description>
+    <description xml:lang="de">Netzwerkinformationen und -dienste abfragen und nutzen</description>
+    <description xml:lang="uk">Надіслати запит і використати дані щодо мережі і служби</description>
+    <message>System policy prevents querying or utilizing network information and services.</message>
+    <message xml:lang="de">Die Systemrichtlinien verhindern die Abfrage der Netzwerkinformationen und -dienste.</message>
+    <message xml:lang="uk">Правила системи забороняють надсилання запитів і використання даних щодо мережі і служб.</message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.freedesktop.ModemManager1.Firmware">
+    <description>Query and manage firmware on a mobile broadband device</description>
+    <description xml:lang="de">Firmware auf mobilen Breitbandgeräten abfragen und verwalten</description>
+    <description xml:lang="uk">Опитування та керування мікропрограмою на пристрої мобільної широкосмугової мережі</description>
+    <message>System policy prevents querying or managing this device's firmware.</message>
+    <message xml:lang="de">Die Systemrichtlinien verhindern die Abfrage oder Verwaltung der Firmware dieses Gerätes.</message>
+    <message xml:lang="uk">Правила системи перешкоджають опитуванню або керування мікропрограмою цього пристрою.</message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+</policyconfig>

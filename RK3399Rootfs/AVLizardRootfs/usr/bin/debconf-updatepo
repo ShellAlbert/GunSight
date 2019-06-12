@@ -1,0 +1,145 @@
+#! /bin/sh
+
+#  debconf-updatepo  - update PO files with Debconf templates files content
+#  Copyright (C) 2002-2005  Denis Barbier <barbier@debian.org>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or (at
+#  your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the
+#  Free Software Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+#   This script is part of po-debconf
+
+: ${PODEBCONF_LIB=/usr/share/intltool-debian}
+INTLTOOL_EXTRACT=${PODEBCONF_LIB}/intltool-extract
+export INTLTOOL_EXTRACT
+
+#  See intltool-extract
+INTLTOOL_DEBIAN_TYPE=po-debconf
+export INTLTOOL_DEBIAN_TYPE
+
+#   Prevent automatic conversion to UTF-8 by Perl
+unset LANGUAGE LANG LC_ALL LC_CTYPE
+
+help=
+verbose=
+podir=
+skip_pot=
+skip_merge=
+msgid_bugs_address=
+
+for option
+do
+        if [ -n "$prev" ]; then
+                eval "$prev=\$option"
+                prev=
+                shift
+                continue
+        fi
+        optarg=$(expr "x$option" : 'x[^=]*=\(.*\)')
+        case $option in
+            -h | --h | --help )
+                help=1 ;;
+            -v | --v | --verbose )
+                verbose=--verbose ;;
+            --podir )
+                prev=podir ;;
+            --podir=* )
+                podir=$optarg ;;
+            --skip-merge )
+                skip_merge=1 ;;
+            --skip-pot )
+                skip_pot=1 ;;
+            --msgid-bugs-address=* )
+                msgid_bugs_address=$optarg ;;
+            -* )
+                echo "$0: unknown option: $option ...exiting" 1>&2
+                exit 1 ;;
+            * ) break ;;
+        esac
+        shift
+done
+
+if [ -n "$help" ]; then
+        cat <<EOT 1>&2
+Usage: debconf-updatepo [OPTIONS]
+Options:
+  -h,  --help          display this help message
+  -v,  --verbose       enable verbose mode
+       --podir=DIR     specify PO directory (searched by default in
+                       debian/po, ./po and ../po)
+       --skip-pot      do not generate a new templates.pot file
+       --skip-merge    do not merge PO files with templates.pot
+       --msgid-bugs-address=EMAIL
+                       specify an email address for POT's
+                       Report-Msgid-Bugs-To field
+EOT
+        exit 0
+fi
+
+[ -n "$podir" ] || {
+        for d in ../po po debian/po
+        do
+                [ -d $d ] && podir=$d
+        done
+}
+[ -n "$podir" ] || {
+        echo "No PO directory found, use the --podir flag to tell where it is... exiting" 1>&2
+        exit 1
+}
+[ -d "$podir" ] || {
+        echo "Directory $podir does not exist... exiting" 1>&2
+        exit 1
+}
+[ -f "$podir/POTFILES.in" ] || {
+        echo "File $podir/POTFILES.in does not exist... exiting" 1>&2
+        exit 1
+}
+
+[ -n "$verbose" ] && echo "PO directory is $podir" 1>&2
+
+cd "$podir"
+domain=templates
+[ -f debian.pot ] && domain=debian
+
+if [ -z "$skip_pot" ]; then
+        if [ -z "$msgid_bugs_address" ] && [ -r "../control" ]; then
+                source_package=$(LC_ALL=C grep "^Source:" ../control |
+                                          sed -e 's/.*:\s\+//' -e 1q)
+                if [ -n "$source_package" ]; then
+                        msgid_bugs_address="$source_package@packages.debian.org"
+			package_name="$source_package"
+                        export XGETTEXT_ARGS
+                fi
+        fi
+        if [ -n "$msgid_bugs_address" ]; then
+                #  intltool-update accepts XGETTEXT_ARGS since intltool-debian 0.34.1
+                XGETTEXT_ARGS="--msgid-bugs-address=\"$msgid_bugs_address\" --package-name=\"$source_package\""
+                export XGETTEXT_ARGS
+        fi
+        "$PODEBCONF_LIB/intltool-update" $verbose --gettext-package=$domain --pot || exit 1
+fi
+
+if [ -z "$skip_merge" ]; then
+        for lang in *.po
+        do
+                [ "x$lang" = "x*.po" ] && break
+                [ -n "$verbose" ] && printf "Merging $lang with $domain.pot... " 1>&2
+                msgmerge --backup=none --previous -q -U $lang $domain.pot
+                [ -n "$verbose" ] && msgfmt -v -o /dev/null $lang
+        done
+fi
+
+rm -f messages.mo 2>/dev/null
+
+exit 0

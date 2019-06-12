@@ -1,0 +1,145 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: openobex
+Upstream-Contact: Hendrik Sattler <post@hendrik-sattler.de>
+Source: https://gitlab.com/openobex/mainline
+
+Files: *
+Copyright: 1999, 2000, Pontus Fuchs
+License: GPL-2+
+
+Files: apps/irxfer.c
+Copyright: 1999, 2000, Fons Botman
+License: GPL-2+
+
+Files: apps/lib/obex_io.c
+Copyright: 2000, Pontus Fuchs
+  1999, Dag Brattli
+License: GPL-2+
+
+Files: apps/obex_find.c
+Copyright: 2010, 2011, Hendrik Sattler
+License: GPL-2+
+
+Files: apps/obex_tcp.c
+Copyright: 1999, Dag Brattli
+License: GPL-2+
+
+Files: include/*
+Copyright: 1999, Dag Brattli
+License: GPL-2+
+
+Files: include/msvc/*
+Copyright: 2006-2008, Alexander Chemeris
+License: BSD-2-clause
+ Please fill license BSD-2-clause from header of include/msvc/*
+
+Files: include/openobex/*
+Copyright: 2007-2012, Hendrik Sattler <post@hendrik-sattler.de>
+  2006, Johan Hedberg <johan.hedberg@nokia.com>
+  2005-2008, Alex Kanavin <ak@sensi.org>
+  2005, Herton Ronaldo Krzesinski <herton@conectiva.com.br>
+  2002-2008, Christian W. Zuckschwerdt <zany@triq.net>
+  2002-2006, Marcel Holtmann <marcel@holtmann.org>
+  2002, Dmitry Kasatkin <dmitry.kasatkin@nokia.com>
+  2001, 2002, Jean Tourrilhes <jt@hpl.hp.com>
+  1999, 2000, Pontus Fuchs <pontus.fuchs@tactel.se>
+  1999, 2000, Dag Brattli <dagb@cs.uit.no>
+License: LGPL-2.1+
+
+Files: lib/*
+Copyright: 2007-2012, Hendrik Sattler
+License: LGPL-2.1+
+
+Files: lib/api.c
+  lib/obex_connect.c
+  lib/obex_main.c
+  lib/obex_main.h
+  lib/obex_object.c
+  lib/obex_object.h
+  lib/obex_transport.c
+Copyright: 1999, 2000, Pontus Fuchs
+  1998-2000, Dag Brattli
+License: LGPL-2.1+
+
+Files: lib/databuffer.c
+  lib/databuffer.h
+Copyright: 2005, Herton Ronaldo Krzesinski
+License: LGPL-2.1+
+
+Files: lib/obex_body.c
+Copyright: 2012, Hendrik Sattler
+  1999, 2000, Pontus Fuchs
+  1999, 2000, Dag Brattli
+License: LGPL-2.1+
+
+Files: lib/obex_client.c
+  lib/obex_client.h
+  lib/obex_server.c
+  lib/obex_server.h
+  lib/win32compat.c
+Copyright: 1999, 2000, Pontus Fuchs
+License: LGPL-2.1+
+
+Files: lib/obex_connect.h
+Copyright: 1999, Dag Brattli
+License: GPL-2+
+
+Files: lib/obex_transport.h
+Copyright: 1999, Dag Brattli
+License: LGPL-2.1+
+
+Files: lib/transport/*
+Copyright: 2005, 2009, Alex Kanavin
+License: LGPL-2.1+
+
+Files: lib/transport/bluez_compat.h
+Copyright: 2007-2012, Hendrik Sattler
+License: LGPL-2.1+
+
+Files: lib/transport/btobex.c
+  lib/transport/btobex.h
+Copyright: 2002, Marcel Holtmann
+License: LGPL-2.1+
+
+Files: lib/transport/customtrans.c
+  lib/transport/customtrans.h
+  lib/transport/fdobex.c
+  lib/transport/fdobex.h
+  lib/transport/irobex.c
+Copyright: 1999, 2000, Pontus Fuchs
+  1998-2000, Dag Brattli
+License: LGPL-2.1+
+
+Files: lib/transport/inobex.c
+  lib/transport/inobex.h
+  lib/transport/irobex.h
+Copyright: 1999, Dag Brattli
+License: LGPL-2.1+
+
+Files: udev/*
+Copyright: 2010, 2011, Hendrik Sattler
+License: GPL-2+
+
+FIles: debian/*
+Copyright: 2002, Schubert <erich@debian.org>
+  2002, Edd Dumbill <ejad@debian.org>
+  2016, Nobuhiro Iwamatsu <iwamatsu@debian.org>
+License: GPL-2+
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; version 2 dated June, 1991, or (at
+ your option) any later version.
+ .
+ On Debian systems, the complete text of version 2 of the GNU General
+ Public License can be found in '/usr/share/common-licenses/GPL-2'.
+
+License: LGPL-2.1+
+ This program is free software; you can redistribute it and/or modify it
+ under the terms of the GNU Lesser General Public License as published by the
+ Free Software Foundation; version 2.1 of the License, or (at
+ your option) any later version.
+ .
+ On Debian systems, the complete text of version 2.1 of the GNU Lesser
+ General Public License can be found in `/usr/share/common-licenses/LGPL-2.1'.

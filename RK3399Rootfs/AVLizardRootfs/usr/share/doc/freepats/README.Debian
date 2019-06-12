@@ -1,0 +1,10 @@
+freepats for Debian
+-------------------
+
+These patches are not nearly enough for good GS or XG MIDI
+synthesis.  But they're all we have got.
+
+If you want better patches, try to track down the old "EAW"
+patchset.  Unfortunately, we cannot distribute that one.
+
+ -- Henrique de Moraes Holschuh <hmh@debian.org>, Sun, 11 Jul 2004 17:58:20 -0300

@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib/aarch64-linux-gnu
+includedir=${prefix}/include
+
+Name: freealut
+Description: freealut is a free implementation of the OpenAL utility toolkit.
+Requires: openal
+Version: 1.1.0
+Libs: -L${libdir} -lalut
+Cflags: -I${includedir}

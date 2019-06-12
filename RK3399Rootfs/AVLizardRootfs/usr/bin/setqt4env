@@ -1,0 +1,39 @@
+#!/bin/bash
+
+CTP=1
+echo "ctp = $CTP"
+
+if [ $CTP = "1" ]; then
+	TSLIB_CONFFILE=/etc/ts-mt.conf
+	echo "-27 13757 -2071768 -9105 -32 34531248 65536 800 480" \
+		>/etc/pointercal
+	sync
+else
+	TSLIB_CONFFILE=/etc/ts.conf
+fi
+
+export TSLIB_TSDEVICE=/dev/input/event0
+export TSLIB_CONFFILE
+
+export TSLIB_PLUGINDIR=/usr/lib/ts
+export TSLIB_CALIBFILE=/etc/pointercal
+
+export QWS_DISPLAY=:1
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+export PATH=/bin:/sbin:/usr/bin/:/usr/sbin:/usr/local/bin
+
+export QWS_MOUSE_PROTO="Tslib MouseMan:/dev/input/mice"
+if [ -c ${TSLIB_TSDEVICE} ]; then
+	if [ ! -s /etc/pointercal ] ; then
+		rm -f /etc/pointercal
+		/usr/bin/ts_calibrate
+	fi
+else
+	export QWS_MOUSE_PROTO="MouseMan:/dev/input/mice"
+fi
+
+export QWS_KEYBOARD=TTY:/dev/tty1
+
+export QWS_DISPLAY_SIZE=mmWidth220:mmHeight220:
+export QWS_DISPLAY=Linuxfb:/dev/fb0:${QWS_DISPLAY_SIZE}0
+

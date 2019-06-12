@@ -1,0 +1,437 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body>
+
+
+
+<h1 id="T-N">TÊN</h1>
+
+<p>podebconf-report-po — gửi cho mỗi người dịch trước tập tin PO debconf bị lỗi thời</p>
+
+<h1 id="T-M-T-T">TÓM TẮT</h1>
+
+<p><b>podebconf-report-po</b> [<b><i>tùy_chọn</i></b>]</p>
+
+<h1 id="M-T">MÔ TẢ</h1>
+
+<p>Chương trình này đọc một thư mục chứa các tập tin PO để quyết định những tập tin nào chứa bản dịch còn dịch mở hoặc bản dịch trống, khởi chạy một trình soạn thảo để cho phép sửa đổi thân và dòng đầu của thư, nhắc bạn xác nhận việc gửi thư, và gửi thư cho người dịch cuối cùng, yêu cầu cập nhật bản dịch. Thư này đính kèm tập tin PO cần cập nhật. <b>podebconf-report-po</b> có thể được gọi hoặc trong thư mục cấp đầu, hoặc trong thư mục con <i>debian</i> or <i>debian/po</i> (hoặc, đối với bản dịch khác cấu hình debconf, từ thư mục <b>po</b> chính nó hoặc thư mục cấp trên).</p>
+
+<p><b>podebconf-report-po</b> cũng có thể được dùng để gửi một thư yêu cầu bản dịch mới cho một hộp thư chung (v.d. hộp thư chung quốc tế hoá của dự án phần mềm). Trong trường hợp đó, thư đính kèm tập tin POT (mẫu).</p>
+
+<p>Có các mẫu khác nhau để yêu cầu cập nhật bản dịch, yêu cầu gửi tập tin PO đã cập nhật dưới dạng là một báo cáo lỗi (<b>--submit</b>) hoặc để yêu cầu bản dịch mới (<b>--call</b>). Người dùng cũng có thể tạo mẫu riêng. Xem phần <b>TEMPLATES</b> để tìm thêm thông tin về mẫu.</p>
+
+<h1 id="T-Y-CH-N">TÙY CHỌN</h1>
+
+<p>Cũng có thể đặt nhiều tùy chọn khác nhau trong tập tin cấu hình. Xem phần<b>CONFIGURATION FILE</b>.</p>
+
+<dl>
+
+<dt id="addlanguageteam-NG-N_NG-:DANH_S-CH"><b>--addlanguageteam=<i>NGÔN_NGỮ</i>:<i>DANH_SÁCH</i></b></dt>
+<dd>
+
+<p>Ghi rõ hộp thư chung cho một ngôn ngữ nào đó. Hộp thư chung này sẽ được thêm vào dòng đầu CC (Chép Cho) của thư đính kèm tập tin PO bằng ngôn ngữ này khi dùng <b>--languageteam</b>, thêm vào nhóm ngôn ngữ được ghi rõ trong phần đầu của tập tin PO (nếu hai hộp thư chung này khác nhau).</p>
+
+<p>Chức năng này hữu ích để báo nhóm ngôn ngữ có đủ thông tin, và cho phép đáp ứng nhanh hơn khi một người dịch được biết là không sẵn sàng.</p>
+
+<p>Có thể ghi rõ tùy chọn này nhiều lần. Mã ngôn ngữ và hộp thư chung của ngôn ngữ định giới bằng dấu hai chấm.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="bts-S"><b>--bts=<i>SỐ</i></b></dt>
+<dd>
+
+<p>Sau khi gửi báo cáo lỗi (hoặc bằng tay hoặc bằng cờ <b>--submit</b> flag) để theo dõi các bản dịch, có thể chạy lại <b>podebconf-report-po</b>, còn lần này đặt cờ <b>--bts=<i>NUMBER</i></b>. Yêu cầu các người dịch theo dòng đầu <b>Reply-To:</b> (Trả lời cho) mà được đặt thành báo cáo lỗi này, để thu thập tất cả các bản dịch vào cùng một vị trí.</p>
+
+</dd>
+<dt id="call-H-P_TH-_CHUNG"><b>--call[=<i>HỘP_THƯ_CHUNG</i>]</b></dt>
+<dd>
+
+<p>Yêu cầu các bản dịch mới. Không đặt đối số <i>MAILING_LIST</i> thì thư yêu cầu bản dịch được gửi cho hộp thư chung quốc tế hoá Debian (<i>debian-i18n@lists.debian.org</i>): nơi tốt để yêu cầu bản dịch.</p>
+
+<p>Thư yêu cầu bản dịch thì hữu ích để nhận bản dịch bằng ngôn ngữ mới.</p>
+
+<p>Mặc định là các thư yêu cầu bản dịch mới cũng được gửi cùng với các thư yêu cầu định kỳ người dịch cập nhật bản dịch đã có. Bạn cũng có thể tắt ứng xử mặc định này dùng tùy chọn <b>--withouttranslators</b>.</p>
+
+</dd>
+<dt id="conf-T-P_TIN"><b>--conf=<i>TẬP_TIN</i></b></dt>
+<dd>
+
+<p>Ghi rõ tập tin cấu hình. Mặc định là <b>podebconf-report-po</b> đọc <i>$HOME/.podebconf-report-po.conf</i>.</p>
+
+</dd>
+<dt id="noconf"><b>--noconf</b></dt>
+<dd>
+
+<p>Đừng đọc tập tin cấu hình.</p>
+
+</dd>
+<dt id="deadline-QU-_H-N"><b>--deadline=<i>QUÁ_HẠN</i></b></dt>
+<dd>
+
+<p>Ghi rõ ngày tới hạn nhận bản dịch đã cập nhật (mặc định là không quá hạn).</p>
+
+<p>(Giá trị này nên là một ngày tháng kết thúc chuỗi này:) Thời hạn cuối cùng cho bản dịch được cập nhật là: <i>DEADLINE</i>.</p>
+
+<p>Nếu chuỗi đưa ra bắt đầu với một dấu cộng « + » thì nó được đọc bằng: LC_ALL=C date -R -d <i>DEADLINE</i></p>
+
+<p>Không ghi rõ thời hạn cuối cùng (cũng không đặt tùy chọn <b>--nodeadline</b>) thì người dùng sẽ được nhắc đặt một thời hạn cuối cùng (đề nghị một thời hạn cuối cùng mặc định +10 ngày).</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="nodeadline"><b>--nodeadline</b></dt>
+<dd>
+
+<p>Tắt chức năng ngụ ý thời hạn cuối cùng cho người dịch, và tránh thấy dấu nhắc nhập thời hạn cuối cùng.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="default"><b>--default</b></dt>
+<dd>
+
+<p>Đừng mở trình soạn thảo : dùng mẫu như thế.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="nodefault"><b>--nodefault</b></dt>
+<dd>
+
+<p>Mở trình soạn thảo trước khi gửi thư.</p>
+
+</dd>
+<dt id="f---force"><b>-f</b>, <b>--force</b></dt>
+<dd>
+
+<p>Gửi các thư cập nhật, không cần xác nhận.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="noforce"><b>--noforce</b></dt>
+<dd>
+
+<p>Nhắc xác nhận trước khi gửi các thư cập nhật.</p>
+
+</dd>
+<dt id="from-T"><b>--from=<i>TỪ</i></b></dt>
+<dd>
+
+<p>Ghi rõ họ tên và địa chỉ thư của người gửi (mặc định được lấy từ biến môi trường <b>DEBEMAIL</b> và <b>DEBFULLNAME</b>, hoặc từ biến môi trường <b>EMAIL</b>: chưa đặt biến thì đặt thành nhà duy trì gói).</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="gzip"><b>--gzip</b></dt>
+<dd>
+
+<p>Nén bằng <code>gzip</code> tập tin PO đính kèm.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="nogzip"><b>--nogzip</b></dt>
+<dd>
+
+<p>Đừng nén tập tin PO.</p>
+
+</dd>
+<dt id="h---help"><b>-h</b>, <b>--help</b></dt>
+<dd>
+
+<p>In ra thông tin về cách sử dụng, rồi thoát.</p>
+
+</dd>
+<dt id="langs-NG-N_NG"><b>--langs=<i>NGÔN_NGỮ</i></b></dt>
+<dd>
+
+<p>Ghi rõ danh sách các ngôn ngữ, để giới hạn gửi thư thông báo chỉ cho những ngôn ngữ đó. Danh sách các ngôn ngữ định giới bằng dấu phẩy. Mỗi tập tin PO phải có tên là mã ngôn ngữ hai ký tự và phần mở rộng .po, v.d. đối với tiếng Việt, « vi.po ».</p>
+
+</dd>
+<dt id="languageteam"><b>--languageteam</b></dt>
+<dd>
+
+<p>Cũng CC (Chép Cho) thư cho Nhóm Ngôn Ngữ (v.d. Nhóm Việt hoá Phần mềm Tự do hay Debian-French).</p>
+
+<p>Nó được hiệu lực theo mặc định.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="nolanguageteam"><b>--nolanguageteam</b></dt>
+<dd>
+
+<p>Đừng gửi thư cho nhóm ngôn ngữ.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="mutt"><b>--mutt</b></dt>
+<dd>
+
+<p>Gửi các thư bằng mutt. Tùy chọn này đặt đối số <b>--postpone</b> thành <i>$HOME/postponed</i>.</p>
+
+</dd>
+<dt id="notdebconf"><b>--notdebconf</b></dt>
+<dd>
+
+<p>Ngụ ý rằng nó không phải là một bản dịch cấu hình debconf. <b>podebconf-report-po</b> sẽ dùng mẫu <i>translator-po</i>, <i>call-po</i> hay <i>submit-po</i> (nếu không có mẫu khác được yêu cầu trong tập tin cấu hình hoặc trên dòng lệnh). Những mẫu này không nói về debconf trong chủ đề hay thân thư, do đó thích hợp hơn với bản dịch khác debconf.</p>
+
+<p>Tùy chọn này cũng thay đổi thư mục <i>po</i> mặc định dùng bởi <b>podebconf-report-po</b> (tức là tùy chọn <b>--podir</b> không phải cần thiết khi cuộc gọi được làm từ thư mục <i>po</i> chính nó hoặc từ thư mục cấp trên).</p>
+
+<p>Mặc định là một thư mục <i>debian/po</i> có mức ưu tiên cao hơn một thư mục <i>po</i>. Bật tùy chọn này thì chỉ thấy một thư mục <i>po</i>.</p>
+
+<p>Tùy chọn này thường không cần thiết. <b>podebconf-report-po</b> thử quyết định kiểu bản dịch dựa vào thư mục hiện thời và sự tồn tại của một thư mục kiểu <i>debian/po</i> hay <i>po</i>.</p>
+
+</dd>
+<dt id="package-G-I"><b>--package=<i>GÓI</i></b></dt>
+<dd>
+
+<p>Ghi rõ tên của gói (mặc định là tên của gói nguồn).</p>
+
+</dd>
+<dt id="podir-TH-_M-C"><b>--podir=<i>THƯ_MỤC</i></b></dt>
+<dd>
+
+<p>Xác định vị trí của các tập tin PO. Mặc định là <b>podebconf-report-po</b> kiểm tra nếu nó được gọi từ một thư mục <i>po</i>, không thì nó tìm kiếm một thư mục <i>debian/po</i> (ứng xử này có thể bị tắt dùng tùy chọn <b>--notdebconf</b>), hoặc một thư mục <i>po</i>.</p>
+
+</dd>
+<dt id="postpone-H-P_TH"><b>--postpone=<i>HỘP_THƯ</i></b></dt>
+<dd>
+
+<p>Đừng gửi các thư, phụ thêm chúng trong <i>HỘP_THƯ</i>. Vậy có thể sử dụng tập tin này dạng hộp thư bị hoãn với hàm <b>mutt -p</b>.</p>
+
+</dd>
+<dt id="potfile-T-P_TIN_POT"><b>--potfile=<i>TẬP_TIN_POT</i></b></dt>
+<dd>
+
+<p>Ghi rõ tập tin POT cần gửi để yêu cầu các bản dịch (<b>--call</b>). Mặc định là <b>podebconf-report-po</b> dùng tập tin POT của thư mục chứa các tập tin PO, nếu chỉ có một tập tin POT ở đó.</p>
+
+<p>Tập tin này cũng được sử dụng để tìm tên và phiên bản của gói, nếu hai giá trị này không phải được ghi rõ bằng tùy chọn, và nếu không tìm thấy tập tin kiểu <i>debian/changelog</i>.</p>
+
+</dd>
+<dt id="sendmessage"><b>--sendmessage</b></dt>
+<dd>
+
+<p>Chỉ gửi một thư không đính kèm gì. Tùy chọn này có thể hữu ích nếu người dịch có quyền gài tập tin vào kho gói.</p>
+
+</dd>
+<dt id="smtp-M-Y_PH-C_V"><b>--smtp=<i>MÁY_PHỤC_VỤ</i></b></dt>
+<dd>
+
+<p>Xác định máy phục vụ SMTP để gửi thư (mặc định là <code>localhost</code>).</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="submit"><b>--submit</b></dt>
+<dd>
+
+<p>Thay vào gửi thư cho người dịch, gửi báo cáo lỗi đối với gói để yêu cầu các bản dịch. Có ích, chẳng hạn, khi chuẩn bị bản tải lên không phải nhà duy trì, để đảm bảo không mất bản dịch.</p>
+
+</dd>
+<dt id="summary"><b>--summary</b></dt>
+<dd>
+
+<p>Gửi cho nhà duy trì báo cáo trạng thái, chứa danh sách các thư được gửi cho người dịch.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="nosummary"><b>--nosummary</b></dt>
+<dd>
+
+<p>Đừng gửi cho nhà duy trì báo cáo trạng thái.</p>
+
+</dd>
+<dt id="utf8"><b>--utf8</b></dt>
+<dd>
+
+<p>Gửi thư theo UTF-8. Tùy chọn này cho phép ký tự khác ASCII trong thân thư và dòng đầu thư. (Trình soạn thảo cũng phải hỗ trợ UTF-8: phần lớn trình thư có phải.)</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="noutf8"><b>--noutf8</b></dt>
+<dd>
+
+<p>Gửi thư theo ASCII. Ký tự khác ASCII bị thay thế bằng dấu hỏi.</p>
+
+</dd>
+<dt id="version"><b>--version</b></dt>
+<dd>
+
+<p>In ra thông tin về phiên bản, rồi thoát.</p>
+
+</dd>
+<dt id="v---verbose"><b>-v</b>, <b>--verbose</b></dt>
+<dd>
+
+<p>Hiển thị thông tin thêm trong khi chạy.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="noverbose"><b>--noverbose</b></dt>
+<dd>
+
+<p>Đừng xuất chi tiết.</p>
+
+</dd>
+<dt id="templatecall-M-U"><b>--templatecall=<i>MẪU</i></b></dt>
+<dd>
+
+<p>Ghi rõ một tập tin cần dùng làm mẫu cho các thư yêu cầu bản dịch. Mẫu mặc định là <i>/usr/share/po-debconf/templates/call</i>.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="templatesubmit-M-U"><b>--templatesubmit=<i>MẪU</i></b></dt>
+<dd>
+
+<p>Ghi rõ một tập tin cần dùng làm mẫu cho các thư được gửi cho người dịch khi tùy chọn <b>--submit</b> được bật. Mẫu mặc định là <i>/usr/share/po-debconf/templates/submit</i>.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="templatetranslators-M-U"><b>--templatetranslators=<i>MẪU</i></b></dt>
+<dd>
+
+<p>Ghi rõ một tập tin cần dùng làm mẫu cho các thư được gửi cho người dịch. Mẫu mặc định là <i>/usr/share/po-debconf/templates/translators</i>.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="template-M-U"><b>--template=<i>MẪU</i></b></dt>
+<dd>
+
+<p>Ghi rõ tập tin cần dùng làm mẫu cho các thư. Mẫu được ghi rõ bằng tùy chọn này có quyền cao hơn ba tùy chọn <b>--templatetranslators</b>, <b>--templatesubmit</b>, <b>--templatecall</b>.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="notemplate"><b>--notemplate</b></dt>
+<dd>
+
+<p>Dùng mẫu mặc định.</p>
+
+</dd>
+<dt id="withtranslators"><b>--withtranslators</b></dt>
+<dd>
+
+<p>Sau khi gửi thư yêu cầu bản dịch, cũng gửi thư cho mỗi người dịch trước, yêu cầu bản dịch đã cập nhật.</p>
+
+<p>Tùy chọn này bị bỏ qua khi tùy chọn <b>--call</b> không phải được ghi rõ. Nó được hiệu lực theo mặc định.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+<dt id="withouttranslators"><b>--withouttranslators</b></dt>
+<dd>
+
+<p>Sau khi gửi thư yêu cầu bản dịch, đừng gửi thư cho mỗi người dịch trước, yêu cầu bản dịch đã cập nhật.</p>
+
+<p>Có thể ghi rõ tùy chọn này trong tập tin cấu hình, để xác định ứng xử mặc định của &lt;podebconf-report-po&gt;. Xem phần <b>CONFIGURATION FILE</b> bên dưới.</p>
+
+</dd>
+</dl>
+
+<h1 id="T-P-TIN-C-U-H-NH">TẬP TIN CẤU HÌNH</h1>
+
+<p>Mặc định là <b>podebconf-report-po</b> đọc <i>$HOME/.podebconf-report-po.conf</i>. Có thể lập tập tin cấu hình bằng tùy chọn <b>--conf</b>. Cũng có thể bỏ qua mọi tập tin cấu hình bằng cách bật tùy chọn <b>--noconf</b>. Các tùy chọn dòng lệnh cũng có thể được sử dụng để ghi đè lên thiết lập tập tin cấu hình.</p>
+
+<p>Các tập tin cấu hình chấp nhận phần lớn các tùy chọn dòng lệnh mà không có chuỗi <b>--</b> đi trước: <b>deadline</b>, <b>nodeadline</b>, <b>smtp</b>, <b>from</b>, <b>verbose</b>, <b>force</b>, <b>templatetranslators</b>, <b>templatesubmit</b>, <b>templatecall</b>, <b>template</b>, <b>default</b>, <b>gzip</b>, <b>languageteam</b>, <b>nolanguageteam</b>, <b>addlanguageteam</b>, <b>summary</b>, <b>utf8</b>, <b>withouttranslators</b>, <b>withtranslators</b>.</p>
+
+<p>Dòng bắt đầu với dấu thăng (có thể cũng có dấu cách nằm trước) là ghi chú thì bị bỏ qua.</p>
+
+<p>Chẳng hạn: # Đây là chú thích smtp smtp.mydomain from = Me Myself &lt;me@mydomain&gt; utf8</p>
+
+<h1 id="M-U">MẪU</h1>
+
+<p>Các mẫu được xác định bằng tùy chọn <b>--template</b>, <b>--templatetranslators</b>, <b>--templatesubmit</b>, hay <b>--templatecall</b> thì có thể chứa những thẻ này:</p>
+
+<dl>
+
+<dt id="from-subject-reply-to"><b>&lt;from</b>&gt;, <b>&lt;subject</b>&gt;, <b>&lt;reply-to</b>&gt;</dt>
+<dd>
+
+<p>Thay thế bằng dòng đầu tương ứng của thư điện tử.</p>
+
+</dd>
+<dt id="filelist"><b>&lt;filelist</b>&gt;</dt>
+<dd>
+
+<p>Ở chế độ mặc định, nó được thay thế bằng chú thích liệt kê các người dịch có bản dịch quá thời.</p>
+
+<p>Ở chế độ <b>--submit</b>, nó được thay thế bằng danh sách các tập tin PO có bản dịch quá thời.</p>
+
+<p>Ở chế độ <b>--call</b>, nó được thay thế bằng danh sách các tập tin PO nằm trong thư mục PO.</p>
+
+</dd>
+<dt id="reply"><b>&lt;reply</b>&gt;</dt>
+<dd>
+
+<p>Được thay thế bằng một chuỗi ngụ ý phương pháp đáp ứng của người dịch (tức là theo thẻ <i>Reply-To</i> hoặc gửi tập tin PO đính kèm một thư báo cáo lỗi riêng).</p>
+
+</dd>
+<dt id="deadline"><b>&lt;deadline</b>&gt;</dt>
+<dd>
+
+<p>Được thay thế bằng một chuỗi ngụ ý ngày tới hạn đệ trình bản dịch (xem <b>--deadline</b>).</p>
+
+</dd>
+<dt id="package"><b>&lt;package</b>&gt;</dt>
+<dd>
+
+<p>Được thay thế bằng tên của gói (nếu nó được phát hiện).</p>
+
+</dd>
+<dt id="statistics"><b>&lt;statistics</b>&gt;</dt>
+<dd>
+
+<p>Được thay thế bằng thống kê của các tập tin PO nằm trong thư mục PO (chỉ trong chế độ <b>--call</b>).</p>
+
+</dd>
+</dl>
+
+<p>Thư mục <i>/usr/share/po-debconf/templates</i> chứa các mẫu mặc định.</p>
+
+<h1 id="V-D">VÍ DỤ</h1>
+
+<p>Sử dụng khuyến khích là gọi <b>podebconf-report-po</b> từ thư mục <i>po</i> cần cập nhật:</p>
+
+<p>podebconf-report-po --call</p>
+
+<p>Đây sẽ gửi một thư yêu cầu bản dịch mới cho hộp thư chung Quốc Tế Hoá Debian &lt;debian-i18n@lists.debian.org&gt;, cũng yêu cầu mỗi người dịch trước cập nhật bản dịch. Các nhóm ngôn ngữ cũng được thông báo và nên có dịp đáp ứng nếu người dịch đã gán được biết là không sẵn sàng.</p>
+
+<p>Một dấu nhắc sẽ yêu cầu người dùng nhập thời hạn cuối cùng (mặc định là yêu cầu bản dịch và bản cập nhật được đệ trình trong 10 ngày).</p>
+
+<p>Sau đó, một trình soạn thảo sẽ hiển thị thư cần gửi cho hộp thư chung. Khi trình soạn thảo này thoát, <b>podebconf-report-po</b> sẽ nhắc người dùng xác nhận việc gửi thư cho hộp thư chung.</p>
+
+<p>Xác nhận được thì một cửa sổ soạn thảo khác sẽ hiển thị thư cần gửi cho các người dịch và các nhóm ngôn ngữ. <b>podebconf-report-po</b> sẽ lại yêu cầu bạn xác nhận việc gửi thư cho các người/nhóm nhận này.</p>
+
+<p>Sau thời hạn cuối cùng thì bạn nên tạo một bản phát hành mới dùng những bản dịch được nhận.</p>
+
+<h1 id="XEM-C-NG">XEM CŨNG</h1>
+
+<p><a href="http://man.he.net/man1/debconf-updatepo">debconf-updatepo(1)</a></p>
+
+<h1 id="T-C-GI">TÁC GIẢ</h1>
+
+<pre><code>  Fabio Tranchitella &lt;kobold@kobold.it&gt;</code></pre>
+
+
+</body>
+
+</html>
+
+

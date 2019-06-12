@@ -1,0 +1,242 @@
+#!/bin/bash
+
+FA_RunCmd() {
+    [ "$V" = "1" ] && echo "+ ${@}"
+    eval $@ || exit $?
+}
+
+# Everything else needs to be run as root
+if [ $(id -u) -ne 0 ]; then
+  printf "Script must be run as root. Try 'sudo turn-wifi-into-apmode yes'\n"
+  exit 1
+fi
+
+if [ "$1" == "" ]; then
+	echo "miss required parameter."
+	exit 1
+fi
+
+emptyfile() {
+        rm -f $1
+        touch $1
+        chmod $2 $1
+        chown root:root $1
+}
+
+init-wifi-ap() {
+    echo "options bcmdhd op_mode=2" > /etc/modprobe.d/bcmdhd.conf
+    FA_RunCmd rmmod bcmdhd
+    sleep 1
+    cp -f /usr/share/network-conf/ap/interfaces /etc/network/interfaces
+    cp -f /usr/share/network-conf/ap/hostapd_new.conf /etc/hostapd/hostapd.conf
+    FA_RunCmd modprobe bcmdhd op_mode=2
+    sleep 2
+}
+
+init-wifi-net() {
+    echo "options bcmdhd op_mode=5" > /etc/modprobe.d/bcmdhd.conf
+    FA_RunCmd rmmod bcmdhd
+    sleep 1
+    cp -f /usr/share/network-conf/sta/interfaces /etc/network/interfaces
+    rm -f /etc/hostapd/hostapd.conf
+    FA_RunCmd modprobe bcmdhd
+    sleep 3
+}
+
+SSID=""
+PASSWORD=""
+PASSWORD2=""
+
+pre_apmode() {
+    read -p "Enter wireless name [default: friendlyelec-wifiap]: " SSID
+    if [[ -z "$SSID" ]]; then
+        SSID="friendlyelec-wifiap"
+    fi
+    if [ ${#SSID} -le 3 ]; then                                   
+        echo "Wireless name is too short."
+            exit 1
+    fi
+    
+    read -s -p "Enter password [default: 123456789]: " PASSWORD
+    if [[ -z "$PASSWORD" ]]; then
+        PASSWORD="123456789"
+    else
+        echo ""
+
+        if [ ${#PASSWORD} -le 8 ]; then                                   
+            echo "Password is too short, 9 characters long is better."
+            exit 1                                               
+        fi
+
+        read -s -p "Enter password again: " PASSWORD2
+        if [[ -z "$PASSWORD2" ]]; then
+            echo "Password cannot be blank."
+            exit 1
+        fi
+
+        if [ "$PASSWORD" == "$PASSWORD2" ]; then
+            echo ""
+        else
+            echo ""
+            echo "The two password didn't match."
+            exit 1
+        fi  
+    fi
+    cp -f /usr/share/network-conf/ap/hostapd.conf /usr/share/network-conf/ap/hostapd_new.conf
+    sed -i "s/^ssid=.*/ssid=$SSID/g" /usr/share/network-conf/ap/hostapd_new.conf
+    sed -i "s/^wpa_passphrase.*/wpa_passphrase=$PASSWORD/g" /usr/share/network-conf/ap/hostapd_new.conf
+}
+
+end_apmode() {
+    echo "-----------------------------------"
+    echo "Configuration Saved!"                                        
+    echo ""                                                     
+    echo "Please connect your computer to the wireless network:"
+    echo "Wireless Name: $SSID"
+    echo "     Password: $PASSWORD"
+    echo ""
+    echo ""
+    read -n 1 -s -p "Press any key to continue"
+}
+
+switch_apmode() {
+    pre_apmode
+    pkill -f 'ifup .*wlan0'
+    FA_RunCmd ifdown wlan0
+    sleep 1
+    FA_RunCmd ifconfig wlan0 down
+    init-wifi-ap
+    FA_RunCmd systemctl stop dnsmasq
+    FA_RunCmd systemctl stop hostapd
+    FA_RunCmd systemctl stop udhcpd.service
+    FA_RunCmd systemctl enable udhcpd.service
+    FA_RunCmd systemctl enable dnsmasq
+    FA_RunCmd systemctl enable hostapd
+    sed -i 's/DHCPD_ENABLED="no"/DHCPD_ENABLED="yes"/g' /etc/default/udhcpd
+    if [ -f /etc/wicd/wireless-settings.conf ]; then
+    	cp /etc/wicd/wireless-settings.conf /etc/wicd/wireless-settings.conf.bak
+    	emptyfile /etc/wicd/wireless-settings.conf 600
+    fi
+    if [ -f /etc/network/interfaces.d/wlan0 ]; then
+	cp /etc/network/interfaces.d/wlan0 /etc/wlan0-bak
+	rm /etc/network/interfaces.d/wlan0
+    fi
+    FA_RunCmd systemctl start udhcpd.service
+    FA_RunCmd systemctl start dnsmasq
+    FA_RunCmd systemctl start hostapd
+    FA_RunCmd /sbin/ifconfig wlan0 192.168.8.1 up
+
+    #while true; do
+	#echo ""
+    #    read -p "Do you wish to reboot?" yn
+    #    case $yn in
+    #        [Yy]* ) reboot; exit;;
+    #        [Nn]* ) exit;;
+    #    *) echo "Please answer yes or no.";;
+    #    esac
+    #done
+
+    end_apmode
+}
+
+exit_apmode() {
+    pkill -f 'ifup .*wlan0'
+    FA_RunCmd ifdown wlan0
+    sleep 1
+    FA_RunCmd ifconfig wlan0 down
+    FA_RunCmd systemctl stop dnsmasq
+    FA_RunCmd systemctl stop hostapd
+    FA_RunCmd systemctl stop udhcpd.service
+    FA_RunCmd systemctl disable dnsmasq
+    FA_RunCmd systemctl disable hostapd
+    FA_RunCmd systemctl disable udhcpd.service
+    sed -i 's/DHCPD_ENABLED="yes"/DHCPD_ENABLED="no"/g' /etc/default/udhcpd
+    init-wifi-net
+    sleep 2
+}
+
+
+remove_networkmanager() {
+apt-get --yes --force-yes remove --auto-remove --purge network-manager
+apt autoremove -y
+ 
+cat >/etc/network/interfaces <<INTERFACEEOL
+source-directory /etc/network/interfaces.d
+ 
+auto lo
+iface lo inet loopback
+ 
+allow-hotplug wlan0
+iface wlan0 inet dhcp
+        wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+INTERFACEEOL
+ 
+cat >/etc/network/interfaces.d/eth0 <<ETH0EOLB
+auto eth0
+    iface eth0 inet dhcp
+    hwaddress 76:92:d4:85:f3:0f
+ETH0EOLB
+}
+
+reboot_func() {
+echo " "
+echo "  _____  ______  _____ _______       _____ _______ "
+echo " |  __ \|  ____|/ ____|__   __|/\   |  __ \__   __|"
+echo " | |__) | |__  | (___    | |  /  \  | |__) | | |   "
+echo " |  _  /|  __|  \___ \   | | / /\ \ |  _  /  | |   "
+echo " | | \ \| |____ ____) |  | |/ ____ \| | \ \  | |   "
+echo " |_|  \_\______|_____/   |_/_/    \_\_|  \_\ |_|   "
+echo " "
+echo "Please restart to implement changes!"
+echo "To Restart type sudo reboot"
+
+echo "Rebooting in 5 seconds!"
+sleep 1
+echo "Rebooting in 4 seconds!"
+sleep 1
+echo "Rebooting in 3 seconds!"
+sleep 1
+echo "Rebooting in 2 seconds!"
+sleep 1
+echo "Rebooting in 1 seconds!"
+sleep 1
+echo "Rebooting now!  "
+sleep 1
+sudo reboot
+}
+
+DPKGRET=$(dpkg -s network-manager|grep installed)  
+clear           
+if [ "" == "$DPKGRET" ]; then                             
+    case $1 in
+        [yY][eE][sS]|[yY])
+        switch_apmode
+            ;;
+        *)
+        exit_apmode
+            ;;
+    esac
+    echo "done."                                
+else 
+    while true; do                           
+        echo "Please note"
+        echo "--------------------------------"
+            echo "This script will uninstall NetworkManger and then reboot your hardware."
+        echo "Please run this script again after reboot."
+        echo ""                                                           
+        read -p "Do you wish to continue? [y/n]: " yn
+        case $yn in                                             
+            [Yy]* ) 
+                remove_networkmanager                                                                     
+                reboot_func                                                                               
+                exit 0
+            ;;                            
+            [Nn]* ) 
+                exit 0
+            ;;            
+            *) echo "Please answer yes or no.";;                           
+        esac                                                                   
+    done
+fi
+
+exit 0

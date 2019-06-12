@@ -1,0 +1,91 @@
+#!/bin/bash
+
+#set -x
+
+if [ "$(id -u)" != "0" ]; then
+	echo "Please run as root."
+	exit 0
+fi
+
+sdcard="/dev/mmcblk0"
+fdisk -l $sdcard | grep $sdcard
+partno="2"
+sdcard_part=`fdisk -l $sdcard | grep mmcblk0p2 | awk '{print $1}'`
+sdcard_sect=`fdisk -l $sdcard | grep "Disk $sdcard" | awk '{print $7}'`
+sdcard_end=$(expr $sdcard_sect - 1024)
+
+part_start=`fdisk -l $sdcard | grep mmcblk0p2 | awk '{print $2}'`
+part_end=`fdisk -l $sdcard | grep mmcblk0p2 | awk '{print $3}'`
+
+echo "*********************************************"
+echo " SD Total sectors(512byte): $sdcard_end"
+echo " Rootfs start sector: $part_start"
+echo " Rootfs end sector: $part_end"
+echo " Part num: $partno"
+echo "*********************************************"
+
+if [ $part_end -ge $sdcard_end ]; then
+    echo "Rootfs has been extended."
+    exit 0
+fi
+
+echo -n "WARNING: Do you want to resize \"$sdcard_part\"(recommended y) (y/N)?  "
+read -n 1 ANSWER
+echo ""
+if [ ! "x${ANSWER}" = "xy" ] ; then
+    echo "You have canceled extending rootfs."
+    exit 0
+fi
+
+echo "Changing partition table..."
+echo -e "p\nd\n$partno\nn\np\n$partno\n$part_start\n$sdcard_end\np\nw" | fdisk ${sdcard} > /dev/null 2>&1
+
+echo "*********************************************"
+echo " Please REBOOT to make filesystem extend."
+echo "*********************************************"
+
+
+#/etc/init.d/resize2fs_once
+cat > /etc/init.d/resize2fs_once << _EOF_
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides: resize2fs_once
+# Required-Start: \$local_fs \$remote_fs \$network \$syslog
+# Required-Stop:
+# Default-Start: 2 3 4 5 S
+# Default-Stop:
+# Short-Description: Resize the root filesystem to fill partition
+# Description:
+### END INIT INFO
+. /lib/lsb/init-functions
+case "\$1" in
+start)
+log_daemon_msg "Starting resize2fs_once" &&
+resize2fs ${sdcard_part} &&
+rm /etc/init.d/resize2fs_once &&
+update-rc.d resize2fs_once remove &&
+log_end_msg \$?
+;;
+*)
+echo "Usage: \$0 start" >&2
+exit 3
+;;
+esac
+_EOF_
+
+chmod +x /etc/init.d/resize2fs_once > /dev/null 2>&1
+
+update-rc.d resize2fs_once defaults > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "Please run \"sudo /etc/int.d/resize2fs_once start\" after reboot."
+    exit 0
+fi
+
+echo -n "WARNING: Do you reboot the system(recommended y) (y/N)?  "
+read -n 1 ANSWER
+echo ""
+if [ "x${ANSWER}" = "xy" ] ; then
+    echo "System is going to reboot..."
+    reboot
+    exit 0
+fi

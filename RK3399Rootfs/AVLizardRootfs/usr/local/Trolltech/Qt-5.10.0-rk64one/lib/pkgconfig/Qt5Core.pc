@@ -1,0 +1,14 @@
+prefix=/opt/rootfs-rk64one/usr/local/Trolltech/Qt-5.10.0-rk64one
+exec_prefix=${prefix}
+libdir=/usr/local/Trolltech/Qt-5.10.0-rk64one/lib
+includedir=/usr/local/Trolltech/Qt-5.10.0-rk64one/include
+
+host_bins=/usr/local/Trolltech/Qt-5.10.0-rk64one-sdk/bin
+qt_config=shared rpath release c++11 c++14 c++1z concurrent dbus no-qml-debug reduce_exports release_tools stl properties animation textcodec big_codecs clock-monotonic codecs textdate datestring doubleconversion eventfd filesystemiterator filesystemwatcher gestures glib itemmodel proxymodel identityproxymodel inotify library mimetype process statemachine regularexpression settings sharedmemory sortfilterproxymodel stringlistmodel systemsemaphore temporaryfile threadsafe-cloexec translation xmlstream xmlstreamreader xmlstreamwriter
+
+Name: Qt5 Core
+Description: Qt Core module
+Version: 5.10.0
+Libs: -L${libdir} -lQt5Core 
+Cflags: -I${includedir}/QtCore -I${includedir}
+
