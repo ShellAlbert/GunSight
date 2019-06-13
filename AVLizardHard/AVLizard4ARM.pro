@@ -182,8 +182,8 @@ LIBS += -L/home/zhangshaoyan/armbuild/copyfromrk3399ubuntu1804/arm-linux-gnueabi
 
 
 #logMMSE.
-INCLUDEPATH += /home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/audio/LogMMSE
-LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/audio/LogMMSE -llogmmse
+#INCLUDEPATH += /home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/audio/LogMMSE
+#LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/AVLizardHard/audio/LogMMSE -llogmmse
 
 #libns.so
 #LIBS += -L/home/zhangshaoyan/MyWork/github/GunSight/GunSight/libns -lns

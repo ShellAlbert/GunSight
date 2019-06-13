@@ -1,0 +1,5 @@
+these .so libs are for AVLizard.bin runs okay in firefly-ubutnu16.04
+they are copied from Friendly-ubuntu16.04.
+they are 32-bit platform compiled with arm-linux-gcc-4.9.3-32.bit
+librockchip_mpp.
+remove rockchip rk3399j core board ubuntu16.04 /usr/lib/aarch64-linux/librockchip_mpp* librockchip_vpu*
